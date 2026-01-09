@@ -5,3 +5,4 @@ httpx
 graphviz
 python-multipart
 websockets
+watchdog
