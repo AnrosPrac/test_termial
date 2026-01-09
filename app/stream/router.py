@@ -9,8 +9,9 @@ async def stream_source(websocket: WebSocket, username: str):
     await stream_manager.start_broadcast(username)
     try:
         while True:
-            data = await websocket.receive_json() # Expecting {"code": "...", "file": "..."}
-            await stream_manager.broadcast_code(username, data["code"], data["file"])
+            # Receive the JSON which now includes 'ts' (timestamp) from the CLI
+            data = await websocket.receive_json() 
+            await stream_manager.broadcast_code(username, data)
     except WebSocketDisconnect:
         await stream_manager.stop_stream(username)
 

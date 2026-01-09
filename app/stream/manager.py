@@ -1,9 +1,9 @@
 from fastapi import WebSocket
 from typing import Dict, List
+import json
 
 class StreamManager:
     def __init__(self):
-        # Format: { "streamer_name": [spectator_ws1, spectator_ws2] }
         self.active_streams: Dict[str, List[WebSocket]] = {}
 
     async def start_broadcast(self, streamer_name: str):
@@ -18,17 +18,34 @@ class StreamManager:
 
     async def stop_stream(self, streamer_name: str):
         if streamer_name in self.active_streams:
+            # Notify spectators or just close
             for ws in self.active_streams[streamer_name]:
-                await ws.close()
+                try:
+                    await ws.close()
+                except:
+                    pass
             del self.active_streams[streamer_name]
 
-    async def broadcast_code(self, streamer_name: str, code: str, filename: str):
+    async def broadcast_code(self, streamer_name: str, data: dict):
         if streamer_name in self.active_streams:
-            payload = {"type": "live_code", "content": code, "file": filename}
+            # We pass the entire dictionary (code, file, and ts for speed measurement)
+            payload = {
+                "type": "live_code", 
+                "content": data.get("code"), 
+                "file": data.get("file"),
+                "ts": data.get("ts") 
+            }
+            
+            disconnected_buckets = []
             for ws in self.active_streams[streamer_name]:
                 try:
                     await ws.send_json(payload)
                 except:
+                    disconnected_buckets.append(ws)
+            
+            # Clean up disconnected spectators safely
+            for ws in disconnected_buckets:
+                if ws in self.active_streams[streamer_name]:
                     self.active_streams[streamer_name].remove(ws)
 
 stream_manager = StreamManager()
