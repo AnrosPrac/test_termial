@@ -4,3 +4,4 @@ google-generativeai
 httpx
 graphviz
 python-multipart
+re

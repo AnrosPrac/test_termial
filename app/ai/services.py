@@ -2,6 +2,7 @@ from app.ai.prompts import PROMPTS
 from app.ai.gemini_core import run_gemini
 import json
 from pathlib import Path
+import re
 # Assuming you place the flowchart script in the same directory
 from app.ai.flowchart_engine_v1 import generate_flowchart_from_json_and_save
 
@@ -25,15 +26,22 @@ def execute_ai(mode: str, version: str, language: str, input_text: str):
     # SPECIAL CASE: Flowchart Generation
     if mode == "fc":
         try:
-            # Clean the output in case Gemini adds markdown fences
-            clean_json = raw_output.replace("```json", "").replace("```", "").strip()
-            flow_data = json.loads(clean_json)
-            
-            temp_img_path = Path("/tmp/flow_output.png")
-            success = generate_flowchart_from_json_and_save(flow_data, temp_img_path)
-            
-            if success:
-                return temp_img_path # Return the path to the image
+            # ROBUST CLEANING: Find the first '{' and the last '}'
+            # This ignores any "Here is your JSON:" text or ```json tags
+            match = re.search(r'\{.*\}', raw_output, re.DOTALL)
+            if match:
+                clean_json = match.group(0)
+                flow_data = json.loads(clean_json)
+                
+                temp_img_path = Path("/tmp/flow_output.png")
+                # Call your generator
+                success = generate_flowchart_from_json_and_save(flow_data, temp_img_path)
+                
+                if success:
+                    return temp_img_path
+            else:
+                print(f"No JSON found in Gemini output: {raw_output}")
+                return None
         except Exception as e:
             print(f"Flowchart processing error: {e}")
             return None
