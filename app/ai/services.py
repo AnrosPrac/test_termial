@@ -3,7 +3,7 @@ from app.ai.gemini_core import run_gemini
 import json
 from pathlib import Path
 # Assuming you place the flowchart script in the same directory
-from flowchart_engine_v1 import generate_flowchart_from_json_and_save
+from app.ai.flowchart_engine_v1 import generate_flowchart_from_json_and_save
 
 def normalize_language(lang: str) -> str:
     return "Tanglish (Tamil + English mix)" if lang == "tanglish" else "English"
