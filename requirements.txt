@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 google-generativeai
+httpx
+graphviz
+python-multipart

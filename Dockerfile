@@ -8,9 +8,11 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (minimal)
+# Install system dependencies
+# Added graphviz: Required for the flowchart engine
 RUN apt-get update && apt-get install -y \
     build-essential \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for layer caching)
