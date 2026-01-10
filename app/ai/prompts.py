@@ -18,5 +18,22 @@ PROMPTS = {
         Schema: {"flows": [{"name": "Flowchart", "steps": [{"type": "start"}, {"type": "process", "text": "..."}, {"type": "decision", "cond": "...", "yes": [], "no": []}, {"type": "end"}]}]}
         Convert this code to the JSON schema: {input}
         """
-    }
-}
+    },
+    "explain":{
+        "from_code":"understand and explain this code {input} in tanglish , what are the types of explanation we need is 1.Keyword explanation 2.unused syntax or cofusing part explanation 3.if memory included about memory 4.logic of the code written 5.how the students must explain it to the teacher 6.is there any imrpovements needed"
+    },
+    "diff":{
+        "standard":"Explain the difference between the two code snippet {input1} and {input2} with following concpts . the bigO , which is fast which is slow,which will be better for a larger system ,  which is best practice , what all are the risks in both files and what are the improvements required "
+},"trace": {
+    "from_code": """
+    Analyze this code {input}. Simulate its execution step-by-step.
+    Output ONLY a JSON object with a list called 'frames'.
+    Each 'frame' must contain:
+    - 'line_no': The current line executing.
+    - 'vars': Current local variables.
+    - 'stack': Current function call stack.
+    - 'heap': Any pointers or dynamic memory.
+    - 'explanation': What is happening in this specific step.
+    Ensure it traces enough steps to show the logic clearly.
+    """
+}}
