@@ -13,7 +13,7 @@ class InjectRequest(BaseModel):
 class FormatRequest(BaseModel):
     text_content: str
 
-@router.post("/ai/format")
+@router.post("/format")
 async def ai_format(payload: FormatRequest):
     try:
         formatted_text = process_formatting(payload.text_content)
