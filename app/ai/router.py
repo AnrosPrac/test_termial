@@ -4,17 +4,14 @@ from app.ai.services import execute_ai
 from pathlib import Path
 
 router = APIRouter()
-from app.ai.injector import process_injection
-
+from app.ai.injector import process_injection_to_memory
 @router.post("/inject")
-def ai_inject(payload: dict):
+async def ai_inject(payload: dict):
     try:
         text_content = payload.get("text_content")
-        folder_name = payload.get("folder_name")
-        
-        path = process_injection(text_content, folder_name)
-        
-        return {"status": "success", "path": path}
+        # Generate the files in memory
+        files_dict = process_injection_to_memory(text_content)
+        return {"status": "success", "files": files_dict}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
