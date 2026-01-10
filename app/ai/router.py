@@ -4,11 +4,22 @@ from pydantic import BaseModel
 from pathlib import Path
 from app.ai.injector import process_injection_to_memory
 from app.ai.services import execute_ai
-
+from app.ai.formatter import process_formatting
 router = APIRouter()
 
 class InjectRequest(BaseModel):
     text_content: str
+
+class FormatRequest(BaseModel):
+    text_content: str
+
+@router.post("/ai/format")
+async def ai_format(payload: FormatRequest):
+    try:
+        formatted_text = process_formatting(payload.text_content)
+        return {"status": "success", "output": formatted_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/inject")
 async def ai_inject(payload: dict):
     try:
