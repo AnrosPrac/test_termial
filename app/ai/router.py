@@ -12,15 +12,13 @@ class InjectRequest(BaseModel):
 @router.post("/inject")
 async def ai_inject(payload: InjectRequest):
     try:
-        # Pydantic ensures text_content exists automatically now
         files_dict = process_injection_to_memory(payload.text_content)
         
         if not files_dict:
-            raise ValueError("AI failed to generate any files for this input")
+            raise ValueError("No files were generated")
             
         return {"status": "success", "files": files_dict}
     except Exception as e:
-        # LOG THIS so you can see it in Render/Terminal logs
         print(f"[!] Injection Error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 

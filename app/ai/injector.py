@@ -3,7 +3,6 @@ import json
 from app.ai.services import execute_ai
 
 def process_injection_to_memory(text_content: str):
-    # Ask Gemini for the plan
     plan_raw = execute_ai(
         mode="plan",
         version="standard",
@@ -11,29 +10,35 @@ def process_injection_to_memory(text_content: str):
         input_text=text_content
     )
     
+    file_plan = []
+    
     try:
-        # CTO FIX: More robust regex to find the JSON block
         match = re.search(r"(\{.*\})", plan_raw, re.DOTALL)
         if not match:
-            raise ValueError("No JSON found in AI response")
+            raise ValueError("No JSON found")
             
         plan_data = json.loads(match.group(1))
-        # Ensure we get a list even if the key is missing
-        file_plan = plan_data.get("files", []) 
         
+        if isinstance(plan_data, dict):
+            file_plan = plan_data.get("files", [])
+        elif isinstance(plan_data, list):
+            file_plan = plan_data
+            
     except Exception as e:
-        print(f"[!] Planning failed, falling back to line-by-line: {e}")
-        # Fallback to your original logic if AI fails to plan
+        print(f"[!] Planning failed, falling back: {e}")
         lines = [l.strip() for l in text_content.split('\n') if l.strip()]
         file_plan = [{"filename": f"task_{i+1}.c", "prompt": l} for i, l in enumerate(lines)]
 
     generated_files = {}
     for item in file_plan:
-        filename = item.get("filename", "untitled.c")
+        if not isinstance(item, dict): continue
+        
+        filename = item.get("filename", f"file_{len(generated_files)+1}.c")
         prompt = item.get("prompt", "")
 
+        if not prompt: continue
+
         raw_code = execute_ai(mode="write", version="standard", language="english", input_text=prompt)
-        # Your exact cleaning logic
         clean_code = re.sub(r"```[a-zA-Z]*\n|```", "", raw_code).strip()
         generated_files[filename] = clean_code
 
