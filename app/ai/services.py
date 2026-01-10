@@ -9,17 +9,25 @@ from app.ai.flowchart_engine_v1 import generate_flowchart_from_json_and_save
 def normalize_language(lang: str) -> str:
     return "Tanglish (Tamil + English mix)" if lang == "tanglish" else "English"
 
-def execute_ai(mode: str, version: str, language: str, input_text: str):
+def execute_ai(mode: str, version: str, language: str, input_text: str,input2: str = ""):
     if mode not in PROMPTS:
         raise ValueError("Unsupported mode")
     if version not in PROMPTS[mode]:
         raise ValueError("Unsupported version")
 
     prompt_template = PROMPTS[mode][version]
-    prompt = prompt_template.format(
-        language=normalize_language(language),
-        input=input_text
-    )
+    if mode == "diff":
+        # Ensure we have both inputs for diff, otherwise it will crash
+        prompt = prompt_template.format(
+            language=normalize_language(language),
+            input1=input_text,
+            input2=input2 if input2 else ""
+        )
+    else:
+        prompt = prompt_template.format(
+            language=normalize_language(language),
+            input=input_text
+        )
 
     raw_output = run_gemini(prompt)
 

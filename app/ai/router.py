@@ -8,11 +8,16 @@ router = APIRouter()
 @router.post("/execute")
 def ai_execute(payload: dict):
     try:
+                # Grab the primary input (handle both "input" and "input1" keys for safety)
+        input_primary = payload.get("input") or payload.get("input1")
+        input_secondary = payload.get("input2")
+
         result = execute_ai(
             mode=payload["mode"],
             version=payload.get("version", "standard"),
             language=payload.get("language", "english"),
-            input_text=payload["input"]
+            input_text=input_primary,
+            input2=input_secondary  # Pass this as a new optional argument
         )
 
         # Check if the result is a file path (for Flowcharts)
