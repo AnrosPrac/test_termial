@@ -19,6 +19,9 @@ PROMPTS = {
         Convert this code to the JSON schema: {input}
         """
     },
+    "json":{
+        "standard": "Output ONLY valid JSON. No markdown tags. No unwanted talk or text only what we ask as a json no other single LETTER OR "
+    },
     "explain":{
         "from_code":"understand and explain this code {input} in tanglish , what are the types of explanation we need is 1.Keyword explanation 2.unused syntax or cofusing part explanation 3.if memory included about memory 4.logic of the code written 5.how the students must explain it to the teacher 6.is there any imrpovements needed"
     },
