@@ -1,9 +1,22 @@
-fastapi
-uvicorn
-google-generativeai
-httpx
-graphviz
-python-multipart
-websockets
-watchdog
-pydantic
+# --- Core Web Framework ---
+fastapi          # High-performance web framework for the API
+uvicorn          # ASGI server to run the FastAPI application
+python-multipart # Required for handling form data during login/file uploads
+
+# --- Security & Authentication ---
+python-jose[cryptography] # JWT token generation and verification
+passlib[bcrypt]           # Secure password hashing for the User Database
+python-dotenv             # To load JWT_SECRET_KEY from your .env file
+
+# --- Real-time & Asynchronous ---
+websockets       # For the ultra-low latency code streaming and chat
+aiofiles         # Non-blocking file I/O for high-performance streaming
+watchdog         # To monitor file changes for the 'lum stream' feature
+
+# --- AI & Visualization ---
+google-generativeai # Integration with Gemini/Google AI Engine
+graphviz            # To render ISO Flowcharts (lum fc)
+httpx               # Asynchronous HTTP client for internal/external AI calls
+
+# --- Data Validation ---
+pydantic         # Data parsing and validation for API schemas

@@ -11,13 +11,12 @@ def process_injection_to_memory(text_content: str):
     )
     
     file_plan = []
-    
     try:
-        match = re.search(r"(\{.*\})", plan_raw, re.DOTALL)
+        match = re.search(r"(\{.*\})|(\[.*\])", plan_raw, re.DOTALL)
         if not match:
             raise ValueError("No JSON found")
             
-        plan_data = json.loads(match.group(1))
+        plan_data = json.loads(match.group(0))
         
         if isinstance(plan_data, dict):
             file_plan = plan_data.get("files", [])
@@ -35,7 +34,6 @@ def process_injection_to_memory(text_content: str):
         
         filename = item.get("filename", f"file_{len(generated_files)+1}.c")
         prompt = item.get("prompt", "")
-
         if not prompt: continue
 
         raw_code = execute_ai(mode="write", version="standard", language="english", input_text=prompt)
