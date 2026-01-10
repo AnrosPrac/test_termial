@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from .manager import manager
-from auth_utils import verify_lum_token_ws
+from app.ai.auth_utils import verify_lum_token_ws
 
 router = APIRouter(prefix="/chat")
 

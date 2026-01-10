@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from typing import Optional
-from auth_utils import verify_lum_token_ws
+from app.ai.auth_utils import verify_lum_token_ws
 from .manager import stream_manager
 
 router = APIRouter(prefix="/stream")
