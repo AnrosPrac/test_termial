@@ -36,4 +36,15 @@ PROMPTS = {
     - 'explanation': What is happening in this specific step.
     Ensure it traces enough steps to show the logic clearly.
     """
+},
+"game_syntax":{"standard": "Generate a JSON object for a 'spot the bug' game. Language: {language}. Output must be valid JSON with keys: 'code' (a 10-line snippet), 'buggy_line' (the line number with the error), 'error_type' (e.g., missing semicolon, case sensitivity), and 'explanation'. Ensure the bug is subtle."},
+"game_logic": {
+    "standard": """
+    Output ONLY a raw JSON object for a logic quiz. No markdown, no prose.
+    Level: {level}. Mixed operators: &&, ||, !, ==, !=, ^.
+    Schema: {"expr": "string", "answer": boolean}
+    """
+},
+"game_regex": {
+    "standard": "Generate a JSON object for a regex matching game. Include 'pattern' (a valid regex) and 'options' (a list of 4 strings where only one matches the pattern). Schema: {'pattern': '...', 'options': ['...', '...', '...', '...'], 'correct_index': int}"
 }}
