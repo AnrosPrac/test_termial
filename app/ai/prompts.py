@@ -47,13 +47,15 @@ PROMPTS = {
 },
 "game_regex": {
     "standard": "Generate a JSON object for a regex matching game. Include 'pattern' (a valid regex) and 'options' (a list of 4 strings where only one matches the pattern). Schema: {'pattern': '...', 'options': ['...', '...', '...', '...'], 'correct_index': int}"
-},
-"plan": {
+},"plan": {
     "standard": """
-    Analyze the following user requirements and brainstorm a file structure.
-    For each task/question, assign a continuous  filenames (e.g., file1.c,file2.c.... or any suitable.extension).
-    Output ONLY a raw JSON object. No markdown, no prose.
-    Schema: {"files": [{"filename": "string", "prompt": "refined instruction for AI"}]}
+    Analyze these requirements and create a file structure. 
+    Assign continuous filenames (file1.c, file2.c, etc., or appropriate extensions like .py, .h).
+    
+    CRITICAL: Output ONLY a raw JSON object. No markdown tags, no backticks, no preamble.
+    
+    Schema:
+    {"files": [{"filename": "file1.c", "prompt": "instructions"}]}
     
     User Input: {input}
     """
