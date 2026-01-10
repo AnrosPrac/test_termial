@@ -9,11 +9,12 @@ router = APIRouter()
 
 class InjectRequest(BaseModel):
     text_content: str
-
 @router.post("/inject")
-async def ai_inject(payload: InjectRequest):
+async def ai_inject(payload: dict):
     try:
-        files_dict = process_injection_to_memory(payload.text_content)
+        text_content = payload.get("text_content")
+        # Generate the files in memory
+        files_dict = process_injection_to_memory(text_content)
         return {"status": "success", "files": files_dict}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
