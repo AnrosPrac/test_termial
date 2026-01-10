@@ -1,18 +1,27 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from app.ai.services import execute_ai
 from pathlib import Path
 
 router = APIRouter()
 from app.ai.injector import process_injection_to_memory
+class InjectRequest(BaseModel):
+    text_content: str
+
 @router.post("/inject")
-async def ai_inject(payload: dict):
+async def ai_inject(payload: InjectRequest):
     try:
-        text_content = payload.get("text_content")
-        # Generate the files in memory
-        files_dict = process_injection_to_memory(text_content)
+        # Pydantic ensures text_content exists automatically now
+        files_dict = process_injection_to_memory(payload.text_content)
+        
+        if not files_dict:
+            raise ValueError("AI failed to generate any files for this input")
+            
         return {"status": "success", "files": files_dict}
     except Exception as e:
+        # LOG THIS so you can see it in Render/Terminal logs
+        print(f"[!] Injection Error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/execute")

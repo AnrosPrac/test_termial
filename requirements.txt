@@ -6,3 +6,4 @@ graphviz
 python-multipart
 websockets
 watchdog
+pydantic
