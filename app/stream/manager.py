@@ -4,9 +4,7 @@ import asyncio
 
 class StreamManager:
     def __init__(self):
-        # Key: streamer_name, Value: List of spectator WebSockets
         self.active_streams: Dict[str, List[WebSocket]] = {}
-        # Key: streamer_name, Value: Last sent payload (code, filename, ts)
         self.stream_cache: Dict[str, dict] = {}
         self.lock = asyncio.Lock()
 
@@ -18,12 +16,6 @@ class StreamManager:
     async def stop_stream(self, streamer_name: str):
         async with self.lock:
             if streamer_name in self.active_streams:
-                # Close all spectator connections
-                for ws in self.active_streams[streamer_name]:
-                    try:
-                        await ws.close()
-                    except:
-                        pass
                 del self.active_streams[streamer_name]
             if streamer_name in self.stream_cache:
                 del self.stream_cache[streamer_name]
@@ -34,7 +26,6 @@ class StreamManager:
                 self.active_streams[streamer_name] = []
             self.active_streams[streamer_name].append(websocket)
         
-        # If there is cached code, send it immediately to the new spectator
         if streamer_name in self.stream_cache:
             await websocket.send_json(self.stream_cache[streamer_name])
 
@@ -45,16 +36,12 @@ class StreamManager:
                     self.active_streams[streamer_name].remove(websocket)
 
     async def broadcast_code(self, streamer_name: str, payload: dict):
-        # Update Cache
         self.stream_cache[streamer_name] = payload
-        
         if streamer_name in self.active_streams:
-            # Create a copy to avoid "Set changed during iteration" errors
-            spectators = list(self.active_streams[streamer_name])
-            for ws in spectators:
+            for connection in list(self.active_streams[streamer_name]):
                 try:
-                    await ws.send_json(payload)
-                except Exception:
-                    await self.remove_spectator(streamer_name, ws)
+                    await connection.send_json(payload)
+                except:
+                    await self.remove_spectator(streamer_name, connection)
 
-stream_manager = StreamManager()
+manager = StreamManager()
