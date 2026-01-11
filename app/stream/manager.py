@@ -7,38 +7,42 @@ class StreamManager:
     def __init__(self):
         self.active_streams: Dict[str, List[WebSocket]] = {}
         self.stream_cache: Dict[str, dict] = {}
+        self.lock = asyncio.Lock()
 
     async def start_broadcast(self, streamer_name: str):
-        if streamer_name not in self.active_streams:
-            self.active_streams[streamer_name] = []
+        async with self.lock:
+            if streamer_name not in self.active_streams:
+                self.active_streams[streamer_name] = []
 
     async def add_spectator(self, streamer_name: str, websocket: WebSocket):
-        if streamer_name not in self.active_streams:
-            self.active_streams[streamer_name] = []
-        
-        self.active_streams[streamer_name].append(websocket)
+        async with self.lock:
+            if streamer_name not in self.active_streams:
+                self.active_streams[streamer_name] = []
+            self.active_streams[streamer_name].append(websocket)
         
         if streamer_name in self.stream_cache:
             try:
                 await websocket.send_json(self.stream_cache[streamer_name])
             except:
-                self.active_streams[streamer_name].remove(websocket)
+                await self.remove_spectator(streamer_name, websocket)
+
+    async def remove_spectator(self, streamer_name: str, websocket: WebSocket):
+        async with self.lock:
+            if streamer_name in self.active_streams:
+                if websocket in self.active_streams[streamer_name]:
+                    self.active_streams[streamer_name].remove(websocket)
 
     async def stop_stream(self, streamer_name: str):
-        if streamer_name in self.active_streams:
-            websockets = self.active_streams[streamer_name]
+        async with self.lock:
+            if streamer_name in self.active_streams:
+                websockets = self.active_streams[streamer_name]
+                close_tasks = [self._safe_close(ws) for ws in websockets]
+                if close_tasks:
+                    await asyncio.gather(*close_tasks)
+                del self.active_streams[streamer_name]
             
-            close_tasks = []
-            for ws in websockets:
-                close_tasks.append(self._safe_close(ws))
-            
-            if close_tasks:
-                await asyncio.gather(*close_tasks)
-                
-            del self.active_streams[streamer_name]
-        
-        if streamer_name in self.stream_cache:
-            del self.stream_cache[streamer_name]
+            if streamer_name in self.stream_cache:
+                del self.stream_cache[streamer_name]
 
     async def _safe_close(self, ws: WebSocket):
         try:
@@ -59,21 +63,24 @@ class StreamManager:
         
         self.stream_cache[streamer_name] = payload
         
-        disconnected_buckets = []
+        disconnected = []
+        async with self.lock:
+            targets = list(self.active_streams[streamer_name])
+
+        if targets:
+            tasks = [self._send_and_track(ws, payload, disconnected) for ws in targets]
+            await asyncio.gather(*tasks)
         
-        broadcast_tasks = []
-        for ws in self.active_streams[streamer_name]:
-            broadcast_tasks.append(self._send_and_track(ws, payload, disconnected_buckets))
-        
-        if broadcast_tasks:
-            await asyncio.gather(*broadcast_tasks)
-        
-        for ws in disconnected_buckets:
-            if ws in self.active_streams[streamer_name]:
-                self.active_streams[streamer_name].remove(ws)
+        if disconnected:
+            async with self.lock:
+                for ws in disconnected:
+                    if ws in self.active_streams.get(streamer_name, []):
+                        self.active_streams[streamer_name].remove(ws)
 
     async def _send_and_track(self, ws: WebSocket, payload: dict, error_list: list):
         try:
             await ws.send_json(payload)
         except:
             error_list.append(ws)
+
+stream_manager = StreamManager()
