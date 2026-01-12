@@ -8,6 +8,8 @@ from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
 from app.ai.auth_utils import verify_lum_token
 
+from app.ai.cell_logic import process_cells_generation # Import the new logic
+
 router = APIRouter()
 
 class InjectRequest(BaseModel):
@@ -16,6 +18,18 @@ class InjectRequest(BaseModel):
 class FormatRequest(BaseModel):
     text_content: str
 
+
+class CellsRequest(BaseModel):
+    text_content: str
+
+@router.post("/cells")
+async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bound_request)):
+    try:
+        # Returns the "ingredients" for the CLI to bake the .ipynb file
+        data = process_cells_generation(payload.text_content)
+        return {"status": "success", "tasks": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/format")
 async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_bound_request)):
     try:
