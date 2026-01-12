@@ -6,7 +6,7 @@ from fastapi import Header, HTTPException, Request, Depends
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 
-from auth_utils import verify_lum_token
+from app.ai.auth_utils import verify_lum_token
 
 
 def verify_client_bound_request(
