@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
+from app.ai.client_bound_guard import verify_client_bound_request
 from app.ai.injector import process_injection_to_memory
 from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
@@ -16,7 +17,7 @@ class FormatRequest(BaseModel):
     text_content: str
 
 @router.post("/format")
-async def ai_format(payload: FormatRequest, user: dict = Depends(verify_lum_token)):
+async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_bound_request)):
     try:
         formatted_text = process_formatting(payload.text_content)
         return {"status": "success", "output": formatted_text}
@@ -24,7 +25,7 @@ async def ai_format(payload: FormatRequest, user: dict = Depends(verify_lum_toke
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/inject")
-async def ai_inject(payload: dict, user: dict = Depends(verify_lum_token)):
+async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         text_content = payload.get("text_content")
         files_dict = process_injection_to_memory(text_content)
@@ -33,7 +34,7 @@ async def ai_inject(payload: dict, user: dict = Depends(verify_lum_token)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/execute")
-def ai_execute(payload: dict, user: dict = Depends(verify_lum_token)):
+def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         input_primary = payload.get("input") or payload.get("input1")
         result = execute_ai(
