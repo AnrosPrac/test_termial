@@ -36,9 +36,7 @@ async def verify_signature(
     if not x_client_public_key or not x_client_signature or not x_client_timestamp:
         raise HTTPException(status_code=401, detail="Missing auth headers")
 
-    # Replay Attack Prevention (30s window)
-    if abs(time.time() - float(x_client_timestamp)) > 230:
-        raise HTTPException(status_code=401, detail="Request expired")
+    
 
     try:
         verify_key = VerifyKey(binascii.unhexlify(x_client_public_key))
