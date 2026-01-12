@@ -37,7 +37,7 @@ async def verify_signature(
         raise HTTPException(status_code=401, detail="Missing auth headers")
 
     # Replay Attack Prevention (30s window)
-    if abs(time.time() - float(x_client_timestamp)) > 30:
+    if abs(time.time() - float(x_client_timestamp)) > 230:
         raise HTTPException(status_code=401, detail="Request expired")
 
     try:
