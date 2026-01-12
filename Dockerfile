@@ -13,6 +13,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     graphviz \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for layer caching)
