@@ -27,8 +27,21 @@ PROMPTS = {
     },
     # Add this to PROMPTS in prompts.py
 # Add this to prompts.py
+# Update this in prompts.py
 "cells": {
-    "standard": "Write only the python code for: {input}. Then, provide a simulated terminal output showing the code being executed, including a mock user interaction if applicable. Separate them with a [TERMINAL_START] marker."
+    "standard": """
+    For the given task: {input}
+    
+    1. Write the functional Python code.
+    2. Simulate a full execution of this code. 
+    3. If the code requires input, invent realistic user values and show them in the output.
+    
+    Format your response EXACTLY like this:
+    [CODE]
+    (python code here)
+    [OUTPUT]
+    (simulated terminal results here)
+    """
 },
     "diff":{
         "standard":"Explain the difference between the two code snippet {input1} and {input2} with following concpts . the bigO , which is fast which is slow,which will be better for a larger system ,  which is best practice , what all are the risks in both files and what are the improvements required "

@@ -6,30 +6,27 @@ def process_cells_generation(text_content: str):
     tasks = []
 
     for i, line in enumerate(lines, 1):
-        # Handle the "filename | question" format
         if "|" in line:
             filename, question = line.split("|", 1)
-            filename = filename.strip()
-            question = question.strip()
         else:
-            filename = f"task_{i}.py"
-            question = line.strip()
+            filename, question = f"task_{i}.py", line
 
-        # Request ONLY the code from Gemini
-        raw_code = execute_ai(
-            mode="write", 
-            version="standard", 
-            language="english", 
-            input_text=question
-        )
+        raw_response = execute_ai(mode="cells", version="standard", language="english", input_text=question)
 
-        # Clean markdown fences (important for .ipynb execution)
-        clean_code = re.sub(r"```[a-zA-Z]*\n|```", "", raw_code).strip()
+        # Extraction logic for the new prompt format
+        code_part = re.search(r"\[CODE\](.*?)\[OUTPUT\]", raw_response, re.DOTALL)
+        output_part = re.search(r"\[OUTPUT\](.*)", raw_response, re.DOTALL)
+
+        clean_code = code_part.group(1).strip() if code_part else raw_response
+        # Remove any lingering backticks
+        clean_code = re.sub(r"```[a-zA-Z]*\n|```", "", clean_code).strip()
         
-        tasks.append({
-            "filename": filename,
-            "question": question,
-            "code": clean_code
-        })
+        simulated_output = output_part.group(1).strip() if output_part else "No output preview available."
 
+        tasks.append({
+            "filename": filename.strip(),
+            "question": question.strip(),
+            "code": clean_code,
+            "output": simulated_output
+        })
     return tasks
