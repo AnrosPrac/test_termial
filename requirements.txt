@@ -20,3 +20,4 @@ httpx               # Asynchronous HTTP client for internal/external AI calls
 
 # --- Data Validation ---
 pydantic         # Data parsing and validation for API schemas
+pynacl
