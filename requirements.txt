@@ -7,7 +7,10 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
-pynacl              # For Ed25519 Signature Verification
+pynacl
+
+# --- Database (THE MISSING LINK) ---
+motor               # For Async MongoDB connection
 
 # --- Real-time & Asynchronous ---
 websockets
@@ -23,4 +26,4 @@ httpx
 pydantic
 
 # --- Cloud Sync & Vault ---
-GitPython           # The Engine for the 100-student GitHub Vault
+GitPython
