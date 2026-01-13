@@ -4,19 +4,16 @@ from app.ai.router import router as ai_router
 from app.chat.router import router as chat_router
 from app.stream.router import router as stream_router
 from app.api.auth_proxy import router as auth_router
+# Import both the worker AND the setup function
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 import binascii
-import os
-from motor.motor_asyncio import AsyncIOMotorClient
+import time
 
 app = FastAPI(title="Lumetrics AI Engine")
 
-# MongoDB Configuration
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client.lumetrics_db 
-
+# --- CTO FIX: Ensure Vault is ready on startup ---
 @app.on_event("startup")
 async def startup_event():
     setup_repo()
@@ -29,6 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- CTO SECURITY: Signature Verification ---
 async def verify_signature(
     request: Request,
     x_client_public_key: str = Header(None),
@@ -37,12 +35,15 @@ async def verify_signature(
 ):
     if not x_client_public_key or not x_client_signature or not x_client_timestamp:
         raise HTTPException(status_code=401, detail="Missing auth headers")
+
+    
+
     try:
         verify_key = VerifyKey(binascii.unhexlify(x_client_public_key))
         message = f"{x_client_timestamp}:{request.url.path}".encode()
         verify_key.verify(message, binascii.unhexlify(x_client_signature))
         return x_client_public_key
-    except:
+    except (BadSignatureError, Exception):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 app.include_router(ai_router, prefix="/ai")
@@ -58,22 +59,18 @@ async def student_push(
 ):
     try:
         data = await request.json()
-        sid_id = data.get("sidhilynx_id")
-        roll_no = data.get("college_roll")
+        student_id = data.get("student_id")
         files = data.get("files")
         
-        # --- IDENTITY LOCK ---
-        # Verify Terminal User (roll_no) against Platform User (sid_id)
-        user_record = await db.users.find_one({"college_roll": roll_no})
-        
-        if not user_record or user_record.get("sid_id") != sid_id:
-             raise HTTPException(status_code=403, detail="Identity Mismatch: Terminal user not linked to Sidhi ID")
+        # Identity Check
+        if student_id != authenticated_pk:
+             return {"status": "error", "message": "Identity mismatch."}
 
-        if not sid_id or not files:
+        if not student_id or not files:
             return {"status": "error", "message": "Missing payload"}
 
-        # Use sid_id for folder naming in GitHub
-        background_tasks.add_task(commit_to_github, sid_id, files)
+        # Use the worker we imported
+        background_tasks.add_task(commit_to_github, student_id, files)
         return {"status": "success", "message": "Cloud sync initiated"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -81,3 +78,8 @@ async def student_push(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+# Add a Root route so you don't get 404s when checking the URL
+@app.get("/")
+def root():
+    return {"message": "Lumetrics Engine Online", "vault": "active"}
