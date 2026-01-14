@@ -122,7 +122,7 @@ async def cloud_view(
                 full_path = os.path.join(root, filename)
                 
                 # Create a relative path for the key (e.g., 'main.py' or 'utils/helper.py')
-                relative_path = os.relpath(full_path, student_folder)
+                relative_path = relative_path = os.path.relpath(full_path, student_folder)
                 
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:
