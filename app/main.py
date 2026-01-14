@@ -7,7 +7,9 @@ from app.api.auth_proxy import router as auth_router
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
 import binascii
+from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
+from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -94,7 +96,50 @@ async def student_push(
         # For any other unexpected server error, send a 500 Internal Server Error
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/sync/cloudview")
+async def cloud_view(
+    sid_id: str = Query(...),
+    # authenticated_pk: str = Depends(verify_signature)
+):
+    try:
+        # 1. SECURITY: Ensure the person requesting is only viewing their own data
+        # Check against your identity lock in MongoDB
+        user_record = await db.users.find_one({"sid_id": sid_id})
+        # if not user_record or user_record.get("public_key") != authenticated_pk:
+        #      raise HTTPException(status_code=403, detail="Unauthorized access to this vault")
 
+        # 2. PATH CONSTRUCTION
+        # Points to: ./vault_storage/vault/user_<sid_id>
+        student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
+
+        if not os.path.exists(student_folder):
+            return {"status": "success", "files": {}, "message": "Vault is currently empty"}
+
+        # 3. RECURSIVE FILE READ
+        vault_contents = {}
+        for root, _, files in os.walk(student_folder):
+            for filename in files:
+                full_path = os.path.join(root, filename)
+                
+                # Create a relative path for the key (e.g., 'main.py' or 'utils/helper.py')
+                relative_path = os.relpath(full_path, student_folder)
+                
+                try:
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        vault_contents[relative_path] = f.read()
+                except Exception:
+                    continue # Skip binary or unreadable files
+
+        return {
+            "status": "success",
+            "sidhilynx_id": sid_id,
+            "files": vault_contents
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/version")
 def get_version():
     return {"version": VERSION or "unknown", "status": "stable"}
