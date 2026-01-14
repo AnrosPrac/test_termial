@@ -11,7 +11,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 app = FastAPI(title="Lumetrics AI Engine")
-
+ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
 # MongoDB Configuration
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
@@ -60,10 +60,21 @@ async def student_push(
         data = await request.json()
         sid_id = data.get("sidhilynx_id")
         roll_no = data.get("college_roll")
-        files = data.get("files")
+        files = data.get("files", {})
         
         # --- IDENTITY LOCK ---
         # Verify Terminal User (roll_no) against Platform User (sid_id)
+        total_payload_size = sum(len(content.encode('utf-8')) for content in files.values())
+        if total_payload_size > 2 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Payload too large. Max 2MB allowed.")
+
+        # 2. EXTENSION SECURITY CHECK
+        # Reject if any file has a forbidden extension (e.g., .exe, .sh)
+        for filename in files.keys():
+            _, ext = os.path.splitext(filename)
+            if ext.lower() not in ALLOWED_EXTENSIONS:
+                 raise HTTPException(status_code=400, detail=f"File type {ext} not allowed.")
+            
         user_record = await db.users.find_one({"college_roll": roll_no})
         
         if not user_record or user_record.get("sid_id") != sid_id:
@@ -75,8 +86,12 @@ async def student_push(
         # Use sid_id for folder naming in GitHub
         background_tasks.add_task(commit_to_github, sid_id, files)
         return {"status": "success", "message": "Cloud sync initiated"}
+    except HTTPException:
+        # Re-raise HTTPExceptions so FastAPI handles the status codes correctly
+        raise 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        # For any other unexpected server error, send a 500 Internal Server Error
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 def health():
