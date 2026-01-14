@@ -12,6 +12,7 @@ import os
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+import datetime
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -59,21 +60,39 @@ app.include_router(stream_router)
 class ApprovalRequest(BaseModel):
     sid_id: str
     college_roll: str
+from pydantic import BaseModel
+
+class ApprovalRequest(BaseModel):
+    sid_id: str
+    college_roll: str
+    username: str 
 
 @app.get("/sync/cloudaccess/{sid_id}")
 async def cloud_access(sid_id: str):
     try:
-        # Construct path to student's vault
-        student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
+        user_record = await db.users.find_one({"sid_id": sid_id})
         
-        # Check if the directory exists and contains files
-        is_available = os.path.exists(student_folder) and any(os.scandir(student_folder))
+        if not user_record:
+            return {
+                "status": "error",
+                "sidhilynx_id": sid_id,
+                "cloud_exists": False,
+                "message": "User not registered in Lumetrics database"
+            }
+
+        student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
+        files_on_disk = os.path.exists(student_folder) and any(os.scandir(student_folder))
         
         return {
             "status": "success",
             "sidhilynx_id": sid_id,
-            "cloud_exists": is_available,
-            "message": "Vault found" if is_available else "No cloud data found"
+            "cloud_exists": files_on_disk,
+            "user_data": {
+                "college_roll": user_record.get("college_roll"),
+                "name": user_record.get("name"),
+                "is_active": user_record.get("is_active")
+            },
+            "message": "Cloud backup found" if files_on_disk else "User registered but no cloud backups found"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -85,7 +104,7 @@ async def cloud_approve(data: ApprovalRequest):
         # This links the JLab username (college_roll) to the Sidhi ID
         result = await db.users.update_one(
             {"sid_id": data.sid_id},
-            {"$set": {"college_roll": data.college_roll}},
+            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True, "created_at": datetime.utcnow()}},
             upsert=True
         )
         
