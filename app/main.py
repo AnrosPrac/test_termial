@@ -9,6 +9,7 @@ from nacl.signing import VerifyKey
 import binascii
 from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
+from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -22,6 +23,16 @@ VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
 
+class UserDetailCreate(BaseModel):
+    username: str
+    sidhi_id: str
+    sidhi_user_id: str
+    college: str
+    department: str
+    starting_year: str
+    is_admin: bool = False
+    degree: str
+    email_id: str
 @app.on_event("startup")
 async def startup_event():
     setup_repo()
@@ -65,7 +76,7 @@ class ApprovalRequest(BaseModel):
     username: str 
 
 @app.get("/sync/cloudaccess/{sid_id}")
-async def cloud_access(sid_id: str):
+async def cloud_access(sid_id: str, user: str = Depends(verify_client_bound_request)):
     try:
         user_record = await db.users.find_one({"sid_id": sid_id})
         
@@ -74,7 +85,7 @@ async def cloud_access(sid_id: str):
                 "status": "error",
                 "sidhilynx_id": sid_id,
                 "cloud_exists": False,
-                "message": "User not registered in Lumetrics database"
+                "message": "User not registered"
             }
 
         student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
@@ -89,13 +100,12 @@ async def cloud_access(sid_id: str):
                 "name": user_record.get("name"),
                 "is_active": user_record.get("is_active")
             },
-            "message": "Cloud found" if user_record else "User registered"
+            "message": "Backup available" if files_on_disk else "Nobackups found"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/sync/cloudapprove")
-async def cloud_approve(data: ApprovalRequest):
+async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client_bound_request)):
     try:
         # Update or Insert the student record
         # This links the JLab username (college_roll) to the Sidhi ID
@@ -158,6 +168,7 @@ async def student_push(
 @app.get("/sync/cloudview")
 async def cloud_view(
     sid_id: str = Query(...),
+    user: str = Depends(verify_client_bound_request)
     # authenticated_pk: str = Depends(verify_signature)
 ):
     try:
@@ -175,7 +186,7 @@ async def cloud_view(
                 full_path = os.path.join(root, filename)
                 
                 # Create a relative path for the key (e.g., 'main.py' or 'utils/helper.py')
-                relative_path = relative_path = os.path.relpath(full_path, student_folder)
+                relative_path = os.path.relpath(full_path, student_folder)
                 
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:
@@ -196,7 +207,54 @@ async def cloud_view(
 @app.get("/version")
 def get_version():
     return {"version": VERSION or "unknown", "status": "stable"}
+@app.get("/user/check/{sidhi_user_id}")
+async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_client_bound_request)):
+    try:
+        user_record = await db.users.find_one({"sidhi_user_id": sidhi_user_id})
+        
+        if user_record:
+            return {
+                "status": "success",
+                "exists": True,
+                "message": "User found in database",
+                "data": {
+                    "username": user_record.get("username"),
+                    "sidhi_user_id": user_record.get("sidhi_user_id")
+                }
+            }
+        
+        return {
+            "status": "success",
+            "exists": False,
+            "message": "User not found"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/user/register")
+async def register_user_details(data: UserDetailCreate, user: str = Depends(verify_client_bound_request)):
+    try:
+        existing_user = await db.users.find_one({"sidhi_user_id": data.sidhi_user_id})
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=409, 
+                detail="User already exists. Data entry not allowed."
+            )
+
+        new_user = data.dict()
+        
+        
+        await db.users.insert_one(new_user)
+        
+        return {
+            "status": "success",
+            "message": "User details successfully registered"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/health")
 def health():
     return {"status": "ok"}
