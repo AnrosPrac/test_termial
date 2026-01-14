@@ -57,10 +57,7 @@ app.include_router(stream_router)
 
 
 # Schema for the approval request
-class ApprovalRequest(BaseModel):
-    sid_id: str
-    college_roll: str
-from pydantic import BaseModel
+
 
 class ApprovalRequest(BaseModel):
     sid_id: str
