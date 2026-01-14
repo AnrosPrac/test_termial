@@ -12,7 +12,7 @@ import os
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-import datetime
+
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -101,7 +101,7 @@ async def cloud_approve(data: ApprovalRequest):
         # This links the JLab username (college_roll) to the Sidhi ID
         result = await db.users.update_one(
             {"sid_id": data.sid_id},
-            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True, "created_at": datetime.utcnow()}},
+            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True}},
             upsert=True
         )
         
