@@ -89,7 +89,7 @@ async def cloud_access(sid_id: str):
                 "name": user_record.get("name"),
                 "is_active": user_record.get("is_active")
             },
-            "message": "Cloud backup found" if files_on_disk else "User registered but no cloud backups found"
+            "message": "Cloud found" if files_on_disk else "User registered"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
