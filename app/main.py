@@ -14,6 +14,7 @@ app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
 # MongoDB Configuration
 MONGO_URL = os.getenv("MONGO_URL")
+VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
 
@@ -92,6 +93,11 @@ async def student_push(
     except Exception as e:
         # For any other unexpected server error, send a 500 Internal Server Error
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/version")
+def get_version():
+    return {"version": VERSION or "unknown", "status": "stable"}
 
 @app.get("/health")
 def health():
