@@ -11,6 +11,7 @@ from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -52,6 +53,48 @@ app.include_router(ai_router, prefix="/ai")
 app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(stream_router)
+
+
+# Schema for the approval request
+class ApprovalRequest(BaseModel):
+    sid_id: str
+    college_roll: str
+
+@app.get("/sync/cloudaccess/{sid_id}")
+async def cloud_access(sid_id: str):
+    try:
+        # Construct path to student's vault
+        student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
+        
+        # Check if the directory exists and contains files
+        is_available = os.path.exists(student_folder) and any(os.scandir(student_folder))
+        
+        return {
+            "status": "success",
+            "sidhilynx_id": sid_id,
+            "cloud_exists": is_available,
+            "message": "Vault found" if is_available else "No cloud data found"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/sync/cloudapprove")
+async def cloud_approve(data: ApprovalRequest):
+    try:
+        # Update or Insert the student record
+        # This links the JLab username (college_roll) to the Sidhi ID
+        result = await db.users.update_one(
+            {"sid_id": data.sid_id},
+            {"$set": {"college_roll": data.college_roll}},
+            upsert=True
+        )
+        
+        return {
+            "status": "success", 
+            "message": f"User {data.college_roll} approved and linked to {data.sid_id}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/sync/push")
 async def student_push(
@@ -102,14 +145,8 @@ async def cloud_view(
     # authenticated_pk: str = Depends(verify_signature)
 ):
     try:
-        # 1. SECURITY: Ensure the person requesting is only viewing their own data
-        # Check against your identity lock in MongoDB
-        user_record = await db.users.find_one({"sid_id": sid_id})
-        # if not user_record or user_record.get("public_key") != authenticated_pk:
-        #      raise HTTPException(status_code=403, detail="Unauthorized access to this vault")
 
-        # 2. PATH CONSTRUCTION
-        # Points to: ./vault_storage/vault/user_<sid_id>
+    
         student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
 
         if not os.path.exists(student_folder):
