@@ -1,0 +1,8 @@
+[{
+    "sidhi_id":"example@sidhilynx.id",
+    "timestamp":"2024-10-05T12:34:56Z",
+    "key_command":"write",
+    "command":"lum write something somefile",
+    "output":"returned value"
+    
+}]
