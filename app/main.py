@@ -13,8 +13,6 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-from quota.manager import consume_quota
-from quota.cycle import resolve_cycle
 
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -273,17 +271,7 @@ async def register_user_details(data: UserDetailCreate, user: str = Depends(veri
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.get("/quota/me")
-async def get_quota(user: str = Depends(verify_client_bound_request)):
-    cycle = resolve_cycle()
-
-    doc = await db.user_quota.find_one(
-        {"sidhi_id": user["sidhi_id"], "cycle.id": cycle["id"]},
-        {"_id": 0}
-    )
-
-    return {"status": "success", "quota": doc}
+  
 
 @app.get("/health")
 def health():
