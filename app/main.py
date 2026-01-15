@@ -26,7 +26,7 @@ db = client.lumetrics_db
 class UserDetailCreate(BaseModel):
     username: str
     sidhi_id: str
-    sidhi_user_id: str
+    user_id: str
     college: str
     department: str
     starting_year: str
