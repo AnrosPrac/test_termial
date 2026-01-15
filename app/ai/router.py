@@ -7,7 +7,7 @@ from app.ai.injector import process_injection_to_memory
 from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
 from app.ai.auth_utils import verify_lum_token
-from app.quota.manager import consume_quota
+
 
 from app.ai.cell_logic import process_cells_generation # Import the new logic
 
