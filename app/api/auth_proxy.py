@@ -34,11 +34,17 @@ async def login_proxy(request: Request, data: dict):
         )
 
     if response.status_code != 200:
-        # Pass through Sidhi error safely
+        try:
+            error_payload = response.json()
+            detail = error_payload.get("detail", "Authentication failed")
+        except Exception:
+            detail = response.text or "Authentication failed"
+
         raise HTTPException(
-            status_code=401,
-            detail=response.json().get("detail", "Authentication failed")
+            status_code=response.status_code,
+            detail=detail
         )
+
 
     # ✅ Return Sidhi-issued tokens EXACTLY as received
     return response.json()
