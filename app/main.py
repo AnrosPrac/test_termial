@@ -250,10 +250,10 @@ async def register_user_details(data: UserDetailCreate, user: str = Depends(veri
             )
 
         new_user = data.dict()
-        
-        
-        await db.users.insert_one(new_user)
-        
+
+
+        await db.users_profile.insert_one(new_user)
+
         return {
             "status": "success",
             "message": "User details successfully registered"
