@@ -13,7 +13,7 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-from app.ai.quota_manager import manager
+
 
 
 app = FastAPI(title="Lumetrics AI Engine")

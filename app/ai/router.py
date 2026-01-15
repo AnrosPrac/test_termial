@@ -7,7 +7,7 @@ from app.ai.injector import process_injection_to_memory
 from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
 from app.ai.auth_utils import verify_lum_token
-from app.ai.quota_manager import manager  
+from app.ai.quota_manager import check_and_use_quota 
 
 from app.ai.cell_logic import process_cells_generation # Import the new logic
 
@@ -28,7 +28,7 @@ async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bou
     
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_use_quota(sidhi_id, "cells")
+        await check_and_use_quota(sidhi_id, "cells")
         data = process_cells_generation(payload.text_content)
         return {"status": "success", "tasks": data}
     except Exception as e:
@@ -38,7 +38,7 @@ async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bou
 async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_use_quota(sidhi_id, "format")
+        await check_and_use_quota(sidhi_id, "format")
         formatted_text = process_formatting(payload.text_content)
         return {"status": "success", "output": formatted_text}
     except Exception as e:
@@ -48,7 +48,7 @@ async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_b
 async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_use_quota(sidhi_id, "inject")
+        await check_and_use_quota(sidhi_id, "inject")
 
         text_content = payload.get("text_content")
         files_dict = process_injection_to_memory(text_content)
@@ -60,7 +60,7 @@ async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_requ
 async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_use_quota(sidhi_id, payload["mode"])
+        await check_and_use_quota(sidhi_id, payload["mode"])
         input_primary = payload.get("input") or payload.get("input1")
         result = execute_ai(
             mode=payload["mode"],
