@@ -27,7 +27,7 @@ class CellsRequest(BaseModel):
 async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bound_request)):
     
     try:
-        sidhi_id = user.get("sidhi_id")
+        sidhi_id = user.get("sub")
         await check_and_use_quota(sidhi_id, "cells")
         data = process_cells_generation(payload.text_content)
         return {"status": "success", "tasks": data}
@@ -37,7 +37,7 @@ async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bou
 @router.post("/format")
 async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_bound_request)):
     try:
-        sidhi_id = user.get("sidhi_id")
+        sidhi_id = user.get("sub")
         await check_and_use_quota(sidhi_id, "format")
         formatted_text = process_formatting(payload.text_content)
         return {"status": "success", "output": formatted_text}
@@ -47,7 +47,7 @@ async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_b
 @router.post("/inject")
 async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
-        sidhi_id = user.get("sidhi_id")
+        sidhi_id = user.get("sub")
         await check_and_use_quota(sidhi_id, "inject")
 
         text_content = payload.get("text_content")
@@ -59,7 +59,7 @@ async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_requ
 @router.post("/execute")
 async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
-        sidhi_id = user.get("sidhi_id")
+        sidhi_id = user.get("sub")
         await check_and_use_quota(sidhi_id, payload["mode"])
         input_primary = payload.get("input") or payload.get("input1")
         result = execute_ai(
