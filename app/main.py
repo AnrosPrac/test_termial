@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI, BackgroundTasks, Request, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.ai.router import router as ai_router
@@ -13,7 +14,7 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-from app.ai.quota_manager import check_and_use_quota,log_activity,get_user_quotas, get_user_history
+from app.ai.quota_manager import get_user_quotas, get_user_history,log_cloud_push,get_cloud_history
 
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -101,7 +102,8 @@ async def cloud_access(sid_id: str, user: str = Depends(verify_client_bound_requ
                 "name": user_record.get("name"),
                 "is_active": user_record.get("is_active")
             },
-            "message": "Backup available" if files_on_disk else "Nobackups found"
+            "message": "Backup available" if files_on_disk else "Nobackups found",
+            "created_at": user_record.get("created_at") 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -112,7 +114,7 @@ async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client
         # This links the JLab username (college_roll) to the Sidhi ID
         result = await db.users.update_one(
             {"sid_id": data.sid_id},
-            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True}},
+            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True,"created_at":datetime.utcnow()}},
             upsert=True
         )
         
@@ -166,6 +168,8 @@ async def student_push(
             return {"status": "error", "message": "Missing payload"}
 
         # Use sid_id for folder naming in GitHub
+        # here sid_id is the one with @sidhilynxi.id
+        background_tasks.add_task(log_cloud_push, sid_id)
         background_tasks.add_task(commit_to_github, sid_id, files)
         return {"status": "success", "message": "Cloud sync initiated"}
     except HTTPException:
@@ -303,25 +307,14 @@ async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/me/quotas")
-async def fetch_my_quotas(user: dict = Depends(verify_client_bound_request)):
+    
+@app.get("/me/cloud-history")
+async def fetch_cloud_history(user: dict = Depends(verify_client_bound_request),sidhi_id: str = Query(..., description="The Sidhi ID of the user example@sidhilynx.id"),):
     try:
-        sidhi_id = user.get("sub")
-        data = await get_user_quotas(sidhi_id)
+        
+        data = await get_cloud_history(sidhi_id)
         if not data:
-            raise HTTPException(status_code=404, detail="Quota record not found")
-        return data
-    except Exception as e:
-        if isinstance(e, HTTPException): raise e
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/me/history")
-async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
-    try:
-        sidhi_id = user.get("sub")
-        data = await get_user_history(sidhi_id)
-        if not data:
-            return {"sidhi_id": sidhi_id, "logs": {}, "message": "No history found"}
+            return {"sidhi_id": sidhi_id, "pushes": [], "message": "No push history found"}
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

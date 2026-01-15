@@ -51,3 +51,24 @@ async def get_user_quotas(sidhi_id: str):
 
 async def get_user_history(sidhi_id: str):
     return await db.history.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
+
+from datetime import datetime
+
+async def log_cloud_push(sidhi_id: str):
+    # Perfect formatting: "Jan 15, 2026 | 10:30 PM"
+    now = datetime.utcnow()
+    timestamp_str = now.strftime("%b %d, %Y | %I:%M %p")
+    
+    await db.cloud_history.update_one(
+        {"sidhi_id": sidhi_id},
+        {"$push": {
+            "pushes": {
+                "time": timestamp_str,
+                "timestamp": now # Storing raw date helps if you want to sort later
+            }
+        }},
+        upsert=True
+    )
+
+async def get_cloud_history(sidhi_id: str):
+    return await db.cloud_history.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
