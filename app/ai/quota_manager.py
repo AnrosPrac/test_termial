@@ -28,3 +28,20 @@ async def check_and_use_quota(sidhi_id: str, feature: str):
     )
 
     return True
+
+
+from datetime import datetime
+
+async def log_activity(sidhi_id: str, command: str, success: bool):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    log_entry = {
+        "command": command,
+        "timestamp": datetime.utcnow(),
+        "success": success
+    }
+    
+    await db.history.update_one(
+        {"sidhi_id": sidhi_id},
+        {"$push": {f"logs.{today}": log_entry}},
+        upsert=True
+    )

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends , BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
@@ -7,7 +7,7 @@ from app.ai.injector import process_injection_to_memory
 from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
 from app.ai.auth_utils import verify_lum_token
-from app.ai.quota_manager import check_and_use_quota 
+from app.ai.quota_manager import check_and_use_quota,log_activity
 
 from app.ai.cell_logic import process_cells_generation # Import the new logic
 
@@ -57,7 +57,7 @@ async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_requ
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/execute")
-async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
+async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request), background_tasks: BackgroundTasks = None):
     try:
         sidhi_id = user.get("sub")
         await check_and_use_quota(sidhi_id, payload["mode"])
@@ -70,6 +70,7 @@ async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_req
         )
         if isinstance(result, Path) and result.exists():
             return FileResponse(result, media_type="image/png")
+        background_tasks.add_task(log_activity, sidhi_id, payload["mode"], True)
         return {"output": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -27,3 +27,4 @@ pydantic
 
 # --- Cloud Sync & Vault ---
 GitPython
+datetime
