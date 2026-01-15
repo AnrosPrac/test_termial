@@ -169,7 +169,7 @@ async def student_push(
 async def cloud_view(
     sid_id: str = Query(...),
     user: str = Depends(verify_client_bound_request)
-    # authenticated_pk: str = Depends(verify_signature)
+    
 ):
     try:
 
@@ -210,7 +210,7 @@ def get_version():
 @app.get("/user/check/{sidhi_user_id}")
 async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_client_bound_request)):
     try:
-        user_record = await db.users.find_one({"sidhi_user_id": sidhi_user_id})
+        user_record = await db.users_profile.find_one({"user_id": sidhi_user_id})
         
         if user_record:
             return {
@@ -219,7 +219,14 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
                 "message": "User found in database",
                 "data": {
                     "username": user_record.get("username"),
-                    "sidhi_user_id": user_record.get("sidhi_user_id")
+                    "user_id": user_record.get("user_id"),
+                    "email_id": user_record.get("email_id"),
+                    "college": user_record.get("college"),
+                    "department": user_record.get("department"),
+                    "starting_year": user_record.get("starting_year"),
+                    "is_admin": user_record.get("is_admin"),
+                    "degree": user_record.get("degree"),
+                    "sidhi_id": user_record.get("sidhi_id")
                 }
             }
         
@@ -234,7 +241,7 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
 @app.post("/user/register")
 async def register_user_details(data: UserDetailCreate, user: str = Depends(verify_client_bound_request)):
     try:
-        existing_user = await db.users.find_one({"sidhi_user_id": data.sidhi_user_id})
+        existing_user = await db.users_profile.find_one({"user_id": data.user_id})
         
         if existing_user:
             raise HTTPException(
