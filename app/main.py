@@ -13,7 +13,7 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-
+from app.ai.quota_manager import check_and_use_quota,log_activity,get_user_quotas, get_user_history
 
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -277,3 +277,51 @@ async def register_user_details(data: UserDetailCreate, user: str = Depends(veri
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+
+@app.get("/me/quotas")
+async def fetch_my_quotas(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        data = await get_user_quotas(sidhi_id)
+        if not data:
+            raise HTTPException(status_code=404, detail="Quota record not found")
+        return data
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/me/history")
+async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        data = await get_user_history(sidhi_id)
+        if not data:
+            return {"sidhi_id": sidhi_id, "logs": {}, "message": "No history found"}
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/me/quotas")
+async def fetch_my_quotas(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        data = await get_user_quotas(sidhi_id)
+        if not data:
+            raise HTTPException(status_code=404, detail="Quota record not found")
+        return data
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/me/history")
+async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        data = await get_user_history(sidhi_id)
+        if not data:
+            return {"sidhi_id": sidhi_id, "logs": {}, "message": "No history found"}
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

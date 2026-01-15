@@ -45,3 +45,9 @@ async def log_activity(sidhi_id: str, command: str, success: bool):
         {"$push": {f"logs.{today}": log_entry}},
         upsert=True
     )
+
+async def get_user_quotas(sidhi_id: str):
+    return await db.users_quotas.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
+
+async def get_user_history(sidhi_id: str):
+    return await db.history.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
