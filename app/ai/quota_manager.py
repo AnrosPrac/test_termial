@@ -17,34 +17,24 @@ class MongoManager:
         if self.client:
             self.client.close()
 
-    async def check_and_update_quota(self, sidhi_id: str, feature_path: str):
+    async def check_and_use_quota(self, sidhi_id: str, feature: str):
         user = await self.db.users_quotas.find_one({"sidhi_id": sidhi_id})
         
         if not user:
             raise HTTPException(status_code=404, detail="User profile not found")
 
-        path_parts = feature_path.split(".")
-        
-        limit = user["base"]
-        used = user["used"]
-        addons = user["addons"]
+        quotas = user.get("quotas", {})
+        remaining = quotas.get(feature, 0)
 
-        for part in path_parts:
-            limit = limit.get(part, 0) if isinstance(limit, dict) else limit
-            used = used.get(part, 0) if isinstance(used, dict) else used
-            addons = addons.get(part, 0) if isinstance(addons, dict) else addons
-
-        total_allowed = limit + addons
-
-        if used >= total_allowed:
+        if remaining <= 0:
             raise HTTPException(
                 status_code=429, 
-                detail=f"Quota exhausted for {feature_path}. Limit: {total_allowed}"
+                detail=f"Quota exhausted for {feature}. Remaining: 0"
             )
 
         await self.db.users_quotas.update_one(
             {"sidhi_id": sidhi_id},
-            {"$inc": {f"used.{feature_path}": 1}}
+            {"$inc": {f"quotas.{feature}": -1}}
         )
         
         return True

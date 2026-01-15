@@ -28,7 +28,7 @@ async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bou
     
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_update_quota(sidhi_id, "cells")
+        await manager.check_and_use_quota(sidhi_id, "cells")
         data = process_cells_generation(payload.text_content)
         return {"status": "success", "tasks": data}
     except Exception as e:
@@ -38,7 +38,7 @@ async def ai_cells(payload: CellsRequest, user: dict = Depends(verify_client_bou
 async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_update_quota(sidhi_id, "format")
+        await manager.check_and_use_quota(sidhi_id, "format")
         formatted_text = process_formatting(payload.text_content)
         return {"status": "success", "output": formatted_text}
     except Exception as e:
@@ -48,7 +48,7 @@ async def ai_format(payload: FormatRequest, user: dict = Depends(verify_client_b
 async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        await manager.check_and_update_quota(sidhi_id, "inject")
+        await manager.check_and_use_quota(sidhi_id, "inject")
 
         text_content = payload.get("text_content")
         files_dict = process_injection_to_memory(text_content)
@@ -57,10 +57,10 @@ async def ai_inject(payload: dict, user: dict = Depends(verify_client_bound_requ
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/execute")
-def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
+async def ai_execute(payload: dict, user: dict = Depends(verify_client_bound_request)):
     try:
         sidhi_id = user.get("sidhi_id")
-        manager.check_and_update_quota(sidhi_id, payload["mode"])
+        await manager.check_and_use_quota(sidhi_id, payload["mode"])
         input_primary = payload.get("input") or payload.get("input1")
         result = execute_ai(
             mode=payload["mode"],
