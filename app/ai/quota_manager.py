@@ -111,7 +111,6 @@ async def get_cloud_history(sidhi_id: str):
 
 import uuid
 from datetime import datetime
-
 async def create_order(user_id: str, summary_data: dict):
     order_id = str(uuid.uuid4().hex[:8]).upper()
     order_doc = {
@@ -132,7 +131,15 @@ async def create_order(user_id: str, summary_data: dict):
             "email_id": summary_data.get("email_id", "")
         }
     }
+    
+    # 1. Insert into DB
     await db.orders.insert_one(order_doc)
+    
+    # 2. FIX: Remove the MongoDB Internal ID before returning
+    # This prevents the "ObjectId is not iterable" error in FastAPI
+    if "_id" in order_doc:
+        del order_doc["_id"]
+        
     return order_doc
 
 async def get_user_orders(user_id: str):
