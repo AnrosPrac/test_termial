@@ -5,29 +5,65 @@ from fastapi import HTTPException
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
-async def check_and_use_quota(sidhi_id: str, feature: str):
+from fastapi import HTTPException
+from datetime import datetime
+
+from fastapi import HTTPException
+from datetime import datetime
+
+async def check_and_use_quota(sidhi_id: str, command: str) -> bool:
     user = await db.users_quotas.find_one({"sidhi_id": sidhi_id})
 
     if not user:
         raise HTTPException(status_code=404, detail="User quota profile not found")
 
-    remaining = user.get("quotas", {}).get(feature)
+    base = user.get("base", {})
+    used = user.get("used", {})
+    addons = user.get("addons", {})
 
-    if remaining is None:
-        raise HTTPException(status_code=400, detail=f"Invalid feature: {feature}")
+    # ---------- detect command vs feature ----------
+    if command in base.get("commands", {}):
+        base_limit = base["commands"].get(command, 0)
+        used_count = used["commands"].get(command, 0)
+        addon_limit = addons.get(command, 0)
+        used_path = f"used.commands.{command}"
+    elif command in base:
+        base_limit = base.get(command, 0)
+        used_count = used.get(command, 0)
+        addon_limit = addons.get(command, 0)
+        used_path = f"used.{command}"
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid command/feature: {command}"
+        )
+
+    remaining = (base_limit + addon_limit) - used_count
 
     if remaining <= 0:
         raise HTTPException(
             status_code=429,
-            detail=f"Quota exhausted for {feature}"
+            detail=f"Quota exhausted for '{command}'"
         )
 
-    await db.users_quotas.update_one(
+    # ---------- atomic update ----------
+    result = await db.users_quotas.update_one(
         {"sidhi_id": sidhi_id},
-        {"$inc": {f"quotas.{feature}": -1}}
+        {
+            "$inc": {used_path: 1},
+            "$set": {"meta.last_updated": datetime.utcnow()}
+        }
     )
 
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=500,
+            detail="Quota update failed"
+        )
+
     return True
+
+
 
 
 from datetime import datetime
