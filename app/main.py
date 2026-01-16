@@ -14,7 +14,7 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-from app.ai.quota_manager import get_user_quotas, get_user_history,log_cloud_push,get_cloud_history
+from app.ai.quota_manager import get_user_quotas, get_user_history,log_cloud_push,get_cloud_history,create_order,get_user_orders
 
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -316,5 +316,37 @@ async def fetch_cloud_history(user: dict = Depends(verify_client_bound_request),
         if not data:
             return {"sidhi_id": sidhi_id, "pushes": [], "message": "No push history found"}
         return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+class OrderSummaryRequest(BaseModel):
+    folder_name: str
+    questions: list
+    flowchart_selected_questions_index: list = []
+    is_algo_needed: bool = False
+    is_code_needed: bool = False
+    is_output_needed: bool = False
+    is_flowchart_needed: bool = False
+    email_id: str
+    client_id:str
+
+@app.post("/orders/place")
+async def place_order(
+    data: OrderSummaryRequest, 
+    user: dict = Depends(verify_client_bound_request)
+):
+    try:
+        user_id = user.get("sub") # SIDHI_HBSEFYBEF style ID from JWT
+        order = await create_order(user_id, data.dict())
+        return {"status": "success", "order": order}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/orders/history")
+async def fetch_order_history(user: dict = Depends(verify_client_bound_request)):
+    try:
+        user_id = user.get("sub")
+        history = await get_user_orders(user_id)
+        return {"status": "success", "orders": history}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

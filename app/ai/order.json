@@ -1,0 +1,20 @@
+[{
+    "ORDER_ID": "12345",
+    "USER_ID":"SIDHI_HBSEFYBEF",
+    "STATUS":"QUEUED",
+    "PLACED_AT":"2024-06-15T10:30:00Z",
+    "SUMMANRY":{
+        "client_id":"",
+        "folder_name":"",
+        "questions":[],
+        "flowchart_selected_questions_index":[],
+        "is_algo_needed":false,
+        "is_code_needed":false,
+        "is_output_needed":false,
+        "is_flowchart_needed":false,
+        "download_url":"",
+        "email_id":"",
+
+
+    }
+}]

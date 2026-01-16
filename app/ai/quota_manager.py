@@ -108,3 +108,33 @@ async def log_cloud_push(sidhi_id: str):
 
 async def get_cloud_history(sidhi_id: str):
     return await db.cloud_history.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
+
+import uuid
+from datetime import datetime
+
+async def create_order(user_id: str, summary_data: dict):
+    order_id = str(uuid.uuid4().hex[:8]).upper()
+    order_doc = {
+        "ORDER_ID": order_id,
+        "USER_ID": user_id,
+        "STATUS": "QUEUED",
+        "PLACED_AT": datetime.utcnow().isoformat() + "Z",
+        "SUMMARY": {
+            "client_id": summary_data.get("client_id", ""),
+            "folder_name": summary_data.get("folder_name", ""),
+            "questions": summary_data.get("questions", []),
+            "flowchart_selected_questions_index": summary_data.get("flowchart_selected_questions_index", []),
+            "is_algo_needed": summary_data.get("is_algo_needed", False),
+            "is_code_needed": summary_data.get("is_code_needed", False),
+            "is_output_needed": summary_data.get("is_output_needed", False),
+            "is_flowchart_needed": summary_data.get("is_flowchart_needed", False),
+            "download_url": "",
+            "email_id": summary_data.get("email_id", "")
+        }
+    }
+    await db.orders.insert_one(order_doc)
+    return order_doc
+
+async def get_user_orders(user_id: str):
+    cursor = db.orders.find({"USER_ID": user_id}, {"_id": 0}).sort("PLACED_AT", -1)
+    return await cursor.to_list(length=100)
