@@ -2,6 +2,7 @@
 fastapi
 uvicorn
 python-multipart
+razorpay
 
 # --- Security & Authentication ---
 python-jose[cryptography]

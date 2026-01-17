@@ -7,6 +7,7 @@ from app.stream.router import router as stream_router
 from app.api.auth_proxy import router as auth_router
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
+from app.payments.router import router as payment_router, create_indexes
 import binascii
 from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
@@ -14,16 +15,18 @@ from app.ai.client_bound_guard import verify_client_bound_request
 from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
-from app.ai.quota_manager import get_user_quotas, get_user_history,log_cloud_push,get_cloud_history,create_order,get_user_orders
+from app.ai.quota_manager import get_user_quotas, get_user_history, log_cloud_push, get_cloud_history, create_order, get_user_orders
 
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
+
 # MongoDB Configuration
 MONGO_URL = os.getenv("MONGO_URL")
 VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
+
 
 class UserDetailCreate(BaseModel):
     username: str
@@ -35,9 +38,13 @@ class UserDetailCreate(BaseModel):
     is_admin: bool = False
     degree: str
     email_id: str
+
+
 @app.on_event("startup")
 async def startup_event():
     setup_repo()
+    await create_indexes()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,7 +52,9 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]  # Added for Razorpay compatibility
 )
+
 
 async def verify_signature(
     request: Request,
@@ -63,19 +72,21 @@ async def verify_signature(
     except:
         raise HTTPException(status_code=401, detail="Invalid signature")
 
+
+# ==================== ROUTER REGISTRATION ====================
 app.include_router(ai_router, prefix="/ai")
 app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(stream_router)
-
-
-# Schema for the approval request
+app.include_router(payment_router, prefix="/payment")  # ✅ CRITICAL FIX: Added payment router!
+# ============================================================
 
 
 class ApprovalRequest(BaseModel):
     sid_id: str
     college_roll: str
     username: str 
+
 
 @app.get("/sync/cloudaccess/{sid_id}")
 async def cloud_access(sid_id: str, user: str = Depends(verify_client_bound_request)):
@@ -102,19 +113,24 @@ async def cloud_access(sid_id: str, user: str = Depends(verify_client_bound_requ
                 "name": user_record.get("name"),
                 "is_active": user_record.get("is_active")
             },
-            "message": "Backup available" if files_on_disk else "Nobackups found",
+            "message": "Backup available" if files_on_disk else "No backups found",
             "created_at": user_record.get("created_at") 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/sync/cloudapprove")
 async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client_bound_request)):
     try:
-        # Update or Insert the student record
-        # This links the JLab username (college_roll) to the Sidhi ID
         result = await db.users.update_one(
             {"sid_id": data.sid_id},
-            {"$set": {"college_roll": data.college_roll, "name": data.username, "is_active": True,"created_at":datetime.utcnow()}},
+            {"$set": {
+                "college_roll": data.college_roll, 
+                "name": data.username, 
+                "is_active": True,
+                "created_at": datetime.utcnow()
+            }},
             upsert=True
         )
         
@@ -124,6 +140,8 @@ async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/debug")
 async def get_user_context(user: dict = Depends(verify_client_bound_request)):
     try:
@@ -134,6 +152,8 @@ async def get_user_context(user: dict = Depends(verify_client_bound_request)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/sync/push")
 async def student_push(
     request: Request, 
@@ -146,67 +166,59 @@ async def student_push(
         roll_no = data.get("college_roll")
         files = data.get("files", {})
         
-        # --- IDENTITY LOCK ---
-        # Verify Terminal User (roll_no) against Platform User (sid_id)
+        # Payload size validation
         total_payload_size = sum(len(content.encode('utf-8')) for content in files.values())
         if total_payload_size > 2 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="Payload too large. Max 2MB allowed.")
 
-        # 2. EXTENSION SECURITY CHECK
-        # Reject if any file has a forbidden extension (e.g., .exe, .sh)
+        # Extension security check
         for filename in files.keys():
             _, ext = os.path.splitext(filename)
             if ext.lower() not in ALLOWED_EXTENSIONS:
-                 raise HTTPException(status_code=400, detail=f"File type {ext} not allowed.")
+                raise HTTPException(status_code=400, detail=f"File type {ext} not allowed.")
             
+        # Identity verification
         user_record = await db.users.find_one({"college_roll": roll_no})
         
         if not user_record or user_record.get("sid_id") != sid_id:
-             raise HTTPException(status_code=403, detail="Identity Mismatch: Terminal user not linked to Sidhi ID")
+            raise HTTPException(status_code=403, detail="Identity Mismatch: Terminal user not linked to Sidhi ID")
 
         if not sid_id or not files:
             return {"status": "error", "message": "Missing payload"}
 
-        # Use sid_id for folder naming in GitHub
-        # here sid_id is the one with @sidhilynxi.id
+        # Background tasks
         background_tasks.add_task(log_cloud_push, sid_id)
         background_tasks.add_task(commit_to_github, sid_id, files)
+        
         return {"status": "success", "message": "Cloud sync initiated"}
     except HTTPException:
-        # Re-raise HTTPExceptions so FastAPI handles the status codes correctly
         raise 
     except Exception as e:
-        # For any other unexpected server error, send a 500 Internal Server Error
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/sync/cloudview")
 async def cloud_view(
     sid_id: str = Query(...),
     user: str = Depends(verify_client_bound_request)
-    
 ):
     try:
-
-    
         student_folder = os.path.join(LOCAL_REPO_DIR, "vault", f"user_{sid_id}")
 
         if not os.path.exists(student_folder):
             return {"status": "success", "files": {}, "message": "Vault is currently empty"}
 
-        # 3. RECURSIVE FILE READ
         vault_contents = {}
         for root, _, files in os.walk(student_folder):
             for filename in files:
                 full_path = os.path.join(root, filename)
-                
-                # Create a relative path for the key (e.g., 'main.py' or 'utils/helper.py')
                 relative_path = os.path.relpath(full_path, student_folder)
                 
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:
                         vault_contents[relative_path] = f.read()
                 except Exception:
-                    continue # Skip binary or unreadable files
+                    continue
 
         return {
             "status": "success",
@@ -218,9 +230,13 @@ async def cloud_view(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/version")
 def get_version():
     return {"version": VERSION or "unknown", "status": "stable"}
+
+
 @app.get("/user/check/{sidhi_user_id}")
 async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_client_bound_request)):
     try:
@@ -252,6 +268,7 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/user/register")
 async def register_user_details(data: UserDetailCreate, user: str = Depends(verify_client_bound_request)):
     try:
@@ -264,8 +281,6 @@ async def register_user_details(data: UserDetailCreate, user: str = Depends(veri
             )
 
         new_user = data.dict()
-
-
         await db.users_profile.insert_one(new_user)
 
         return {
@@ -283,7 +298,6 @@ def health():
     return {"status": "ok"}
 
 
-
 @app.get("/me/quotas")
 async def fetch_my_quotas(user: dict = Depends(verify_client_bound_request)):
     try:
@@ -293,8 +307,10 @@ async def fetch_my_quotas(user: dict = Depends(verify_client_bound_request)):
             raise HTTPException(status_code=404, detail="Quota record not found")
         return data
     except Exception as e:
-        if isinstance(e, HTTPException): raise e
+        if isinstance(e, HTTPException): 
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/me/history")
 async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
@@ -309,9 +325,11 @@ async def fetch_my_history(user: dict = Depends(verify_client_bound_request)):
 
     
 @app.get("/me/cloud-history")
-async def fetch_cloud_history(user: dict = Depends(verify_client_bound_request),sidhi_id: str = Query(..., description="The Sidhi ID of the user example@sidhilynx.id"),):
+async def fetch_cloud_history(
+    user: dict = Depends(verify_client_bound_request),
+    sidhi_id: str = Query(..., description="The Sidhi ID of the user example@sidhilynx.id")
+):
     try:
-        
         data = await get_cloud_history(sidhi_id)
         if not data:
             return {"sidhi_id": sidhi_id, "pushes": [], "message": "No push history found"}
@@ -319,6 +337,7 @@ async def fetch_cloud_history(user: dict = Depends(verify_client_bound_request),
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
 class OrderSummaryRequest(BaseModel):
     folder_name: str
     questions: list
@@ -328,7 +347,8 @@ class OrderSummaryRequest(BaseModel):
     is_output_needed: bool = False
     is_flowchart_needed: bool = False
     email_id: str
-    client_id:str
+    client_id: str
+
 
 @app.post("/orders/place")
 async def place_order(
@@ -336,11 +356,12 @@ async def place_order(
     user: dict = Depends(verify_client_bound_request)
 ):
     try:
-        user_id = user.get("sub") # SIDHI_HBSEFYBEF style ID from JWT
+        user_id = user.get("sub")
         order = await create_order(user_id, data.dict())
         return {"status": "success", "order": order}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/orders/history")
 async def fetch_order_history(user: dict = Depends(verify_client_bound_request)):
