@@ -235,7 +235,43 @@ async def cloud_view(
 @app.get("/version")
 def get_version():
     return {"version": VERSION or "unknown", "status": "stable"}
-
+@app.get("/me/payments/history")
+async def fetch_my_payments(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Fetch payments for the user, sorted by created_at descending (newest first)
+        payments_cursor = db.payments.find(
+            {"sidhi_id": sidhi_id},
+            {
+                "_id": 0,
+                "created_at": 1,
+                "expires_at": 1,
+                "status": 1,
+                "amount": 1,
+                "sidhi_id": 1,
+                "tier": 1
+            }
+        ).sort("created_at", -1)
+        
+        payments = await payments_cursor.to_list(length=None)
+        
+        if not payments:
+            return {
+                "status": "success",
+                "sidhi_id": sidhi_id,
+                "payments": [],
+                "message": "No payment history found"
+            }
+        
+        return {
+            "status": "success",
+            "sidhi_id": sidhi_id,
+            "payments": payments,
+            "count": len(payments)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/user/check/{sidhi_user_id}")
 async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_client_bound_request)):
