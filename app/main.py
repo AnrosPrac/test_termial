@@ -554,3 +554,651 @@ async def mark_all_notifications_read(user: dict = Depends(verify_client_bound_r
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+from pydantic import BaseModel
+from typing import Dict
+from datetime import datetime
+from fastapi import HTTPException, Depends
+
+# Import the prompt generation function (add this at the top of your file)
+# Make sure generate_coding_style_prompt is imported or defined in main.py
+def generate_coding_style_prompt(answers):
+    """
+    Generate a personalized coding style prompt based on user answers.
+    
+    Args:
+        answers (dict): Dictionary with keys q1-q20, values 'A', 'B', 'C', 'D', or 'E'
+    
+    Returns:
+        str: Complete prompt string to send to an AI
+    """
+    
+    prompt = "You are a code generator. Write code following these specific style guidelines:\n\n"
+    
+    # Q1: Problem-solving approach
+    if answers['q1'] == 'A':
+        prompt += "- Break problems into small, incremental functions. Use a step-by-step approach.\n"
+    elif answers['q1'] == 'B':
+        prompt += "- Start with high-level architecture comments, then implement details.\n"
+    elif answers['q1'] == 'C':
+        prompt += "- Use an iterative approach with multiple solution attempts. Include TODO comments for alternative approaches.\n"
+    elif answers['q1'] == 'D':
+        prompt += "- Include references to documentation and similar examples in comments.\n"
+    
+    # Q2: Documentation style
+    if answers['q2'] == 'A':
+        prompt += "- Add detailed comments explaining every step and decision.\n"
+    elif answers['q2'] == 'B':
+        prompt += "- Use minimal, concise comments only for complex logic.\n"
+    elif answers['q2'] == 'C':
+        prompt += "- Include ASCII diagrams or visual representations in comments where helpful.\n"
+    elif answers['q2'] == 'D':
+        prompt += "- Organize code with section headers and structured comment blocks.\n"
+    elif answers['q2'] == 'E':
+        prompt += "- NO COMMENTS AT ALL. Write self-documenting code with clear variable and function names only.\n"
+    
+    # Q3: Naming convention
+    if answers['q3'] == 'A':
+        prompt += "- Use very descriptive, long variable names (e.g., user_input_validation_result).\n"
+    elif answers['q3'] == 'B':
+        prompt += "- Use short, abbreviated names (e.g., usr_inp, val_res).\n"
+    elif answers['q3'] == 'C':
+        prompt += "- Include contextual prefixes in names (e.g., temp_data_2026, final_result_v2).\n"
+    elif answers['q3'] == 'D':
+        prompt += "- Use simple, generic names (e.g., data, result, value, temp).\n"
+    
+    # Q4: Code organization
+    if answers['q4'] == 'A':
+        prompt += "- Group related functions into clearly labeled sections with comment headers.\n"
+    elif answers['q4'] == 'B':
+        prompt += "- Organize functions chronologically or by when they're called.\n"
+    elif answers['q4'] == 'C':
+        prompt += "- Keep related helper functions near where they're used.\n"
+    elif answers['q4'] == 'D':
+        prompt += "- Keep all code in a simple, linear structure without heavy organization.\n"
+    
+    # Q5: Code precision/detail
+    if answers['q5'] == 'A':
+        prompt += "- Include explicit parameter validation, type checking, and edge case handling.\n"
+    elif answers['q5'] == 'B':
+        prompt += "- Keep code straightforward without excessive validation.\n"
+    elif answers['q5'] == 'C':
+        prompt += "- Add meaningful examples in comments to illustrate usage.\n"
+    elif answers['q5'] == 'D':
+        prompt += "- Write minimal code assuming standard use cases.\n"
+    
+    # Q6: Explanation style
+    if answers['q6'] == 'A':
+        prompt += "- Add step-by-step inline comments for every operation.\n"
+    elif answers['q6'] == 'B':
+        prompt += "- Only comment on the main logic flow, skip obvious details.\n"
+    elif answers['q6'] == 'C':
+        prompt += "- Use analogies and real-world examples in comments.\n"
+    elif answers['q6'] == 'D':
+        prompt += "- Assume code is self-explanatory, minimal comments.\n"
+    
+    # Q7: Error checking approach
+    if answers['q7'] == 'A':
+        prompt += "- Include comprehensive error handling with try-except blocks and validation at every step.\n"
+    elif answers['q7'] == 'B':
+        prompt += "- Add basic error handling only for critical operations.\n"
+    elif answers['q7'] == 'C':
+        prompt += "- Use defensive programming with fallback values and conditional checks.\n"
+    elif answers['q7'] == 'D':
+        prompt += "- Minimal error handling, trust inputs are correct.\n"
+    
+    # Q8: Debugging/fixing approach
+    if answers['q8'] == 'A':
+        prompt += "- Add detailed logging statements and debug comments explaining potential issues.\n"
+    elif answers['q8'] == 'B':
+        prompt += "- Keep code clean without debug statements, rely on clean logic.\n"
+    elif answers['q8'] == 'C':
+        prompt += "- Include multiple solution paths or alternative implementations commented out.\n"
+    elif answers['q8'] == 'D':
+        prompt += "- Write fresh, clean implementations without legacy code or comments.\n"
+    
+    # Q9: Planning vs doing
+    if answers['q9'] == 'A':
+        prompt += "- Start with a detailed pseudocode outline before any implementation.\n"
+    elif answers['q9'] == 'B':
+        prompt += "- Write working code first, refactor and optimize later.\n"
+    elif answers['q9'] == 'C':
+        prompt += "- Mix high-level planning comments with immediate implementation.\n"
+    elif answers['q9'] == 'D':
+        prompt += "- Dive straight into implementation without planning comments.\n"
+    
+    # Q10: Learning style
+    if answers['q10'] == 'A':
+        prompt += "- Include complete documentation references and usage instructions.\n"
+    elif answers['q10'] == 'B':
+        prompt += "- Write experimental code with various approaches to test.\n"
+    elif answers['q10'] == 'C':
+        prompt += "- Include example usage and sample outputs in comments.\n"
+    elif answers['q10'] == 'D':
+        prompt += "- Provide basic working code with room for experimentation.\n"
+    
+    # Q11: Code organization/cleanliness
+    if answers['q11'] == 'A':
+        prompt += "- Use strict formatting: consistent indentation, spacing, and alignment.\n"
+    elif answers['q11'] == 'B':
+        prompt += "- Flexible formatting, prioritize readability over strict rules.\n"
+    elif answers['q11'] == 'C':
+        prompt += "- Minimalist code style, remove unnecessary whitespace and comments.\n"
+    elif answers['q11'] == 'D':
+        prompt += "- Adaptive formatting based on context and code complexity.\n"
+    
+    # Q12: Writing/communication style
+    if answers['q12'] == 'A':
+        prompt += "- Write complete sentence comments with proper grammar and punctuation.\n"
+    elif answers['q12'] == 'B':
+        prompt += "- Use casual, conversational comments (e.g., 'grab the data', 'check if it works').\n"
+    elif answers['q12'] == 'C':
+        prompt += "- Use brief, fragmented comments and bullet points.\n"
+    elif answers['q12'] == 'D':
+        prompt += "- Mix formal and informal comments based on code context.\n"
+    
+    # Q13: Complexity preference
+    if answers['q13'] == 'A':
+        prompt += "- Prefer clear, explicit solutions even if verbose. Avoid clever tricks.\n"
+    elif answers['q13'] == 'B':
+        prompt += "- Use creative, elegant solutions and modern language features.\n"
+    elif answers['q13'] == 'C':
+        prompt += "- Implement challenging, optimized algorithms when possible.\n"
+    elif answers['q13'] == 'D':
+        prompt += "- Keep solutions simple and straightforward, avoid overengineering.\n"
+    
+    # Q14: Tool usage style
+    if answers['q14'] == 'A':
+        prompt += "- Include tutorial-style comments explaining how each part works.\n"
+    elif answers['q14'] == 'B':
+        prompt += "- Use diverse language features and libraries freely.\n"
+    elif answers['q14'] == 'C':
+        prompt += "- Stick to basic, well-known patterns and vanilla implementations.\n"
+    elif answers['q14'] == 'D':
+        prompt += "- Include helpful comments pointing to resources and documentation.\n"
+    
+    # Q15: Communication personality
+    if answers['q15'] == 'A':
+        prompt += "- Use comprehensive, well-structured comments with full explanations.\n"
+    elif answers['q15'] == 'B':
+        prompt += "- Keep comments brief and efficient, no fluff.\n"
+    elif answers['q15'] == 'C':
+        prompt += "- Use friendly, approachable language in comments (e.g., 'Let's do this!', 'Nice!').\n"
+    elif answers['q15'] == 'D':
+        prompt += "- Use emojis and expressive comments where appropriate (e.g., '# ✅ Works!', '# 🚀 Fast solution').\n"
+    
+    # Q16: Input method preference
+    if answers['q16'] == 'A':
+        prompt += "- Hardcode sample input values directly in the code for testing.\n"
+    elif answers['q16'] == 'B':
+        prompt += "- Use interactive prompts (input()) to get user input.\n"
+    elif answers['q16'] == 'C':
+        prompt += "- Read input from files or external data sources.\n"
+    elif answers['q16'] == 'D':
+        prompt += "- Use function parameters and pass data programmatically.\n"
+    
+    # Q17: Testing with different inputs
+    if answers['q17'] == 'A':
+        prompt += "- Create multiple test cases with different hardcoded values in the code.\n"
+    elif answers['q17'] == 'B':
+        prompt += "- Run the program multiple times and type different values each time.\n"
+    elif answers['q17'] == 'C':
+        prompt += "- Use lists of test inputs and loop through them.\n"
+    elif answers['q17'] == 'D':
+        prompt += "- Use a single representative input value that covers the general case.\n"
+    
+    # Q18: Input validation
+    if answers['q18'] == 'A':
+        prompt += "- Detailed validation with specific error messages for each type of invalid input.\n"
+    elif answers['q18'] == 'B':
+        prompt += "- Basic validation with simple retry loops until input is correct.\n"
+    elif answers['q18'] == 'C':
+        prompt += "- Use default values or corrections when input is invalid.\n"
+    elif answers['q18'] == 'D':
+        prompt += "- Minimal validation, assume users provide correct input.\n"
+    
+    # Q19: Multiple inputs handling
+    if answers['q19'] == 'A':
+        prompt += "- Ask for each input separately with clear prompts (e.g., 'Enter name: ', 'Enter age: ').\n"
+    elif answers['q19'] == 'B':
+        prompt += "- Get all inputs at once (e.g., comma-separated, space-separated using split()).\n"
+    elif answers['q19'] == 'C':
+        prompt += "- Use a menu or numbered options for users to select from.\n"
+    elif answers['q19'] == 'D':
+        prompt += "- Accept inputs as command-line arguments (sys.argv) or configuration.\n"
+    
+    # Q20: Input instruction display
+    if answers['q20'] == 'A':
+        prompt += "- Show detailed instructions with examples (e.g., 'Enter date (YYYY-MM-DD): ').\n"
+    elif answers['q20'] == 'B':
+        prompt += "- Brief prompts (e.g., 'Name: ', 'Age: ').\n"
+    elif answers['q20'] == 'C':
+        prompt += "- No prompts, let the code structure be self-evident.\n"
+    elif answers['q20'] == 'D':
+        prompt += "- Show instructions once at the beginning, then simple prompts.\n"
+    
+    prompt += "\nGenerate code that strictly follows ALL of these guidelines. The code should reflect this specific personality and style in every aspect."
+    
+    return prompt
+
+
+# Add this model to your main.py
+class PersonalizationAnswers(BaseModel):
+    q1: str
+    q2: str
+    q3: str
+    q4: str
+    q5: str
+    q6: str
+    q7: str
+    q8: str
+    q9: str
+    q10: str
+    q11: str
+    q12: str
+    q13: str
+    q14: str
+    q15: str
+    q16: str
+    q17: str
+    q18: str
+    q19: str
+    q20: str
+
+
+# Add this endpoint to your main.py (after the other endpoints)
+@app.post("/personalization/save")
+async def save_personalization_preferences(
+    answers: PersonalizationAnswers,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Save user's coding style personalization preferences.
+    Each answer should be 'A', 'B', 'C', 'D', or 'E'.
+    Generates and stores the AI prompt string.
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Validate all answers are valid choices
+        valid_choices = {'A', 'B', 'C', 'D', 'E'}
+        answers_dict = answers.dict()
+        
+        for question, answer in answers_dict.items():
+            if answer not in valid_choices:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid answer '{answer}' for {question}. Must be A, B, C, D, or E"
+                )
+        
+        # Generate the prompt string using our function
+        prompt_string = generate_coding_style_prompt(answers_dict)
+        
+        # Prepare personalization document
+        personalization_doc = {
+            "sidhi_id": sidhi_id,
+            "answers": answers_dict,
+            "prompt": prompt_string,  # Store the generated prompt
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "version": 1  # For future schema updates
+        }
+        
+        # Upsert: Update if exists, insert if new
+        result = await db.personalization.update_one(
+            {"sidhi_id": sidhi_id},
+            {
+                "$set": {
+                    "answers": answers_dict,
+                    "prompt": prompt_string,
+                    "updated_at": datetime.utcnow()
+                },
+                "$setOnInsert": {
+                    "created_at": datetime.utcnow(),
+                    "version": 1
+                }
+            },
+            upsert=True
+        )
+        
+        return {
+            "status": "success",
+            "message": "Personalization preferences saved successfully",
+            "sidhi_id": sidhi_id,
+            "is_new": result.upserted_id is not None,
+            "updated_at": personalization_doc["updated_at"],
+            "prompt_preview": prompt_string[:200] + "..."  # Show first 200 chars
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/personalization/get")
+async def get_personalization_preferences(
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Retrieve user's saved personalization preferences.
+    Returns null if user hasn't set preferences yet.
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        personalization = await db.personalization.find_one(
+            {"sidhi_id": sidhi_id},
+            {"_id": 0}  # Exclude MongoDB _id from response
+        )
+        
+        if not personalization:
+            return {
+                "status": "success",
+                "exists": False,
+                "message": "No personalization preferences found",
+                "sidhi_id": sidhi_id,
+                "data": None
+            }
+        
+        return {
+            "status": "success",
+            "exists": True,
+            "sidhi_id": sidhi_id,
+            "data": personalization
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/personalization/delete")
+async def delete_personalization_preferences(
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Delete user's personalization preferences (reset to default).
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        result = await db.personalization.delete_one({"sidhi_id": sidhi_id})
+        
+        if result.deleted_count == 0:
+            return {
+                "status": "success",
+                "message": "No personalization preferences to delete",
+                "sidhi_id": sidhi_id
+            }
+        
+        return {
+            "status": "success",
+            "message": "Personalization preferences deleted successfully",
+            "sidhi_id": sidhi_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/personalization/stats")
+async def get_personalization_stats(
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Get statistics about user's coding style preferences.
+    Useful for displaying a profile summary.
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        personalization = await db.personalization.find_one({"sidhi_id": sidhi_id})
+        
+        if not personalization:
+            raise HTTPException(
+                status_code=404, 
+                detail="No personalization preferences found. Please complete the quiz first."
+            )
+        
+        answers = personalization.get("answers", {})
+        
+        # Analyze all 20 preferences
+        stats = {
+            "sidhi_id": sidhi_id,
+            "profile": {
+                "q1_problem_solving": _get_problem_solving_style(answers.get("q1")),
+                "q2_documentation": _get_doc_style(answers.get("q2")),
+                "q3_naming": _get_naming_style(answers.get("q3")),
+                "q4_organization": _get_organization_style(answers.get("q4")),
+                "q5_precision": _get_precision_level(answers.get("q5")),
+                "q6_explanation": _get_explanation_style(answers.get("q6")),
+                "q7_error_handling": _get_error_handling_style(answers.get("q7")),
+                "q8_debugging": _get_debugging_style(answers.get("q8")),
+                "q9_planning": _get_planning_style(answers.get("q9")),
+                "q10_learning": _get_learning_style(answers.get("q10")),
+                "q11_cleanliness": _get_code_cleanliness(answers.get("q11")),
+                "q12_communication": _get_communication_style(answers.get("q12")),
+                "q13_complexity": _get_complexity_preference(answers.get("q13")),
+                "q14_tool_usage": _get_tool_usage_style(answers.get("q14")),
+                "q15_personality": _get_personality_style(answers.get("q15")),
+                "q16_input_method": _get_input_preference(answers.get("q16")),
+                "q17_testing": _get_testing_style(answers.get("q17")),
+                "q18_validation": _get_validation_style(answers.get("q18")),
+                "q19_multi_input": _get_multi_input_style(answers.get("q19")),
+                "q20_instructions": _get_instruction_style(answers.get("q20"))
+            },
+            "created_at": personalization.get("created_at"),
+            "updated_at": personalization.get("updated_at")
+        }
+        
+        return {
+            "status": "success",
+            "stats": stats
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Helper functions for all 20 questions
+def _get_problem_solving_style(answer):
+    """Q1: Problem-solving approach"""
+    styles = {
+        'A': 'Step-by-Step Breakdown',
+        'B': 'Big Picture First',
+        'C': 'Iterative Trial & Error',
+        'D': 'Reference-Based Learning'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_doc_style(answer):
+    """Q2: Documentation style"""
+    styles = {
+        'A': 'Detailed Documentation',
+        'B': 'Minimal Comments',
+        'C': 'Visual Diagrams',
+        'D': 'Structured Blocks',
+        'E': 'No Comments (Self-Documenting)'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_naming_style(answer):
+    """Q3: Naming convention"""
+    styles = {
+        'A': 'Very Descriptive Names',
+        'B': 'Short Abbreviations',
+        'C': 'Contextual Prefixes',
+        'D': 'Simple Generic Names'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_organization_style(answer):
+    """Q4: Code organization"""
+    styles = {
+        'A': 'Clearly Labeled Sections',
+        'B': 'Chronological Order',
+        'C': 'Proximity-Based Grouping',
+        'D': 'Simple Linear Structure'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_precision_level(answer):
+    """Q5: Code precision/detail"""
+    styles = {
+        'A': 'Explicit Validation & Edge Cases',
+        'B': 'Straightforward Logic',
+        'C': 'Example-Driven',
+        'D': 'Minimal Assumptions'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_explanation_style(answer):
+    """Q6: Explanation approach"""
+    styles = {
+        'A': 'Step-by-Step Inline',
+        'B': 'Main Logic Only',
+        'C': 'Analogies & Examples',
+        'D': 'Self-Explanatory Code'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_error_handling_style(answer):
+    """Q7: Error checking approach"""
+    styles = {
+        'A': 'Comprehensive Try-Catch',
+        'B': 'Basic Critical Checks',
+        'C': 'Defensive Programming',
+        'D': 'Trust Inputs'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_debugging_style(answer):
+    """Q8: Debugging/fixing approach"""
+    styles = {
+        'A': 'Detailed Logging',
+        'B': 'Clean Logic Only',
+        'C': 'Multiple Solution Paths',
+        'D': 'Fresh Clean Code'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_planning_style(answer):
+    """Q9: Planning vs doing"""
+    styles = {
+        'A': 'Detailed Pseudocode First',
+        'B': 'Code First, Refactor Later',
+        'C': 'Mix Planning & Implementation',
+        'D': 'Direct Implementation'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_learning_style(answer):
+    """Q10: Learning approach"""
+    styles = {
+        'A': 'Complete Documentation',
+        'B': 'Experimental Testing',
+        'C': 'Example-Based',
+        'D': 'Basic Experimentation'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_code_cleanliness(answer):
+    """Q11: Code organization/cleanliness"""
+    styles = {
+        'A': 'Strict Formatting Rules',
+        'B': 'Flexible Readability',
+        'C': 'Minimalist Style',
+        'D': 'Adaptive Context-Based'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_communication_style(answer):
+    """Q12: Writing/communication style"""
+    styles = {
+        'A': 'Formal Complete Sentences',
+        'B': 'Casual Conversational',
+        'C': 'Brief Bullet Points',
+        'D': 'Mixed Context-Based'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_complexity_preference(answer):
+    """Q13: Complexity preference"""
+    styles = {
+        'A': 'Clear & Explicit',
+        'B': 'Creative & Elegant',
+        'C': 'Optimized & Challenging',
+        'D': 'Simple & Straightforward'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_tool_usage_style(answer):
+    """Q14: Tool usage approach"""
+    styles = {
+        'A': 'Tutorial-Style Explanations',
+        'B': 'Diverse Features & Libraries',
+        'C': 'Basic Vanilla Patterns',
+        'D': 'Resource References'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_personality_style(answer):
+    """Q15: Communication personality"""
+    styles = {
+        'A': 'Comprehensive Structured',
+        'B': 'Brief & Efficient',
+        'C': 'Friendly & Approachable',
+        'D': 'Expressive with Emojis'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_input_preference(answer):
+    """Q16: Input method preference"""
+    styles = {
+        'A': 'Hardcoded Test Values',
+        'B': 'Interactive Prompts',
+        'C': 'File-Based Input',
+        'D': 'Function Parameters'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_testing_style(answer):
+    """Q17: Testing approach"""
+    styles = {
+        'A': 'Multiple Hardcoded Tests',
+        'B': 'Manual Repeated Runs',
+        'C': 'Loop Through Test Arrays',
+        'D': 'Single Representative Case'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_validation_style(answer):
+    """Q18: Input validation"""
+    styles = {
+        'A': 'Detailed Error Messages',
+        'B': 'Basic Retry Loops',
+        'C': 'Auto-Correct Defaults',
+        'D': 'Minimal Validation'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_multi_input_style(answer):
+    """Q19: Multiple inputs handling"""
+    styles = {
+        'A': 'Separate Clear Prompts',
+        'B': 'All at Once (Separated)',
+        'C': 'Menu/Numbered Options',
+        'D': 'Command-Line Arguments'
+    }
+    return styles.get(answer, 'Unknown')
+
+def _get_instruction_style(answer):
+    """Q20: Input instruction display"""
+    styles = {
+        'A': 'Detailed with Examples',
+        'B': 'Brief Prompts',
+        'C': 'No Prompts (Self-Evident)',
+        'D': 'Instructions Once, Then Brief'
+    }
+    return styles.get(answer, 'Unknown')
