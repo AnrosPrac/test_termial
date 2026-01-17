@@ -142,16 +142,6 @@ async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/debug")
-async def get_user_context(user: dict = Depends(verify_client_bound_request)):
-    try:
-        return {
-            "status": "success",
-            "raw_payload": user,
-            "available_keys": list(user.keys())
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/sync/push")
@@ -405,5 +395,162 @@ async def fetch_order_history(user: dict = Depends(verify_client_bound_request))
         user_id = user.get("sub")
         history = await get_user_orders(user_id)
         return {"status": "success", "orders": history}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class HelpRequest(BaseModel):
+    issue: str
+    email_id: str
+
+
+@app.post("/support/help")
+async def submit_help_request(
+    data: HelpRequest,
+    user: dict = Depends(verify_client_bound_request)
+):
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Create help ticket
+        help_ticket = {
+            "sidhi_id": sidhi_id,
+            "email_id": data.email_id,
+            "issue": data.issue,
+            "status": "pending",  # pending, in_progress, resolved, closed
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "admin_response": None,
+            "resolved_at": None
+        }
+        
+        result = await db.help_tickets.insert_one(help_ticket)
+        
+        return {
+            "status": "success",
+            "message": "Help request submitted successfully",
+            "ticket_id": str(result.inserted_id)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/support/my-tickets")
+async def get_my_help_tickets(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        
+        tickets_cursor = db.help_tickets.find(
+            {"sidhi_id": sidhi_id},
+            {"_id": 0}
+        ).sort("created_at", -1)
+        
+        tickets = await tickets_cursor.to_list(length=None)
+        
+        return {
+            "status": "success",
+            "sidhi_id": sidhi_id,
+            "tickets": tickets,
+            "count": len(tickets)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+@app.get("/notifications")
+async def get_notifications(
+    user: dict = Depends(verify_client_bound_request),
+    unread_only: bool = Query(False, description="Fetch only unread notifications")
+):
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Build query: global notifications OR user-specific notifications
+        query = {
+            "$or": [
+                {"target_type": "all"},  # Global notifications
+                {"target_type": "specific", "target_users": sidhi_id}  # User-specific
+            ]
+        }
+        
+        # Add unread filter if requested
+        if unread_only:
+            query["read_by"] = {"$ne": sidhi_id}
+        
+        notifications_cursor = db.notifications.find(query).sort("created_at", -1)
+        notifications = await notifications_cursor.to_list(length=None)
+        
+        # Format response: add read status for each notification
+        formatted_notifications = []
+        for notif in notifications:
+            formatted_notifications.append({
+                "notification_id": str(notif.get("_id")),
+                "title": notif.get("title"),
+                "message": notif.get("message"),
+                "type": notif.get("type"),  # info, warning, success, error, announcement
+                "priority": notif.get("priority"),  # low, medium, high, urgent
+                "target_type": notif.get("target_type"),
+                "created_at": notif.get("created_at"),
+                "is_read": sidhi_id in notif.get("read_by", []),
+                "action_url": notif.get("action_url"),  # Optional link for CTA
+                "expires_at": notif.get("expires_at")  # Optional expiry
+            })
+        
+        return {
+            "status": "success",
+            "notifications": formatted_notifications,
+            "count": len(formatted_notifications),
+            "unread_count": sum(1 for n in formatted_notifications if not n["is_read"])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/notifications/{notification_id}/mark-read")
+async def mark_notification_read(
+    notification_id: str,
+    user: dict = Depends(verify_client_bound_request)
+):
+    try:
+        sidhi_id = user.get("sub")
+        from bson import ObjectId
+        
+        # Add user to read_by array
+        result = await db.notifications.update_one(
+            {"_id": ObjectId(notification_id)},
+            {"$addToSet": {"read_by": sidhi_id}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {
+            "status": "success",
+            "message": "Notification marked as read"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/notifications/mark-all-read")
+async def mark_all_notifications_read(user: dict = Depends(verify_client_bound_request)):
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Mark all accessible notifications as read
+        result = await db.notifications.update_many(
+            {
+                "$or": [
+                    {"target_type": "all"},
+                    {"target_type": "specific", "target_users": sidhi_id}
+                ],
+                "read_by": {"$ne": sidhi_id}
+            },
+            {"$addToSet": {"read_by": sidhi_id}}
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Marked {result.modified_count} notifications as read"
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
