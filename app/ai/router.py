@@ -8,7 +8,7 @@ from app.ai.services import execute_ai
 from app.ai.formatter import process_formatting
 from app.ai.auth_utils import verify_lum_token
 from app.ai.quota_manager import check_and_use_quota,log_activity
-from app.payments.router import get_user_quotas, is_quota_expired, activate_tier_idempotent
+from app.ai.payment_router import get_user_quotas, is_quota_expired, activate_tier_idempotent
 from app.ai.cell_logic import process_cells_generation # Import the new logic
 
 router = APIRouter()

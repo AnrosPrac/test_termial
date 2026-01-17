@@ -7,7 +7,7 @@ from app.stream.router import router as stream_router
 from app.api.auth_proxy import router as auth_router
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
-from app.payments.router import router as payment_router, create_indexes
+from app.ai.payment_router import router as payment_router, create_indexes
 import binascii
 from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
