@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from datetime import datetime
 
 async def check_and_use_quota(sidhi_id: str, command: str) -> bool:
-    user = await db.users_quotas.find_one({"sidhi_id": sidhi_id})
+    user = await db.quotas.find_one({"sidhi_id": sidhi_id})
 
     if not user:
         raise HTTPException(status_code=404, detail="User quota profile not found")
@@ -47,7 +47,7 @@ async def check_and_use_quota(sidhi_id: str, command: str) -> bool:
         )
 
     # ---------- atomic update ----------
-    result = await db.users_quotas.update_one(
+    result = await db.quotas.update_one(
         {"sidhi_id": sidhi_id},
         {
             "$inc": {used_path: 1},
@@ -83,7 +83,7 @@ async def log_activity(sidhi_id: str, command: str, success: bool):
     )
 
 async def get_user_quotas(sidhi_id: str):
-    return await db.users_quotas.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
+    return await db.quotas.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
 
 async def get_user_history(sidhi_id: str):
     return await db.history.find_one({"sidhi_id": sidhi_id}, {"_id": 0})
