@@ -37,6 +37,15 @@ RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 TIER_HERO_PRICE = int(os.getenv("TIER_HERO_PRICE", "199")) * 100  # ₹199
 TIER_DOMINATOR_PRICE = int(os.getenv("TIER_DOMINATOR_PRICE", "349")) * 100  # ₹349
 
+
+def serialize_mongo_doc(doc):
+    """Convert MongoDB document to JSON-serializable dict"""
+    if doc is None:
+        return None
+    doc = dict(doc)
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])  # Convert ObjectId to string
+    return doc
 # Tier Limits Configuration
 TIER_LIMITS = {
     "free": {
@@ -486,7 +495,7 @@ async def verify_payment(
                 "status": "success",
                 "message": "Payment already verified",
                 "tier": payment_record["tier"],
-                "quota": quota,
+                "quota": serialize_mongo_doc(quota),
                 "already_verified": True
             }
         
@@ -780,7 +789,7 @@ async def check_quota_expiry(user: dict = Depends(verify_client_bound_request)):
             "expired": False,
             "tier": quota["tier"],
             "expires_at": quota.get("meta", {}).get("expires_at"),
-            "quota": quota
+            "quota": serialize_mongo_doc(quota)
         }
         
     except Exception as e:
