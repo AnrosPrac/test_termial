@@ -263,10 +263,9 @@ async def fetch_my_payments(user: dict = Depends(verify_client_bound_request)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/user/check")
-async def check_user_exists(user: str = Depends(verify_client_bound_request)):
+@app.get("/user/check/{sidhi_user_id}")
+async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_client_bound_request)):
     try:
-        sidhi_user_id = user.get("sub")
         user_record = await db.users_profile.find_one({"user_id": sidhi_user_id})
         
         if user_record:
