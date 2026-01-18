@@ -16,7 +16,7 @@ from fastapi import Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from app.ai.quota_manager import get_user_quotas, get_user_history, log_cloud_push, get_cloud_history, create_order, get_user_orders
-
+from app.ai.bot_services import generate_bot_response
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -1202,3 +1202,128 @@ def _get_instruction_style(answer):
         'D': 'Instructions Once, Then Brief'
     }
     return styles.get(answer, 'Unknown')
+
+
+class ChatMessage(BaseModel):
+    message: str
+    session_id: str = None  # Optional: for maintaining conversation
+
+
+@app.post("/help-bot/chat")
+async def chat_with_bot(
+    data: ChatMessage,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Main chatbot endpoint
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Rate limiting: max 20 queries per hour per user
+        hour_ago = datetime.utcnow().timestamp() - 3600
+        recent_count = await db.help_bot_history.count_documents({
+            "sidhi_id": sidhi_id,
+            "timestamp": {"$gte": hour_ago}
+        })
+        
+        if recent_count >= 20:
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded. Max 20 queries per hour."
+            )
+        
+        # Get conversation history
+        session_id = data.session_id or f"{sidhi_id}_{int(datetime.utcnow().timestamp())}"
+        history_cursor = db.help_bot_history.find({
+            "sidhi_id": sidhi_id,
+            "session_id": session_id
+        }).sort("timestamp", -1).limit(5)
+        
+        history = await history_cursor.to_list(length=5)
+        conversation_history = [
+            {"user": h["user_message"], "bot": h["bot_response"]}
+            for h in reversed(history)
+        ]
+        
+        # Generate response
+        bot_response = generate_bot_response(data.message, conversation_history)
+        
+        # Save to database
+        chat_record = {
+            "sidhi_id": sidhi_id,
+            "session_id": session_id,
+            "user_message": data.message,
+            "bot_response": bot_response,
+            "timestamp": datetime.utcnow().timestamp(),
+            "created_at": datetime.utcnow()
+        }
+        await db.help_bot_history.insert_one(chat_record)
+        
+        return {
+            "status": "success",
+            "response": bot_response,
+            "session_id": session_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/help-bot/history")
+async def get_chat_history(
+    user: dict = Depends(verify_client_bound_request),
+    session_id: str = None
+):
+    """
+    Get chat history for a user
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        query = {"sidhi_id": sidhi_id}
+        if session_id:
+            query["session_id"] = session_id
+        
+        history_cursor = db.help_bot_history.find(
+            query,
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(50)
+        
+        history = await history_cursor.to_list(length=50)
+        
+        return {
+            "status": "success",
+            "history": history,
+            "count": len(history)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/help-bot/clear-session")
+async def clear_session(
+    session_id: str,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Clear a specific chat session
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        result = await db.help_bot_history.delete_many({
+            "sidhi_id": sidhi_id,
+            "session_id": session_id
+        })
+        
+        return {
+            "status": "success",
+            "message": f"Deleted {result.deleted_count} messages"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
