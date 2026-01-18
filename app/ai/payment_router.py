@@ -37,7 +37,9 @@ RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 TIER_HERO_PRICE = int(os.getenv("TIER_HERO_PRICE", "199")) * 100  # ₹199
 TIER_DOMINATOR_PRICE = int(os.getenv("TIER_DOMINATOR_PRICE", "349")) * 100  # ₹349
 
-
+class PaymentInitiateRequest(BaseModel):
+    tier: str  # "hero" or "dominator"
+    referral_code: Optional[str] = None  # NEW: Optional referral code
 def serialize_mongo_doc(doc):
     """Convert MongoDB document to JSON-serializable dict"""
     if doc is None:
@@ -102,6 +104,8 @@ TIER_LIMITS = {
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db
+# Add this after TIER_DOMINATOR_PRICE line
+BASE_DISCOUNT = int(os.getenv("BASE_DISCOUNT", "39")) * 100  # ₹39 in paise (default)
 
 # Razorpay Client
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
@@ -377,7 +381,59 @@ async def activate_free_tier(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
+@router.get("/referral/my-code")
+async def get_my_referral_code(user: dict = Depends(verify_client_bound_request)):
+    """
+    Generate/retrieve user's unique referral code
+    Only for FREE tier users
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Check: User must be on FREE tier to share code
+        quota = await db.quotas.find_one({"sidhi_id": sidhi_id})
+        if not quota or quota.get("tier") != "free":
+            raise HTTPException(
+                status_code=403,
+                detail="Referral codes only available for free tier users"
+            )
+        
+        # Check if code already exists
+        existing = await db.referral_codes.find_one({"sidhi_id": sidhi_id})
+        
+        if existing:
+            return {
+                "status": "success",
+                "referral_code": existing["code"],
+                "total_referrals": existing.get("total_referrals", 0),
+                "pending_bonus": existing.get("pending_bonus", 0) // 100  # Convert to rupees
+            }
+        
+        # Generate unique code
+        import secrets
+        code = f"{sidhi_id.split('@')[0].upper()}_{secrets.token_hex(4).upper()}"
+        
+        # Save code
+        await db.referral_codes.insert_one({
+            "sidhi_id": sidhi_id,
+            "code": code,
+            "tier_at_creation": "free",
+            "total_referrals": 0,
+            "pending_bonus": 0,
+            "created_at": datetime.utcnow()
+        })
+        
+        return {
+            "status": "success",
+            "referral_code": code,
+            "total_referrals": 0,
+            "pending_bonus": 0
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/initiate")
 async def initiate_payment(
     data: PaymentInitiateRequest,
@@ -385,7 +441,7 @@ async def initiate_payment(
 ):
     """
     Initiate Razorpay payment for Hero or Dominator tier
-    Protected endpoint - requires authentication
+    WITH REFERRAL CODE SUPPORT (non-paid to non-paid only)
     """
     try:
         sidhi_id = user.get("sub")
@@ -398,54 +454,139 @@ async def initiate_payment(
                 detail="Invalid tier. Use 'hero' or 'dominator'"
             )
         
-        # Get price
+        # Base price
         amount = TIER_HERO_PRICE if tier == "hero" else TIER_DOMINATOR_PRICE
+        discount = 0
+        referral_valid = False
+        referrer_sidhi_id = None
+        credit_used = 0
+        
+        # Check user's current tier
+        quota = await db.quotas.find_one({"sidhi_id": sidhi_id})
+        user_is_free_tier = not quota or quota.get("tier") == "free"
+        
+        # ===== REFERRAL CODE VALIDATION =====
+        if data.referral_code:
+            # Only free tier users can use referral codes
+            if not user_is_free_tier:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Referral codes can only be used by free tier users on their first payment"
+                )
+            
+            # Find referral code owner
+            referral_code_doc = await db.referral_codes.find_one({
+                "code": data.referral_code.upper()
+            })
+            
+            if not referral_code_doc:
+                raise HTTPException(status_code=400, detail="Invalid referral code")
+            
+            referrer_sidhi_id = referral_code_doc["sidhi_id"]
+            
+            # Can't use own code
+            if referrer_sidhi_id == sidhi_id:
+                raise HTTPException(status_code=400, detail="Cannot use your own referral code")
+            
+            # Check: Referrer must STILL be on FREE tier
+            referrer_quota = await db.quotas.find_one({"sidhi_id": referrer_sidhi_id})
+            if not referrer_quota or referrer_quota.get("tier") != "free":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Referral code is no longer valid (referrer has upgraded to paid tier)"
+                )
+            
+            # Check: User hasn't already used a referral code before
+            already_used = await db.referrals.find_one({
+                "referee_sidhi_id": sidhi_id,
+                "status": {"$in": ["completed", "pending"]}
+            })
+            
+            if already_used:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You have already used a referral code"
+                )
+            
+            # ALL CHECKS PASSED - Apply discount
+            discount = BASE_DISCOUNT
+            amount = max(amount - discount, 0)
+            referral_valid = True
+        
+        # ===== REFERRAL CREDIT (for referrers making their own payment) =====
+        if not data.referral_code:  # Only check credit if NOT using referral code
+            referral_credit_doc = await db.referral_codes.find_one({"sidhi_id": sidhi_id})
+            available_credit = referral_credit_doc.get("pending_bonus", 0) if referral_credit_doc else 0
+            
+            if available_credit > 0:
+                credit_used = min(available_credit, amount)  # Can't exceed order amount
+                amount -= credit_used
+                
+                # Deduct from pending bonus (will be confirmed after payment)
+                # We'll finalize this in /verify endpoint
         
         # Create Razorpay order
         order_data = {
-            "amount": amount,  # in paise
+            "amount": amount,
             "currency": "INR",
             "receipt": f"{sidhi_id}_{tier}_{int(datetime.utcnow().timestamp())}",
             "notes": {
                 "sidhi_id": sidhi_id,
                 "tier": tier,
-                "semester": get_current_semester()
+                "semester": get_current_semester(),
+                "referral_applied": referral_valid,
+                "discount_amount": discount,
+                "credit_used": credit_used
             }
         }
         
         razorpay_order = razorpay_client.order.create(data=order_data)
         
-        # Store order in MongoDB (pending status)
+        # Store payment record
         payment_doc = {
             "razorpay_order_id": razorpay_order["id"],
             "sidhi_id": sidhi_id,
             "tier": tier,
             "amount": amount,
+            "original_amount": amount + discount + credit_used,
+            "discount": discount,
+            "credit_used": credit_used,
             "currency": "INR",
             "status": "created",
             "semester": get_current_semester(),
+            "referral_code": data.referral_code.upper() if referral_valid else None,
+            "referrer_sidhi_id": referrer_sidhi_id if referral_valid else None,
             "created_at": datetime.utcnow(),
             "expires_at": calculate_expiry_date()
         }
         
-        try:
-            await db.payments.insert_one(payment_doc)
-        except Exception as e:
-            # Handle duplicate order_id (should not happen, but safety)
-            if "duplicate" in str(e).lower():
-                raise HTTPException(
-                    status_code=409,
-                    detail="Order already exists. Refresh and try again."
-                )
-            raise
+        await db.payments.insert_one(payment_doc)
+        
+        # Create pending referral record
+        if referral_valid:
+            await db.referrals.insert_one({
+                "referrer_sidhi_id": referrer_sidhi_id,
+                "referee_sidhi_id": sidhi_id,
+                "referrer_tier_at_share": "free",
+                "referee_tier_at_use": "free",
+                "referral_code": data.referral_code.upper(),
+                "order_id": razorpay_order["id"],
+                "status": "pending",
+                "discount_applied": discount,
+                "created_at": datetime.utcnow()
+            })
         
         return {
             "status": "success",
             "order_id": razorpay_order["id"],
-            "amount": amount // 100,  # Convert to rupees for display
+            "amount": amount // 100,
+            "original_amount": (amount + discount + credit_used) // 100,
+            "discount": discount // 100,
+            "credit_used": credit_used // 100,
             "currency": "INR",
             "key_id": RAZORPAY_KEY_ID,
             "tier": tier,
+            "referral_applied": referral_valid,
             "notes": razorpay_order["notes"]
         }
         
@@ -584,6 +725,60 @@ async def verify_payment(
             order_id=data.razorpay_order_id
         )
         
+        # ===== PROCESS REFERRAL BONUS =====
+        referral = await db.referrals.find_one({
+            "order_id": data.razorpay_order_id,
+            "status": "pending"
+        })
+        
+        if referral:
+            referrer_id = referral["referrer_sidhi_id"]
+            
+            # Double-check referrer is STILL on free tier
+            referrer_quota = await db.quotas.find_one({"sidhi_id": referrer_id})
+            
+            if referrer_quota and referrer_quota.get("tier") == "free":
+                # Grant referrer the bonus credit
+                await db.referral_codes.update_one(
+                    {"sidhi_id": referrer_id},
+                    {
+                        "$inc": {
+                            "total_referrals": 1,
+                            "pending_bonus": BASE_DISCOUNT
+                        }
+                    }
+                )
+                
+                # Mark referral as completed
+                await db.referrals.update_one(
+                    {"order_id": data.razorpay_order_id},
+                    {
+                        "$set": {
+                            "status": "completed",
+                            "completed_at": datetime.utcnow(),
+                            "referrer_bonus_granted": True
+                        }
+                    }
+                )
+                
+                print(f"✅ Referral bonus ₹{BASE_DISCOUNT // 100} granted to {referrer_id}")
+            else:
+                # Referrer upgraded before payment completed - invalidate
+                await db.referrals.update_one(
+                    {"order_id": data.razorpay_order_id},
+                    {"$set": {"status": "invalid", "reason": "referrer_upgraded"}}
+                )
+                print(f"⚠️ Referral invalid: {referrer_id} upgraded to paid tier")
+        
+        # Deduct used referral credit (if any was used in this payment)
+        if payment_record.get("credit_used", 0) > 0:
+            await db.referral_codes.update_one(
+                {"sidhi_id": sidhi_id},
+                {"$inc": {"pending_bonus": -payment_record["credit_used"]}}
+            )
+            print(f"✅ Deducted ₹{payment_record['credit_used'] // 100} credit from {sidhi_id}")
+        # ===== END REFERRAL PROCESSING =====
+        
         return {
             "status": "success",
             "message": result["message"],
@@ -711,7 +906,49 @@ async def razorpay_webhook(request: Request, background_tasks: BackgroundTasks):
     except Exception as e:
         print(f"❌ Webhook error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+@router.get("/referral/stats")
+async def get_referral_stats(user: dict = Depends(verify_client_bound_request)):
+    """
+    Get user's referral statistics
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Get referral code info
+        code_doc = await db.referral_codes.find_one({"sidhi_id": sidhi_id})
+        
+        if not code_doc:
+            return {
+                "status": "success",
+                "has_code": False,
+                "message": "No referral code generated yet"
+            }
+        
+        # Get referral history
+        referrals = await db.referrals.find({
+            "referrer_sidhi_id": sidhi_id
+        }).to_list(length=None)
+        
+        return {
+            "status": "success",
+            "has_code": True,
+            "referral_code": code_doc["code"],
+            "total_referrals": code_doc.get("total_referrals", 0),
+            "pending_bonus": code_doc.get("pending_bonus", 0) // 100,  # Convert to rupees
+            "referrals": [
+                {
+                    "referee_id": r["referee_sidhi_id"],
+                    "status": r["status"],
+                    "discount_applied": r.get("discount_applied", 0) // 100,
+                    "created_at": r["created_at"],
+                    "completed_at": r.get("completed_at")
+                }
+                for r in referrals
+            ]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/status/{order_id}")
 async def check_payment_status(
