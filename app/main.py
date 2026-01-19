@@ -82,7 +82,7 @@ async def verify_signature(
 app.include_router(ai_router, prefix="/ai")
 app.include_router(chat_router)
 app.include_router(auth_router)
-app.include_router(admin_router)
+app.include_router(admin_router,prefix="/admin")
 app.include_router(stream_router)
 app.include_router(payment_router, prefix="/payment")  # ✅ CRITICAL FIX: Added payment router!
 # ============================================================

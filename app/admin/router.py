@@ -43,7 +43,7 @@ async def get_db():
     """Dependency to get database instance"""
     return db
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(tags=["Admin"])
 
 
 # ============================================================================
