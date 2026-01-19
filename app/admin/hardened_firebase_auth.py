@@ -1,26 +1,25 @@
 """
-Firebase Authentication for Admin Panel
-Verifies Firebase ID tokens and issues admin JWT tokens with hardened security
+Basic Authentication for Admin Panel
+Verifies username/password and issues admin JWT tokens with hardened security
 """
 
 import os
 import jwt
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Set
+from typing import Optional
 from fastapi import HTTPException, Header
-from firebase_admin import credentials, auth
-import firebase_admin
 
 # Configuration validation
 class Config:
     """Validated configuration - fails fast on missing vars"""
     
     def __init__(self):
-        self.FIREBASE_PROJECT_ID = self._require_env("FIREBASE_PROJECT_ID")
-        self.FIREBASE_PRIVATE_KEY = self._require_env("FIREBASE_PRIVATE_KEY").replace('\\n', '\n')
-        self.FIREBASE_CLIENT_EMAIL = self._require_env("FIREBASE_CLIENT_EMAIL")
-        self.ADMIN_EMAILS = self._parse_admin_emails(self._require_env("ADMIN_EMAILS"))
+        # Basic auth configuration (required)
+        self.ADMIN_USERNAME = self._require_env("ADMIN_USERNAME")
+        self.ADMIN_PASSWORD = self._require_env("ADMIN_PASSWORD")
+        
+        # JWT configuration (required)
         self.ADMIN_JWT_SECRET = self._require_env("ADMIN_JWT_SECRET")
         self.ADMIN_JWT_ALGORITHM = "HS256"
         self.ADMIN_TOKEN_EXPIRE_HOURS = 24
@@ -34,14 +33,6 @@ class Config:
         if not value:
             raise RuntimeError(f"❌ FATAL: Missing required environment variable: {key}")
         return value
-    
-    @staticmethod
-    def _parse_admin_emails(emails_str: str) -> Set[str]:
-        """Parse comma-separated admin emails into set"""
-        emails = {email.strip().lower() for email in emails_str.split(',') if email.strip()}
-        if not emails:
-            raise RuntimeError("❌ FATAL: ADMIN_EMAILS must contain at least one email")
-        return emails
 
 
 # Global config instance
@@ -52,108 +43,55 @@ config: Optional[Config] = None
 revoked_sessions: dict[str, float] = {}
 
 
-def init_firebase() -> None:
+def init_auth() -> None:
     """
-    Initialize Firebase Admin SDK at app startup
+    Initialize authentication system at app startup
     Call this in FastAPI @app.on_event("startup")
     
     Raises:
-        RuntimeError: If configuration invalid or Firebase init fails
+        RuntimeError: If configuration invalid
     """
     global config
     
     try:
-        # Validate configuration first
+        # Validate configuration
         config = Config()
         
-        # Initialize Firebase Admin SDK
-        if not firebase_admin._apps:
-            cred = credentials.Certificate({
-                "type": "service_account",
-                "project_id": config.FIREBASE_PROJECT_ID,
-                "private_key": config.FIREBASE_PRIVATE_KEY,
-                "client_email": config.FIREBASE_CLIENT_EMAIL,
-                "token_uri": "https://oauth2.googleapis.com/token",
-            })
-            firebase_admin.initialize_app(cred)
-        
-        print(f"✅ Firebase Admin SDK initialized")
-        print(f"✅ Admin allowlist: {len(config.ADMIN_EMAILS)} email(s)")
+        print(f"✅ Authentication system initialized")
+        print(f"✅ Admin user configured: {config.ADMIN_USERNAME}")
         
     except Exception as e:
-        raise RuntimeError(f"❌ FATAL: Firebase initialization failed: {e}")
+        raise RuntimeError(f"❌ FATAL: Authentication initialization failed: {e}")
 
 
-def verify_firebase_token(firebase_token: str) -> dict:
+def verify_credentials(username: str, password: str) -> dict:
     """
-    Verify Firebase ID token with strict claim validation
+    Verify username/password credentials
     
     Args:
-        firebase_token: Firebase ID token from frontend
+        username: Admin username
+        password: Admin password
         
     Returns:
-        dict: Decoded token with user info
+        dict: User info with email and role (same format as before for compatibility)
         
     Raises:
-        HTTPException: If token invalid or user not admin
+        HTTPException: If credentials invalid
     """
     if config is None:
         raise HTTPException(status_code=500, detail="Authentication system not initialized")
     
-    try:
-        # Verify Firebase token
-        decoded_token = auth.verify_id_token(firebase_token)
-        
-        # Validate critical claims
-        _validate_token_claims(decoded_token)
-        
-        # Extract and validate email
-        email = decoded_token.get('email', '').lower()
-        if not email:
-            raise HTTPException(status_code=403, detail="Access denied")
-        
-        # Check admin allowlist
-        if email not in config.ADMIN_EMAILS:
-            raise HTTPException(
-                status_code=403,
-                detail="Access denied"
-            )
-        
-        return decoded_token
-        
-    except HTTPException:
-        raise
-    except (auth.InvalidIdTokenError, auth.ExpiredIdTokenError):
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-
-
-def _validate_token_claims(decoded_token: dict) -> None:
-    """
-    Validate Firebase token claims for security
+    # Verify credentials
+    if username != config.ADMIN_USERNAME or password != config.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    Args:
-        decoded_token: Decoded Firebase token
-        
-    Raises:
-        HTTPException: If claims invalid
-    """
-    # Validate audience matches project ID
-    aud = decoded_token.get('aud')
-    if aud != config.FIREBASE_PROJECT_ID:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    
-    # Validate issuer
-    expected_issuer = f"https://securetoken.google.com/{config.FIREBASE_PROJECT_ID}"
-    iss = decoded_token.get('iss')
-    if iss != expected_issuer:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    
-    # Enforce email verification
-    email_verified = decoded_token.get('email_verified', False)
-    if not email_verified:
-        raise HTTPException(status_code=403, detail="Email verification required")
+    # Return user info in compatible format
+    return {
+        "email": f"{username}@admin.local",
+        "uid": username,
+        "email_verified": True,
+        "username": username
+    }
 
 
 def create_admin_jwt(email: str) -> str:
@@ -161,7 +99,7 @@ def create_admin_jwt(email: str) -> str:
     Create hardened admin JWT token with session tracking
     
     Args:
-        email: Admin email
+        email: Admin email/identifier
         
     Returns:
         str: JWT token
@@ -299,16 +237,19 @@ async def get_current_admin(authorization: str = Header(None)) -> dict:
     """
     FastAPI dependency to protect admin routes
     
+    ⚠️ IMPORTANT: This returns the SAME structure as before!
+    Existing endpoints using this dependency will continue to work without changes.
+    
     Usage:
         @router.get("/admin/dashboard")
         async def dashboard(admin: dict = Depends(get_current_admin)):
-            return {"email": admin["email"]}
+            return {"email": admin["email"], "role": admin["role"]}
     
     Args:
         authorization: Authorization header
         
     Returns:
-        dict: Admin payload
+        dict: Admin payload with 'email', 'role', 'jti', etc.
         
     Raises:
         HTTPException: If authentication fails
@@ -322,7 +263,7 @@ async def get_current_admin(authorization: str = Header(None)) -> dict:
     
     token = authorization.split(" ")[1]
     
-    # Verify JWT
+    # Verify JWT - returns same payload structure as before
     admin = verify_admin_jwt(token)
     
     return admin
@@ -332,30 +273,62 @@ async def get_current_admin(authorization: str = Header(None)) -> dict:
 """
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 app = FastAPI()
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @app.on_event("startup")
 async def startup_event():
-    init_firebase()
+    init_auth()
 
 @app.post("/auth/login")
-async def login(firebase_token: str):
-    # Verify Firebase token
-    user = verify_firebase_token(firebase_token)
+async def login(credentials: LoginRequest):
+    '''
+    Login with username and password
+    Returns JWT token for subsequent requests
+    '''
+    # Verify credentials
+    user = verify_credentials(credentials.username, credentials.password)
     
-    # Create admin session
+    # Create admin session JWT
     admin_jwt = create_admin_jwt(user['email'])
     
-    return {"token": admin_jwt}
+    return {"token": admin_jwt, "email": user['email']}
 
 @app.post("/auth/logout")
 async def logout(admin: dict = Depends(get_current_admin), authorization: str = Header(None)):
+    '''
+    Logout - revokes current JWT token
+    '''
     token = authorization.split(" ")[1]
     revoke_admin_session(token)
     return {"message": "Logged out successfully"}
 
 @app.get("/admin/dashboard")
 async def dashboard(admin: dict = Depends(get_current_admin)):
-    return {"email": admin["email"], "role": admin["role"]}
+    '''
+    Protected admin route - requires valid JWT token
+    No changes needed to existing endpoints!
+    '''
+    return {
+        "email": admin["email"], 
+        "role": admin["role"],
+        "message": "Welcome to admin dashboard"
+    }
+
+@app.get("/admin/users")
+async def get_users(admin: dict = Depends(get_current_admin)):
+    '''
+    Another protected route - works exactly as before
+    '''
+    return {"users": [], "admin": admin["email"]}
 """
+
+# Environment variables required:
+# ADMIN_USERNAME=your_username
+# ADMIN_PASSWORD=your_secure_password
+# ADMIN_JWT_SECRET=your_jwt_secret_key_min_32_chars
