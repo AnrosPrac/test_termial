@@ -981,29 +981,6 @@ async def send_notification(
         "target_count": len(data.target_users) if data.target_type == "specific" else "all"
     }
 
-"""
-Missing endpoints to complete the admin router
-Add these to the end of your existing router.py file
-"""
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from bson import ObjectId
-
-# These should match your existing imports
-from app.admin.hardened_firebase_auth import get_current_admin
-
-# Assuming you have this
-async def get_db():
-    """Your existing get_db function"""
-    pass
-
-router = APIRouter(prefix="/admin", tags=["Admin"])
-
-
 # ============================================================================
 # NOTIFICATIONS (COMPLETION)
 # ============================================================================
