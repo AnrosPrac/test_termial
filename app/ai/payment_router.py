@@ -50,51 +50,51 @@ def serialize_mongo_doc(doc):
 TIER_LIMITS = {
     "free": {
         "commands": {
-            "ask": int(os.getenv("FREE_ASK", "50")),
-            "explain": int(os.getenv("FREE_EXPLAIN", "40")),
-            "write": int(os.getenv("FREE_WRITE", "30")),
-            "fix": int(os.getenv("FREE_FIX", "25")),
-            "trace": int(os.getenv("FREE_TRACE", "20")),
-            "diff": int(os.getenv("FREE_DIFF", "15")),
-            "algo": int(os.getenv("FREE_ALGO", "10")),
-            "format": int(os.getenv("FREE_FORMAT", "20"))
+            "ask": int(os.getenv("FREE_ASK", "5")),
+            "explain": int(os.getenv("FREE_EXPLAIN", "0")),
+            "write": int(os.getenv("FREE_WRITE", "0")),
+            "fix": int(os.getenv("FREE_FIX", "2")),
+            "trace": int(os.getenv("FREE_TRACE", "1")),
+            "diff": int(os.getenv("FREE_DIFF", "1")),
+            "algo": int(os.getenv("FREE_ALGO", "1")),
+            "format": int(os.getenv("FREE_FORMAT", "2"))
         },
-        "inject": int(os.getenv("FREE_INJECT", "5")),
-        "cells": int(os.getenv("FREE_CELLS", "100")),
-        "pdf": int(os.getenv("FREE_PDF", "10")),
-        "convo": int(os.getenv("FREE_CONVO", "200"))
+        "inject": int(os.getenv("FREE_INJECT", "0")),
+        "cells": int(os.getenv("FREE_CELLS", "0")),
+        "pdf": int(os.getenv("FREE_PDF", "1")),
+        "convo": int(os.getenv("FREE_CONVO", "0"))
     },
     "hero": {
         "commands": {
-            "ask": int(os.getenv("HERO_ASK", "150")),
-            "explain": int(os.getenv("HERO_EXPLAIN", "120")),
-            "write": int(os.getenv("HERO_WRITE", "100")),
-            "fix": int(os.getenv("HERO_FIX", "80")),
-            "trace": int(os.getenv("HERO_TRACE", "60")),
-            "diff": int(os.getenv("HERO_DIFF", "50")),
-            "algo": int(os.getenv("HERO_ALGO", "40")),
-            "format": int(os.getenv("HERO_FORMAT", "60"))
+            "ask": int(os.getenv("HERO_ASK", "30")),
+            "explain": int(os.getenv("HERO_EXPLAIN", "20")),
+            "write": int(os.getenv("HERO_WRITE", "15")),
+            "fix": int(os.getenv("HERO_FIX", "20")),
+            "trace": int(os.getenv("HERO_TRACE", "3")),
+            "diff": int(os.getenv("HERO_DIFF", "20")),
+            "algo": int(os.getenv("HERO_ALGO", "25")),
+            "format": int(os.getenv("HERO_FORMAT", "30"))
         },
-        "inject": int(os.getenv("HERO_INJECT", "20")),
-        "cells": int(os.getenv("HERO_CELLS", "300")),
-        "pdf": int(os.getenv("HERO_PDF", "30")),
-        "convo": int(os.getenv("HERO_CONVO", "500"))
+        "inject": int(os.getenv("HERO_INJECT", "8")),
+        "cells": int(os.getenv("HERO_CELLS", "8")),
+        "pdf": int(os.getenv("HERO_PDF", "8")),
+        "convo": int(os.getenv("HERO_CONVO", "0"))
     },
     "dominator": {
         "commands": {
-            "ask": int(os.getenv("DOMINATOR_ASK", "300")),
-            "explain": int(os.getenv("DOMINATOR_EXPLAIN", "250")),
-            "write": int(os.getenv("DOMINATOR_WRITE", "200")),
-            "fix": int(os.getenv("DOMINATOR_FIX", "150")),
-            "trace": int(os.getenv("DOMINATOR_TRACE", "120")),
-            "diff": int(os.getenv("DOMINATOR_DIFF", "100")),
-            "algo": int(os.getenv("DOMINATOR_ALGO", "80")),
-            "format": int(os.getenv("DOMINATOR_FORMAT", "120"))
+            "ask": int(os.getenv("DOMINATOR_ASK", "50")),
+            "explain": int(os.getenv("DOMINATOR_EXPLAIN", "40")),
+            "write": int(os.getenv("DOMINATOR_WRITE", "30")),
+            "fix": int(os.getenv("DOMINATOR_FIX", "30")),
+            "trace": int(os.getenv("DOMINATOR_TRACE", "10")),
+            "diff": int(os.getenv("DOMINATOR_DIFF", "40")),
+            "algo": int(os.getenv("DOMINATOR_ALGO", "50")),
+            "format": int(os.getenv("DOMINATOR_FORMAT", "60"))
         },
-        "inject": int(os.getenv("DOMINATOR_INJECT", "50")),
-        "cells": int(os.getenv("DOMINATOR_CELLS", "600")),
-        "pdf": int(os.getenv("DOMINATOR_PDF", "60")),
-        "convo": int(os.getenv("DOMINATOR_CONVO", "1000"))
+        "inject": int(os.getenv("DOMINATOR_INJECT", "13")),
+        "cells": int(os.getenv("DOMINATOR_CELLS", "13")),
+        "pdf": int(os.getenv("DOMINATOR_PDF", "13")),
+        "convo": int(os.getenv("DOMINATOR_CONVO", "0"))
     }
 }
 

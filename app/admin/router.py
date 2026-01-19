@@ -4,10 +4,12 @@ from typing import List
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 # 🔐 Admin Auth (from same folder)
-from app.admin.hardened_firebase_auth import get_current_admin
+from app.admin.hardened_firebase_auth import get_current_admin,verify_admin_jwt,create_admin_jwt,verify_firebase_token
 
 # 🗄️ Database
 from app.admin.hardened_analytics import get_db
+
+from pydantic import BaseModel
 
 # 📊 Analytics
 from app.admin.hardened_analytics import (
@@ -31,6 +33,28 @@ router = APIRouter(
     prefix="/admin",
     tags=["Admin"],
 )
+
+class AdminLoginRequest(BaseModel):
+    firebase_token: str
+
+
+@router.post("/login")
+async def admin_login(payload: AdminLoginRequest):
+    """
+    Admin login endpoint.
+    Accepts Firebase ID token and returns admin JWT.
+    """
+    # 1. Verify Firebase token + admin allowlist
+    decoded = verify_firebase_token(payload.firebase_token)
+
+    # 2. Issue backend admin JWT
+    admin_jwt = create_admin_jwt(decoded["email"])
+
+    return {
+        "access_token": admin_jwt,
+        "token_type": "Bearer",
+        "expires_in_hours": 24
+    }
 
 @router.get("/dashboard/stats")
 async def dashboard_stats(
