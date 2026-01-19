@@ -29,3 +29,7 @@ pydantic
 # --- Cloud Sync & Vault ---
 GitPython
 datetime
+firebase-admin
+
+# JWT handling
+PyJWT
