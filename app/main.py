@@ -17,6 +17,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from app.ai.quota_manager import get_user_quotas, get_user_history, log_cloud_push, get_cloud_history, create_order, get_user_orders
 from app.ai.bot_services import generate_bot_response
+from app.admin.router import router as admin_router
+
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -77,6 +79,7 @@ async def verify_signature(
 app.include_router(ai_router, prefix="/ai")
 app.include_router(chat_router)
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(stream_router)
 app.include_router(payment_router, prefix="/payment")  # ✅ CRITICAL FIX: Added payment router!
 # ============================================================
