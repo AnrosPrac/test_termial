@@ -18,6 +18,8 @@ from pydantic import BaseModel
 from app.ai.quota_manager import get_user_quotas, get_user_history, log_cloud_push, get_cloud_history, create_order, get_user_orders
 from app.ai.bot_services import generate_bot_response
 from app.admin.router import router as admin_router
+from app.admin.hardened_firebase_auth import init_auth
+
 
 
 app = FastAPI(title="Lumetrics AI Engine")
@@ -44,6 +46,7 @@ class UserDetailCreate(BaseModel):
 
 @app.on_event("startup")
 async def startup_event():
+    init_auth()   # ✅ ADD THIS
     setup_repo()
     await create_indexes()
 
