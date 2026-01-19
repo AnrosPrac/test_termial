@@ -818,3 +818,131 @@ async def audit_logs(
 ):
     return await AuditService.get_recent_actions(db, limit, admin["email"])
 """
+# ============================================================================
+# BACKWARD-COMPATIBILITY WRAPPERS
+# DO NOT REMOVE – required by existing admin router
+# ============================================================================
+
+from typing import List, Optional
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+
+# Reuse existing Mongo connection pattern used elsewhere
+_MONGO_URL = os.getenv("MONGO_URL")
+_client = AsyncIOMotorClient(_MONGO_URL)
+_db = _client.lumetrics_db
+
+
+# -------------------------------
+# BULK ACTION WRAPPERS
+# -------------------------------
+
+async def bulk_upgrade_users(
+    sidhi_ids: List[str],
+    tier: str
+) -> dict:
+    """
+    Wrapper for BulkService.bulk_upgrade_users
+    (keeps router unchanged)
+    """
+    from app.admin.safe_bulk_operations import BulkService, UserTier
+
+    return await BulkService.bulk_upgrade_users(
+        db=_db,
+        admin_email="system-admin",  # router already authenticated admin
+        sidhi_ids=sidhi_ids,
+        tier=UserTier(tier),
+        dry_run=False
+    )
+
+
+async def bulk_reset_quotas(
+    sidhi_ids: List[str],
+    reset_type: str
+) -> dict:
+    from app.admin.safe_bulk_operations import BulkService, QuotaResetType
+
+    return await BulkService.bulk_reset_quotas(
+        db=_db,
+        admin_email="system-admin",
+        sidhi_ids=sidhi_ids,
+        reset_type=QuotaResetType(reset_type),
+        dry_run=False
+    )
+
+
+async def bulk_ban_users(
+    sidhi_ids: List[str],
+    reason: str
+) -> dict:
+    from app.admin.safe_bulk_operations import BulkService
+
+    return await BulkService.bulk_ban_users(
+        db=_db,
+        admin_email="system-admin",
+        sidhi_ids=sidhi_ids,
+        reason=reason,
+        dry_run=False
+    )
+
+
+async def bulk_unban_users(
+    sidhi_ids: List[str]
+) -> dict:
+    from app.admin.safe_bulk_operations import BulkService
+
+    return await BulkService.bulk_unban_users(
+        db=_db,
+        admin_email="system-admin",
+        sidhi_ids=sidhi_ids,
+        dry_run=False
+    )
+
+
+# -------------------------------
+# CSV EXPORT WRAPPERS
+# -------------------------------
+
+async def export_users_csv() -> str:
+    """
+    Wrapper for ExportService.export_users_csv
+    Returns CSV string (router already streams it)
+    """
+    from app.admin.safe_bulk_operations import ExportService
+
+    chunks = []
+    async for chunk in ExportService.export_users_csv(_db):
+        chunks.append(chunk)
+
+    return "".join(chunks)
+
+
+async def export_payments_csv(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+) -> str:
+    from app.admin.safe_bulk_operations import ExportService
+
+    chunks = []
+    async for chunk in ExportService.export_payments_csv(_db):
+        chunks.append(chunk)
+
+    return "".join(chunks)
+
+
+async def export_tickets_csv() -> str:
+    """
+    Minimal ticket export to satisfy router import
+    """
+    rows = ["sidhi_id,email_id,issue,status,created_at\n"]
+
+    async for ticket in _db.help_tickets.find({}):
+        rows.append(
+            f"{ticket.get('sidhi_id','')},"
+            f"{ticket.get('email_id','')},"
+            f"{ticket.get('issue','')},"
+            f"{ticket.get('status','')},"
+            f"{ticket.get('created_at','')}\n"
+        )
+
+    return "".join(rows)
