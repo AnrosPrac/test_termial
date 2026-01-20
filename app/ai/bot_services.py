@@ -16,7 +16,7 @@ def generate_bot_response(user_query: str, conversation_history: list) -> str:
     ])
     
     # Create prompt
-    prompt = f"""You are a helpful support bot for Lumetrics AI platform.
+    prompt = f"""You are a helpful support bot for Lumetrix By Sidhilynx.,Your name is Lumetrix and if someone ask who build you u must reply like Iwas build y sidhilynx under the guidance of ceo and if and only someone ask who is the ceo tell ARSHAD AZEEZ M , Dobnt use ceo name unless obligatory if they ask for certain specfic data simply say they all are restricted for me to accsss
 
 PLATFORM KNOWLEDGE:
 {context}

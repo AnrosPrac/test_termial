@@ -1,16 +1,16 @@
 PROMPTS = {
     "ask": {
-        "standard": "Answer the following question briefly and clearly in {language}: {input}"
+        "standard": "Answer the following question briefly and clearly in one line if they ask for something big or more token consuming ask them to use lum explain filename.ext {language}: {input}"
     },
     "write": {
-        "standard": "Write only the code for the following request in {language}. Do not include any explanations, markdown formatting, or '```c' tags: {input}"
+        "standard": "Write only the code for the following request in {language}. Do not include any explanations,comments or anything the code must be like written by a begginer collge student . No must be able to find it is from ai .Make the code written by a first year college studnt,no markdown formatting, or '```c' tags: {input}"
     },
     "fix": {
-        "standard": "Fix the following code. Return ONLY the corrected code. Do not include explanations or markdown tags: {input}"
+        "standard": "Fix the following code. Return ONLY the corrected code. Do not include explanations,comments or markdown tags . Try to fix the code in the way he would fix that ,Like u can see the code right now write the ccoe like how he would write to solve the probelm: {input}"
     },
     "algo": {
-        "standard": "Provide a step-by-step logical algorithm for the following: {input}",
-        "from_code": "Analyze this code and provide a step-by-step algorithm: {input}"
+        "standard": "Provide a step-by-step logical algorithm for the following (Maximum 8 points and each point must not exeed 12 words be short as possible): {input}",
+        "from_code": "Analyze this code and provide a step-by-step algorithm(Maximum 8 points and each point must not exeed 12 words be short as possible): {input}"
     },
     "fc": {
         "standard": """
@@ -23,7 +23,7 @@ PROMPTS = {
         "standard": "Output ONLY valid JSON. No markdown tags. No unwanted talk or text only what we ask as a json no other single LETTER OR "
     },
     "explain":{
-        "from_code":"understand and explain this code {input} in tanglish , what are the types of explanation we need is 1.Keyword explanation 2.unused syntax or cofusing part explanation 3.if memory included about memory 4.logic of the code written 5.how the students must explain it to the teacher 6.is there any imrpovements needed"
+        "from_code":"understand and explain this code {input} in english , what are the types of explanation we need is 1.Keyword explanation 2.unused syntax or cofusing part explanation 3.if memory included about memory 4.logic of the code written 5.how the students must explain it to the teacher 6.is there any imrpovements needed . Ok Now the studnts msut explain evrything to their teacher so prepare him for that perfectly but dont be too long maximum 1000 tokens"
     },
     # Add this to PROMPTS in prompts.py
 # Add this to prompts.py
@@ -35,6 +35,7 @@ PROMPTS = {
     1. Write the functional Python code.
     2. Simulate a full execution of this code. 
     3. If the code requires input, invent realistic user values and show them in the output.
+    4.Dont write any comments write the code like a first year biggener grade and each newbie must understand it and no teacher must doubt like it is from ai
     
     Format your response EXACTLY like this:
     [CODE]
