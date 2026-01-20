@@ -129,11 +129,17 @@ async def cloud_access(sid_id: str, user: str = Depends(verify_client_bound_requ
 @app.post("/sync/cloudapprove")
 async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client_bound_request)):
     try:
+        # ✅ SANITIZE ALL INPUTS
+        sid_id = data.sid_id.strip()
+        college_roll = data.college_roll.strip()
+        username = data.username.strip()
+        
         result = await db.users.update_one(
-            {"sid_id": data.sid_id},
+            {"sid_id": sid_id},
             {"$set": {
-                "college_roll": data.college_roll, 
-                "name": data.username, 
+                "sid_id": sid_id,
+                "college_roll": college_roll,
+                "name": username,
                 "is_active": True,
                 "created_at": datetime.utcnow()
             }},
@@ -142,7 +148,7 @@ async def cloud_approve(data: ApprovalRequest, user: str = Depends(verify_client
         
         return {
             "status": "success", 
-            "message": f"User {data.college_roll} approved and linked to {data.sid_id}"
+            "message": f"User {college_roll} approved and linked to {sid_id}"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,8 +164,8 @@ async def student_push(
 ):
     try:
         data = await request.json()
-        sid_id = data.get("sidhilynx_id")
-        roll_no = data.get("college_roll")
+        sid_id = data.get("sidhilynx_id", "").strip()  # ✅ ADD .strip()
+        roll_no = data.get("college_roll", "").strip()  # ✅ ADD .strip()
         files = data.get("files", {})
         
         # Payload size validation
@@ -176,7 +182,7 @@ async def student_push(
         # Identity verification
         user_record = await db.users.find_one({"college_roll": roll_no})
         
-        if not user_record or user_record.get("sid_id") != sid_id:
+        if not user_record or user_record.get("sid_id", "").strip() != sid_id:  # ✅ ADD .strip()
             raise HTTPException(status_code=403, detail="Identity Mismatch: Terminal user not linked to Sidhi ID")
 
         if not sid_id or not files:
@@ -191,7 +197,6 @@ async def student_push(
         raise 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/sync/cloudview")
 async def cloud_view(
