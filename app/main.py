@@ -20,6 +20,7 @@ from app.ai.bot_services import generate_bot_response
 from app.admin.router import router as admin_router
 from app.admin.hardened_firebase_auth import init_auth
 from app.ai.training_router import router as training_router
+from app.ai.coding_practice import router as coding_router
 
 
 
@@ -85,6 +86,7 @@ app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(admin_router,prefix="/admin")
 app.include_router(stream_router)
+app.include_router(coding_router, prefix="/coding")
 app.include_router(training_router, prefix="/training")
 app.include_router(payment_router, prefix="/payment")  # ✅ CRITICAL FIX: Added payment router!
 # ============================================================
