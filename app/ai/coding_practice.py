@@ -629,7 +629,7 @@ async def get_my_progress(user: dict = Depends(verify_client_bound_request)):
         sidhi_id = user.get("sub")
         
         # Get progress
-        progress_cursor = db.user_progress.find({"sidhi_id": sidhi_id})
+        progress_cursor = db.user_progress.find({"sidhi_id": sidhi_id}, {"_id": 0})
         progress = await progress_cursor.to_list(length=None)
         
         # Calculate stats
