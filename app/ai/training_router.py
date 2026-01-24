@@ -104,6 +104,110 @@ async def get_training_samples(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/chapters")
+async def get_available_chapters(
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Get list of all available chapters with their question counts.
+    Useful for building chapter navigation in the frontend.
+    """
+    try:
+        chapter_stats = await db.training_samples_filtered.aggregate([
+            {
+                "$group": {
+                    "_id": "$chapter",
+                    "total_count": {"$sum": 1},
+                    "program_count": {
+                        "$sum": {"$cond": [{"$eq": ["$type", "program"]}, 1, 0]}
+                    },
+                    "realworld_count": {
+                        "$sum": {"$cond": [{"$eq": ["$type", "realworld"]}, 1, 0]}
+                    },
+                    "easy_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "easy"]}, 1, 0]}
+                    },
+                    "medium_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "medium"]}, 1, 0]}
+                    },
+                    "hard_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "hard"]}, 1, 0]}
+                    }
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]).to_list(length=None)
+        
+        chapters = [
+            {
+                "chapter": item["_id"],
+                "total_questions": item["total_count"],
+                "breakdown": {
+                    "by_type": {
+                        "program": item["program_count"],
+                        "realworld": item["realworld_count"]
+                    },
+                    "by_difficulty": {
+                        "easy": item["easy_count"],
+                        "medium": item["medium_count"],
+                        "hard": item["hard_count"]
+                    }
+                }
+            }
+            for item in chapter_stats
+        ]
+        
+        return {
+            "status": "success",
+            "total_chapters": len(chapters),
+            "chapters": chapters
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/filters")
+async def get_available_filters(
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Get all available filter options for the frontend.
+    Returns unique values for chapters, types, and difficulties.
+    """
+    try:
+        # Get unique chapters
+        chapters = await db.training_samples_filtered.distinct("chapter")
+        chapters = sorted(chapters)
+        
+        # Get unique types
+        types = await db.training_samples_filtered.distinct("type")
+        types = sorted(types)
+        
+        # Get unique difficulties
+        difficulties = await db.training_samples_filtered.distinct("difficulty")
+        # Sort difficulties by severity
+        difficulty_order = {"easy": 1, "medium": 2, "hard": 3}
+        difficulties = sorted(difficulties, key=lambda x: difficulty_order.get(x, 99))
+        
+        return {
+            "status": "success",
+            "filters": {
+                "chapters": chapters,
+                "types": types,
+                "difficulties": difficulties
+            },
+            "metadata": {
+                "chapter_count": len(chapters),
+                "type_count": len(types),
+                "difficulty_count": len(difficulties)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/samples/{sample_id}")
 async def get_sample_by_id(
     sample_id: str,
@@ -150,6 +254,9 @@ async def get_training_stats(
     - Samples by type (program/realworld)
     - Samples by difficulty (easy/medium/hard)
     - Samples by chapter
+    - Available chapters list
+    - Available difficulties list
+    - Available types list
     """
     try:
         # Total count
@@ -184,9 +291,41 @@ async def get_training_stats(
             {"$sort": {"_id.type": 1, "_id.difficulty": 1}}
         ]).to_list(length=None)
         
+        # Count by chapter and difficulty
+        chapter_difficulty_stats = await db.training_samples_filtered.aggregate([
+            {
+                "$group": {
+                    "_id": {"chapter": "$chapter", "difficulty": "$difficulty"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id.chapter": 1, "_id.difficulty": 1}}
+        ]).to_list(length=None)
+        
+        # Count by chapter and type
+        chapter_type_stats = await db.training_samples_filtered.aggregate([
+            {
+                "$group": {
+                    "_id": {"chapter": "$chapter", "type": "$type"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id.chapter": 1, "_id.type": 1}}
+        ]).to_list(length=None)
+        
+        # Get all unique chapters, difficulties, and types
+        available_chapters = sorted([item["_id"] for item in chapter_stats])
+        available_difficulties = sorted([item["_id"] for item in difficulty_stats])
+        available_types = sorted([item["_id"] for item in type_stats])
+        
         return {
             "status": "success",
             "total_samples": total_count,
+            "available_filters": {
+                "chapters": available_chapters,
+                "difficulties": available_difficulties,
+                "types": available_types
+            },
             "by_type": {item["_id"]: item["count"] for item in type_stats},
             "by_difficulty": {item["_id"]: item["count"] for item in difficulty_stats},
             "by_chapter": {str(item["_id"]): item["count"] for item in chapter_stats},
@@ -197,6 +336,22 @@ async def get_training_stats(
                     "count": item["count"]
                 }
                 for item in type_difficulty_stats
+            ],
+            "by_chapter_and_difficulty": [
+                {
+                    "chapter": item["_id"]["chapter"],
+                    "difficulty": item["_id"]["difficulty"],
+                    "count": item["count"]
+                }
+                for item in chapter_difficulty_stats
+            ],
+            "by_chapter_and_type": [
+                {
+                    "chapter": item["_id"]["chapter"],
+                    "type": item["_id"]["type"],
+                    "count": item["count"]
+                }
+                for item in chapter_type_stats
             ]
         }
         
