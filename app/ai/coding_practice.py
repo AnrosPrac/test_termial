@@ -140,71 +140,91 @@ async def get_all_questions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/questions/{question_id}")
-async def get_question_detail(
-    question_id: str,
-    user: dict = Depends(verify_client_bound_request)
+@router.get("/questions")
+async def get_all_questions(
+    user: dict = Depends(verify_client_bound_request),
+    difficulty: Optional[str] = None,
+    topic: Optional[str] = None,
+    status: Optional[str] = None,
+    sort_by: Optional[str] = "question_id"
 ):
-    """
-    Get detailed question with sample test cases
-    """
+    """Get list of all coding questions with user progress"""
     try:
         sidhi_id = user.get("sub")
         
-        # Get question
-        question = await db.coding_questions.find_one(
-            {"question_id": question_id, "is_active": True},
-            {"_id": 0}
-        )
+        # Build query
+        query = {"is_active": True}
+        if difficulty:
+            query["difficulty"] = difficulty.lower()
+        if topic:
+            query["topic"] = topic.lower()
         
-        if not question:
-            raise HTTPException(status_code=404, detail="Question not found")
+        # Get questions with sorting
+        questions_cursor = db.coding_questions.find(query, {"_id": 0})
         
-        # Filter: Only show sample test cases
-        question["testcases"] = [
-            tc for tc in question.get("testcases", [])
-            if tc.get("is_sample", False)
-        ]
+        # Apply sorting BEFORE converting to list
+        if sort_by == "acceptance_rate":
+            questions_cursor = questions_cursor.sort("acceptance_rate", -1)
+            questions = await questions_cursor.to_list(length=None)
+        elif sort_by == "difficulty":
+            # Need to sort in Python for custom order
+            questions = await questions_cursor.to_list(length=None)
+            difficulty_order = {"easy": 1, "medium": 2, "hard": 3}
+            questions.sort(key=lambda x: difficulty_order.get(x.get("difficulty"), 999))
+        else:  # Default: sort by question_id
+            questions_cursor = questions_cursor.sort("question_id", 1)
+            questions = await questions_cursor.to_list(length=None)
         
         # Get user progress
-        progress = await db.user_progress.find_one(
-            {"sidhi_id": sidhi_id, "question_id": question_id},
-            {"_id": 0}
+        progress_cursor = db.user_progress.find(
+            {"sidhi_id": sidhi_id},
+            {"_id": 0, "question_id": 1, "status": 1, "attempts": 1}
         )
+        progress_list = await progress_cursor.to_list(length=None)
+        progress_map = {p["question_id"]: p for p in progress_list}
         
-        # Get user's note for this question
-        note = await db.user_notes.find_one(
-            {"sidhi_id": sidhi_id, "question_id": question_id}
-        )
+        # Get user bookmarks
+        bookmarks = await db.user_bookmarks.find_one({"sidhi_id": sidhi_id})
+        bookmarked_ids = set(bookmarks.get("question_ids", [])) if bookmarks else set()
         
-        # Check if bookmarked
-        bookmark = await db.user_bookmarks.find_one({"sidhi_id": sidhi_id})
-        is_bookmarked = question_id in bookmark.get("question_ids", []) if bookmark else False
-        
-        # Get related problems (same topic, similar difficulty)
-        related_cursor = db.coding_questions.find(
-            {
-                "topic": question["topic"],
-                "difficulty": question["difficulty"],
-                "question_id": {"$ne": question_id},
-                "is_active": True
-            },
-            {"_id": 0, "question_id": 1, "title": 1, "difficulty": 1}
-        ).limit(3)
-        related_problems = await related_cursor.to_list(length=3)
+        # Combine data
+        result = []
+        for q in questions:
+            qid = q.get("question_id")
+            if not qid:  # Skip if no question_id
+                continue
+                
+            progress = progress_map.get(qid, {})
+            user_status = progress.get("status", "not_started")
+            
+            # Filter by status if requested
+            if status and user_status != status:
+                continue
+            
+            result.append({
+                "question_id": qid,
+                "title": q.get("title", "Untitled"),
+                "difficulty": q.get("difficulty", "medium"),
+                "topic": q.get("topic", "general"),
+                "total_testcases": q.get("total_testcases", 0),
+                "acceptance_rate": q.get("acceptance_rate", 0),
+                "total_submissions": q.get("total_submissions", 0),
+                "total_accepted": q.get("total_accepted", 0),
+                "user_status": user_status,
+                "user_attempts": progress.get("attempts", 0),
+                "is_bookmarked": qid in bookmarked_ids
+            })
         
         return {
             "status": "success",
-            "question": question,
-            "user_progress": progress,
-            "user_note": note.get("content") if note else None,
-            "is_bookmarked": is_bookmarked,
-            "related_problems": related_problems
+            "questions": result,
+            "count": len(result)
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
+        import traceback
+        print(f"Error in get_all_questions: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
