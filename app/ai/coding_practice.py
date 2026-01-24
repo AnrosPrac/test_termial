@@ -145,7 +145,268 @@ async def get_all_questions(
 
 
 
+@router.get("/questions/{question_id}")
+async def get_question_detail(
+    question_id: str,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Get detailed question with sample test cases
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Get question
+        question = await db.coding_questions.find_one(
+            {"question_id": question_id, "is_active": True},
+            {"_id": 0}
+        )
+        
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Filter: Only show sample test cases
+        question["testcases"] = [
+            tc for tc in question.get("testcases", [])
+            if tc.get("is_sample", False)
+        ]
+        
+        # Get user progress
+        progress = await db.user_progress.find_one(
+            {"sidhi_id": sidhi_id, "question_id": question_id},
+            {"_id": 0}
+        )
+        
+        return {
+            "status": "success",
+            "question": question,
+            "user_progress": progress
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/submit")
+async def submit_code(
+    submission: SubmissionRequest,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Submit code for judging - Returns task_id immediately
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Get question with ALL test cases
+        question = await db.coding_questions.find_one(
+            {"question_id": submission.question_id, "is_active": True}
+        )
+        
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+        
+        # Prepare test cases for judge
+        testcases = [
+            {"input": tc["input"], "output": tc["output"]}
+            for tc in question.get("testcases", [])
+        ]
+        
+        # Submit to judge service
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{JUDGE_API_URL}/judge",
+                json={
+                    "language": submission.language,
+                    "sourceCode": submission.source_code,
+                    "testcases": testcases
+                },
+                headers={
+                    "X-API-Key": JUDGE_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                timeout=10.0
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=502,
+                    detail="Judge service error"
+                )
+            
+            judge_response = response.json()
+        
+        # Create submission record
+        submission_id = f"SUB_{uuid.uuid4()}"
+        submission_doc = {
+            "submission_id": submission_id,
+            "sidhi_id": sidhi_id,
+            "question_id": submission.question_id,
+            "language": submission.language,
+            "source_code": submission.source_code,
+            "status": "queued",
+            "task_id": judge_response.get("task_id"),
+            "submitted_at": datetime.utcnow(),
+            "completed_at": None
+        }
+        
+        await db.user_submissions.insert_one(submission_doc)
+        
+        # Update progress - mark as attempted
+        await db.user_progress.update_one(
+            {"sidhi_id": sidhi_id, "question_id": submission.question_id},
+            {
+                "$set": {
+                    "status": "attempted",
+                    "last_attempted_at": datetime.utcnow()
+                },
+                "$inc": {"attempts": 1}
+            },
+            upsert=True
+        )
+        
+        return {
+            "status": "success",
+            "submission_id": submission_id,
+            "task_id": judge_response.get("task_id"),
+            "message": "Code submitted successfully. Use /status endpoint to check result."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/status/{submission_id}")
+async def get_submission_status(
+    submission_id: str,
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Check submission status and get result
+    """
+    try:
+        sidhi_id = user.get("sub")
+        
+        # Get submission
+        submission = await db.user_submissions.find_one(
+            {"submission_id": submission_id, "sidhi_id": sidhi_id}
+        )
+        
+        if not submission:
+            raise HTTPException(status_code=404, detail="Submission not found")
+        
+        # If already completed, return cached result
+        if submission.get("status") != "queued":
+            return {
+                "status": "success",
+                "submission": {
+                    "submission_id": submission_id,
+                    "question_id": submission["question_id"],
+                    "status": submission["status"],
+                    "verdict": submission.get("verdict"),
+                    "passed_tests": submission.get("passed_tests"),
+                    "total_tests": submission.get("total_tests"),
+                    "execution_time": submission.get("execution_time"),
+                    "error_message": submission.get("error_message"),
+                    "submitted_at": submission["submitted_at"],
+                    "completed_at": submission.get("completed_at")
+                }
+            }
+        
+        # Check judge service
+        task_id = submission.get("task_id")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{JUDGE_API_URL}/status/{task_id}",
+                headers={"X-API-Key": JUDGE_API_KEY},
+                timeout=5.0
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=502, detail="Judge service error")
+            
+            judge_result = response.json()
+        
+        # If still pending/processing, return status
+        if judge_result.get("status") in ["pending", "processing"]:
+            return {
+                "status": "success",
+                "submission": {
+                    "submission_id": submission_id,
+                    "status": judge_result["status"],
+                    "message": "Submission is being processed..."
+                }
+            }
+        
+        # Result is ready - update database
+        result = judge_result.get("result", {})
+        verdict = result.get("verdict", "Unknown")
+        
+        # Map verdict to status
+        status_map = {
+            "Accepted": "accepted",
+            "Wrong Answer": "wrong_answer",
+            "Time Limit Exceeded": "tle",
+            "Runtime Error": "runtime_error",
+            "Compilation Error": "compilation_error",
+            "Memory Limit Exceeded": "mle"
+        }
+        
+        submission_status = status_map.get(verdict, "error")
+        
+        # Update submission
+        update_data = {
+            "status": submission_status,
+            "verdict": verdict,
+            "passed_tests": result.get("passed", 0),
+            "total_tests": result.get("total", 0),
+            "error_message": result.get("error"),
+            "completed_at": datetime.utcnow()
+        }
+        
+        await db.user_submissions.update_one(
+            {"submission_id": submission_id},
+            {"$set": update_data}
+        )
+        
+        # Update progress if accepted
+        if submission_status == "accepted":
+            await db.user_progress.update_one(
+                {"sidhi_id": sidhi_id, "question_id": submission["question_id"]},
+                {
+                    "$set": {
+                        "status": "solved",
+                        "best_submission_id": submission_id,
+                        "first_solved_at": datetime.utcnow(),
+                        "language_used": submission["language"]
+                    }
+                },
+                upsert=True
+            )
+        
+        return {
+            "status": "success",
+            "submission": {
+                "submission_id": submission_id,
+                "question_id": submission["question_id"],
+                "status": submission_status,
+                "verdict": verdict,
+                "passed_tests": result.get("passed", 0),
+                "total_tests": result.get("total", 0),
+                "error_message": result.get("error"),
+                "submitted_at": submission["submitted_at"],
+                "completed_at": update_data["completed_at"]
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.get("/status/{submission_id}")
 async def get_submission_status(
     submission_id: str,
