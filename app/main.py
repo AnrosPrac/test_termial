@@ -21,6 +21,10 @@ from app.admin.router import router as admin_router
 from app.admin.hardened_firebase_auth import init_auth
 from app.ai.training_router import router as training_router
 from app.ai.coding_practice import router as coding_router
+from app.plagiarism.plagiarism_router import router as plag_router
+from app.teachers.teacher_router import router as teacher_router
+from app.students.student_router import router as student_router
+from app.teachers.database_setup import create_teacher_indexes, create_student_indexes
 
 
 
@@ -48,9 +52,11 @@ class UserDetailCreate(BaseModel):
 
 @app.on_event("startup")
 async def startup_event():
-    init_auth()   # ✅ ADD THIS
+    init_auth()
     setup_repo()
     await create_indexes()
+    await create_teacher_indexes()  # ✅ ADD THIS
+    await create_student_indexes()  # ✅ ADD THIS
 
 
 app.add_middleware(
@@ -86,9 +92,12 @@ app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(admin_router,prefix="/admin")
 app.include_router(stream_router)
+app.include_router(plag_router, prefix="/plagiarism")
 app.include_router(coding_router, prefix="/coding")
 app.include_router(training_router, prefix="/training")
-app.include_router(payment_router, prefix="/payment")  # ✅ CRITICAL FIX: Added payment router!
+app.include_router(payment_router, prefix="/payment")
+app.include_router(teacher_router)  # ✅ ADD THIS
+app.include_router(student_router)  # ✅ ADD THIS
 # ============================================================
 
 
