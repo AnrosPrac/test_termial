@@ -146,17 +146,45 @@ async def unlock_classroom_joining(
 
 # ==================== ASSIGNMENT MANAGEMENT ====================
 
+# teacher_router.py - MODIFY existing endpoint
+
 @router.post("/classrooms/{classroom_id}/assignments", response_model=AssignmentResponse, status_code=201)
 async def create_assignment(
     classroom_id: str,
     data: AssignmentCreate,
-    teacher: TeacherContext = Depends(get_current_teacher)
+    teacher: TeacherContext = Depends(get_current_teacher),
+    auto_generate_testcases: bool = True  # NEW: Query parameter to enable/disable
 ):
     """
     Create a new assignment in this classroom
+    
+    Query Parameters:
+    - auto_generate_testcases: If true (default), automatically generate test cases 
+      using AI for all questions. Set to false to create test cases manually.
+    
+    Examples:
+    - POST /teacher/classrooms/CLS_123/assignments (auto-generates test cases)
+    - POST /teacher/classrooms/CLS_123/assignments?auto_generate_testcases=false (manual test cases)
     """
     await verify_classroom_ownership(classroom_id, teacher)
-    return await service.create_assignment(classroom_id, teacher, data.dict())
+    return await service.create_assignment(
+        classroom_id, 
+        teacher, 
+        data.dict(),
+        auto_generate_testcases=auto_generate_testcases
+    )
+@router.get("/assignments/{assignment_id}/questions/{question_id}/testcases", response_model=List[TestCaseResponse])
+async def get_question_testcases(
+    assignment_id: str,
+    question_id: str,
+    teacher: TeacherContext = Depends(get_current_teacher)
+):
+    """
+    Get all test cases for a specific question
+    ✅ NEW: Query test cases by question within assignment
+    """
+    await verify_assignment_ownership(assignment_id, teacher)
+    return await service.get_question_testcases(assignment_id, question_id)
 
 @router.get("/classrooms/{classroom_id}/assignments", response_model=List[AssignmentResponse])
 async def get_classroom_assignments(

@@ -33,9 +33,13 @@ async def create_teacher_indexes():
     await db.assignments.create_index([("classroom_id", 1), ("status", 1)])
     
     # Test cases
+    # Test cases
     await db.testcases.create_index("testcase_id", unique=True)
     await db.testcases.create_index("assignment_id")
+    await db.testcases.create_index("question_id")  # ✅ NEW: Query by question
+    await db.testcases.create_index([("assignment_id", 1), ("question_id", 1)])  # ✅ NEW: Compound index
     await db.testcases.create_index([("assignment_id", 1), ("locked", 1)])
+    await db.testcases.create_index([("question_id", 1), ("is_hidden", 1)])  # ✅ NEW: For filtering hidden tests
     
     # Submissions
     await db.submissions.create_index("submission_id", unique=True)

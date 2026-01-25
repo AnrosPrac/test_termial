@@ -192,9 +192,99 @@ async def get_classroom_students(classroom_id: str) -> List[dict]:
     return students
 
 # ==================== ASSIGNMENT MANAGEMENT ====================
+# teacher_service.py - ADD THIS NEW FUNCTION
 
-async def create_assignment(classroom_id: str, teacher: TeacherContext, data: dict) -> dict:
-    """Create a new assignment in classroom"""
+async def generate_testcases_for_question(
+    question_prompt: str,
+    language: str,
+    num_testcases: int = 3
+) -> List[dict]:
+    """
+    Generate test cases for any question using AI
+    Returns list of test case dictionaries
+    
+    Args:
+        question_prompt: The coding problem description
+        language: Programming language (python, java, cpp, etc.)
+        num_testcases: Number of test cases to generate (default 3)
+    
+    Returns:
+        List of test case dicts with input_data, expected_output, weight, is_hidden
+    """
+    tc_prompt = f"""Generate {num_testcases} test cases for this coding problem:
+
+Problem: {question_prompt}
+Language: {language}
+
+IMPORTANT: Return ONLY valid JSON in this exact format, nothing else:
+{{
+  "testcases": [
+    {{
+      "input_data": "sample input as string",
+      "expected_output": "expected output as string",
+      "weight": 1.0,
+      "is_hidden": false
+    }}
+  ]
+}}
+
+Requirements:
+1. Generate {num_testcases} test cases
+2. First {num_testcases - 1} should be visible (is_hidden: false)
+3. Last test case should be hidden (is_hidden: true)
+4. Cover edge cases, normal cases, and boundary conditions
+5. Input and output should be strings that can be directly used in code execution
+6. Make sure test cases are diverse and comprehensive
+
+Generate {num_testcases} test cases now."""
+
+    try:
+        tc_response = run_gemini(tc_prompt)
+        
+        # Clean response (remove markdown code blocks)
+        clean_tc = tc_response.strip()
+        if clean_tc.startswith('```'):
+            lines = clean_tc.split('\n')
+            clean_tc = '\n'.join(lines[1:-1])
+        
+        # Parse JSON
+        tc_data = json.loads(clean_tc)
+        testcases = tc_data.get('testcases', [])
+        
+        if not testcases:
+            raise ValueError("No test cases generated")
+        
+        # Ensure last one is hidden
+        if len(testcases) >= num_testcases:
+            testcases[-1]['is_hidden'] = True
+        
+        return testcases
+        
+    except json.JSONDecodeError as e:
+        # Fallback: create basic test cases
+        print(f"[WARNING] AI generated invalid JSON for test cases: {e}")
+        return [
+            {
+                "input_data": "# Test case 1 - Please update manually",
+                "expected_output": "# Expected output",
+                "weight": 1.0,
+                "is_hidden": False
+            }
+        ]
+    except Exception as e:
+        print(f"[ERROR] Failed to generate test cases: {e}")
+        return []
+# teacher_service.py - REPLACE existing create_assignment function
+
+async def create_assignment(
+    classroom_id: str, 
+    teacher: TeacherContext, 
+    data: dict,
+    auto_generate_testcases: bool = True
+) -> dict:
+    """
+    Create a new assignment in classroom
+    """
     assignment_id = generate_id("ASG")
     
     assignment = Assignment(
@@ -205,10 +295,64 @@ async def create_assignment(classroom_id: str, teacher: TeacherContext, data: di
         **data
     )
     
+    # Save assignment to database
     await db.assignments.insert_one(assignment.dict())
     await log_audit(teacher, "create_assignment", "assignment", assignment_id)
     
+    # Auto-generate test cases for all questions
+    if auto_generate_testcases and data.get('questions'):
+        print(f"[INFO] Auto-generating test cases for {len(data['questions'])} questions...")
+        
+        testcases_created = 0
+
+        for question in data['questions']:
+            question_id = question.get('question_id')
+            
+            if not question_id:
+                print("[WARNING] Question missing question_id, skipping test case generation")
+                continue
+            
+            try:
+                # Generate 3 test cases per question using AI
+                testcases = await generate_testcases_for_question(
+                    question_prompt=question.get('prompt', ''),
+                    language=question.get('language', 'python'),
+                    num_testcases=3
+                )
+                
+                # Create each test case in database with question_id mapping
+                for tc_data in testcases:
+                    testcase = TestCase(
+                        testcase_id=generate_id("TC"),
+                        assignment_id=assignment_id,
+                        question_id=question_id,  # ✅ CRITICAL
+                        **tc_data
+                    )
+                    await db.testcases.insert_one(testcase.dict())
+                    testcases_created += 1
+                
+                print(f"[INFO] Created {len(testcases)} test cases for question: {question_id}")
+                
+            except Exception as e:
+                print(f"[WARNING] Failed to generate test cases for question {question_id}: {e}")
+                continue
+        
+        # Log test case generation (ONCE, not per question)
+        await log_audit(
+            teacher, 
+            "auto_generate_testcases", 
+            "assignment", 
+            assignment_id,
+            {
+                "testcases_created": testcases_created,
+                "questions": len(data['questions'])
+            }
+        )
+        
+        print(f"[SUCCESS] Auto-generated {testcases_created} test cases for assignment {assignment_id}")
+    
     return await get_assignment_with_stats(assignment_id)
+
 
 async def get_classroom_assignments(classroom_id: str) -> List[dict]:
     """Get all assignments in a classroom"""
@@ -290,10 +434,10 @@ Generate {num_questions} questions now."""
         # Limit to requested number
         questions = questions[:num_questions]
         
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         raise HTTPException(
             status_code=500,
-            detail=f"AI generated invalid response. Please try again."
+            detail="AI generated invalid response. Please try again."
         )
     
     # Generate question IDs
@@ -305,6 +449,12 @@ Generate {num_questions} questions now."""
     all_testcases = []
     
     for question in questions:
+        question_id = question.get('question_id')  # ✅ CRITICAL ADDITION
+        
+        if not question_id:
+            print("[WARNING] Question missing question_id, skipping test case generation")
+            continue
+
         tc_prompt = f"""Generate 3 test cases for this coding problem:
 
 Problem: {question['prompt']}
@@ -337,11 +487,15 @@ Generate 3 test cases (2 visible, 1 hidden)."""
             if len(testcases) >= 3:
                 testcases[2]['is_hidden'] = True
             
+            # ✅ CRITICAL FIX: attach question_id to every testcase
+            for tc in testcases:
+                tc['question_id'] = question_id
+            
             all_testcases.extend(testcases)
             testcases_generated += len(testcases)
             
-        except:
-            # Skip if test case generation fails
+        except Exception as e:
+            print(f"[WARNING] Testcase generation failed for question {question_id}: {e}")
             continue
     
     return {
@@ -350,6 +504,7 @@ Generate 3 test cases (2 visible, 1 hidden)."""
         "questions_generated": len(questions),
         "testcases_generated": testcases_generated
     }
+
 
 
 # ADD CSV export function
@@ -454,11 +609,37 @@ async def delete_assignment(assignment_id: str, teacher: TeacherContext):
 
 async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dict) -> dict:
     """Create a new test case"""
+    
+    # ✅ VALIDATE: question_id must be provided
+    question_id = data.get('question_id')
+    if not question_id:
+        raise HTTPException(
+            status_code=400,
+            detail="question_id is required when creating test case"
+        )
+    
+    # ✅ VALIDATE: question must exist in assignment
+    assignment = await db.assignments.find_one({"assignment_id": assignment_id})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    question_exists = any(
+        q.get('question_id') == question_id 
+        for q in assignment.get('questions', [])
+    )
+    
+    if not question_exists:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Question {question_id} does not exist in assignment {assignment_id}"
+        )
+    
     testcase_id = generate_id("TC")
     
     testcase = TestCase(
         testcase_id=testcase_id,
         assignment_id=assignment_id,
+        question_id=question_id,  # ✅ Required field
         **data
     )
     
@@ -472,6 +653,22 @@ async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dic
 async def get_assignment_testcases(assignment_id: str) -> List[dict]:
     """Get all test cases for an assignment"""
     cursor = db.testcases.find({"assignment_id": assignment_id}).sort("created_at", 1)
+    testcases = await cursor.to_list(length=None)
+    
+    for tc in testcases:
+        tc.pop("_id", None)
+    
+    return testcases
+async def get_question_testcases(assignment_id: str, question_id: str) -> List[dict]:
+    """
+    Get all test cases for a specific question
+    ✅ NEW: Query test cases by question_id
+    """
+    cursor = db.testcases.find({
+        "assignment_id": assignment_id,
+        "question_id": question_id
+    }).sort("created_at", 1)
+    
     testcases = await cursor.to_list(length=None)
     
     for tc in testcases:

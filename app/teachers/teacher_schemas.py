@@ -37,12 +37,20 @@ class AssignmentUpdate(BaseModel):
     status: Optional[AssignmentStatus] = None
 
 class TestCaseCreate(BaseModel):
+    question_id: str  # ✅ NEW: Required - which question is this test case for?
     input_data: str
     expected_output: str
     weight: float = Field(1.0, ge=0.1, le=10.0)
     is_hidden: bool = False
+    
+    @validator('question_id')
+    def validate_question_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError('question_id is required')
+        return v
 
 class TestCaseUpdate(BaseModel):
+    question_id: Optional[str] = None  # ✅ NEW: Allow changing which question (rare)
     input_data: Optional[str] = None
     expected_output: Optional[str] = None
     weight: Optional[float] = Field(None, ge=0.1, le=10.0)
@@ -134,6 +142,7 @@ class AssignmentResponse(BaseModel):
 class TestCaseResponse(BaseModel):
     testcase_id: str
     assignment_id: str
+    question_id: str  # ✅ NEW: Show which question this belongs to
     input_data: str
     expected_output: str
     weight: float

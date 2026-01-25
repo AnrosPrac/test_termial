@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
+from pydantic import BaseModel, Field, validator  # Add 'validator' here
 import hashlib
 
 # ==================== ENUMS ====================
@@ -87,6 +88,7 @@ class Assignment(BaseModel):
 class TestCase(BaseModel):
     testcase_id: str  # TC_XXXXXX
     assignment_id: str
+    question_id: str  # ✅ NEW: Which question does this test case belong to?
     input_data: str
     expected_output: str
     weight: float = 1.0  # For weighted scoring
@@ -94,6 +96,18 @@ class TestCase(BaseModel):
     locked: bool = False  # Once assignment.testcases_locked = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    @validator('weight')
+    def validate_weight(cls, v):
+        if v < 0.1 or v > 10.0:
+            raise ValueError('weight must be between 0.1 and 10.0')
+        return v
+    
+    @validator('input_data', 'expected_output')
+    def validate_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Input and output cannot be empty')
+        return v
 
 class Submission(BaseModel):
     submission_id: str  # SUB_XXXXXX
