@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 import secrets
 from app.teachers.teacher_permissions import TeacherContext, db
-from app.teachers.teacher_schemas import (
+from app.teachers.teacher_models import (
     Classroom, Assignment, TestCase, Submission,
     ClassroomVisibility, AssignmentStatus
 )
