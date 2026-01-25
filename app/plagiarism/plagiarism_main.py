@@ -291,33 +291,58 @@ class PlagiarismDetector:
                 execution_time=time.time() - start
             )
     
-    def _calculate_weighted_score(
-        self,
-        results: List[DetectionResult]
-    ) -> float:
-        """Calculate weighted similarity score from layer results"""
+    def _calculate_weighted_score(self, results: List[DetectionResult]) -> float:
+        """
+        Calculate weighted similarity score from layer results
+        
+        FIXED: Proper layer name to weight mapping
+        """
         total_score = 0.0
         total_weight = 0.0
         
+        # Map layer names to weight keys
+        LAYER_WEIGHT_MAP = {
+            "AST Analysis": "ast",
+            "Token Fingerprinting": "token",
+            "Control Flow Analysis": "control_flow",
+            "AI Detection": "ai_detection"
+        }
+        
         for result in results:
-            # Skip AI detection for overall similarity (it's separate)
+            # Skip AI detection for overall similarity (it's tracked separately)
             if result.layer_name == "AI Detection":
                 continue
             
-            # Get weight for this layer
-            layer_key = result.layer_name.lower().replace(" ", "_")
-            weight = self.WEIGHTS.get(layer_key, 0.0)
+            # Get weight using proper mapping
+            weight_key = LAYER_WEIGHT_MAP.get(result.layer_name)
+            
+            if weight_key is None:
+                print(f"⚠️ WARNING: Unknown layer '{result.layer_name}', skipping")
+                continue
+            
+            weight = self.WEIGHTS.get(weight_key, 0.0)
+            
+            if weight == 0.0:
+                print(f"⚠️ WARNING: Layer '{result.layer_name}' has 0 weight")
+                continue
             
             # Weight by confidence
             effective_weight = weight * result.confidence
             
             total_score += result.similarity_score * effective_weight
             total_weight += effective_weight
+            
+            # Debug logging (remove in production)
+            print(f"  {result.layer_name}: {result.similarity_score:.2%} × {weight} × {result.confidence} = {result.similarity_score * effective_weight:.4f}")
         
         if total_weight == 0:
+            print("⚠️ ERROR: Total weight is 0!")
             return 0.0
         
-        return total_score / total_weight
+        final_score = total_score / total_weight
+        print(f"📊 Overall: {total_score:.4f} / {total_weight:.4f} = {final_score:.2%}")
+        
+        return final_score
     
     def _classify_similarity(self, score: float) -> SimilarityLevel:
         """Classify similarity score into levels"""
