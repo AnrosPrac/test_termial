@@ -231,8 +231,11 @@ IMPORTANT: Return ONLY valid JSON in this exact format, nothing else:
 Requirements:
 1. Generate {num_testcases} test cases
 2. First {num_testcases - 1} should be visible (is_hidden: false)
+IMPORTANT:HERE INPUT DATA IS NOT THE CODE IT IS THE MODEL INPUT WE NEED TO GIVE TO THAT SORT OF PROBLEM
+FOR EXAMPLE WHEN WE HAVE A PROBLEM LIKE ADDITION OF TWO NUMBERS THEN THE INPUT IS 5 10 or 5 \n10 and the OUTPUT IS 15 SO ALL THE PROBLEMS MSY BE DONE LIKE THIS DONT WRITE THE CODE OF THE FUNCTION
 3. Last test case should be hidden (is_hidden: true)
 4. Cover edge cases, normal cases, and boundary conditions
+THE TEST CAES MUST TEST THE CODES QUALITY
 5. Input and output should be strings that can be directly used in code execution
 6. Make sure test cases are diverse and comprehensive
 
@@ -633,13 +636,24 @@ async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dic
     # ✅ CRITICAL FIX: remove question_id from data to avoid duplication
     data = data.copy()
     data.pop("question_id", None)
+        # 🧹 Sanitize AI-generated testcase
+    input_data = (data.get("input_data") or "").strip()
+    expected_output = (data.get("expected_output") or "").strip()
+
+    if not input_data or not expected_output:
+        # Skip invalid AI testcase silently
+        print("[WARNING] Skipping invalid testcase (empty input/output):", data)
+        return None
 
     testcase = TestCase(
-        testcase_id=generate_id("TC"),
-        assignment_id=assignment_id,
-        question_id=question_id,  # ✅ SINGLE SOURCE OF TRUTH
-        **data
-    )
+    testcase_id=generate_id("TC"),
+    assignment_id=assignment_id,
+    question_id=question_id,
+    input_data=input_data,
+    expected_output=expected_output,
+    weight=float(data.get("weight", 1.0)),
+    is_hidden=bool(data.get("is_hidden", False))
+)
 
     await db.testcases.insert_one(testcase.dict())
     await log_audit(teacher, "create_testcase", "testcase", testcase.testcase_id)
