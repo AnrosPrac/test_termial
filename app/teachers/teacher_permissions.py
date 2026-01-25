@@ -175,7 +175,55 @@ async def verify_submission_access(
         raise HTTPException(status_code=403, detail="Not authorized to access this submission")
     
     return submission
+# ADD classroom scope validation
+async def verify_classroom_scope(
+    classroom_id: str,
+    student_user_id: str,
+    teacher: TeacherContext
+) -> bool:
+    """
+    Verify student is in same university/college/branch as classroom
+    Called when student tries to join
+    """
+    classroom = await db.classrooms.find_one({"classroom_id": classroom_id})
+    if not classroom:
+        return False
+    
+    student_profile = await db.users_profile.find_one({"user_id": student_user_id})
+    if not student_profile:
+        return False
+    
+    # Check university match
+    if classroom.get("university_id") != student_profile.get("college"):
+        return False
+    
+    # Check branch match
+    if classroom.get("branch_id") != student_profile.get("department"):
+        return False
+    
+    return True
 
+
+# ADD max students check
+async def check_classroom_capacity(classroom_id: str) -> bool:
+    """
+    Check if classroom has reached max capacity
+    Returns True if can accept more students, False if full
+    """
+    classroom = await db.classrooms.find_one({"classroom_id": classroom_id})
+    if not classroom:
+        return False
+    
+    max_students = classroom.get("max_students")
+    if not max_students:
+        return True  # No limit
+    
+    current_count = await db.classroom_memberships.count_documents({
+        "classroom_id": classroom_id,
+        "is_active": True
+    })
+    
+    return current_count < max_students
 def check_testcases_not_locked(assignment: dict):
     """
     Raises 400 if testcases are locked

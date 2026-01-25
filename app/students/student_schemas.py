@@ -66,7 +66,11 @@ class ClassroomDiscovery(BaseModel):
     can_join: bool  # False if scope mismatch or joining locked
     join_reason: Optional[str] = None  # "Already joined" | "Scope mismatch" | "Joining locked"
     is_joined: bool = False
-
+class JoinClassroomRequest(BaseModel):
+    """
+    Request to join a classroom
+    """
+    password: Optional[str] = None  # Required if classroom has password protection
 class JoinedClassroom(BaseModel):
     """
     Classroom the student has joined
@@ -91,7 +95,7 @@ class ClassroomDetail(BaseModel):
     year: Optional[int]
     section: Optional[str]
     late_submission_policy: Optional[str]
-    assignments: List['AssignmentSummary']
+    
 
 class AssignmentSummary(BaseModel):
     """
@@ -121,6 +125,7 @@ class AssignmentDetail(BaseModel):
     allowed_languages: List[str]
     attempts_used: int
     status: SubmissionStatus
+    questions: List['AssignmentQuestionView'] = []
     can_submit: bool
     submission_blocked_reason: Optional[str] = None
 
@@ -161,3 +166,12 @@ class SubmitSuccess(BaseModel):
     attempt_number: int
     message: str
     processing_status: str  # "queued" - tests running asynchronously
+
+class AssignmentQuestionView(BaseModel):
+    """
+    Individual question in an assignment
+    """
+    question_id: str
+    prompt: str
+    language: str
+    marks: Optional[int] = None

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
+import hashlib
 
 # ==================== ENUMS ====================
 
@@ -59,6 +60,9 @@ class Classroom(BaseModel):
     joining_locked: bool = False  # Can students join?
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    join_password_hash: Optional[str] = None
+    max_students: Optional[int] = None
+
 
 class Assignment(BaseModel):
     assignment_id: str  # ASG_XXXXXX
@@ -69,6 +73,9 @@ class Assignment(BaseModel):
     description: str
     source_type: SourceType = SourceType.MANUAL
     due_date: Optional[datetime] = None
+    plagiarism_enabled: bool = True
+    questions: List["AssignmentQuestion"] = []
+
     allow_late: bool = True
     max_attempts: int = 3
     allowed_languages: List[str] = ["python", "java", "cpp"]
@@ -142,3 +149,8 @@ class ClassroomMembership(BaseModel):
     student_sidhi_id: str
     joined_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = True
+class AssignmentQuestion(BaseModel):
+    question_id: str
+    prompt: str
+    language: str
+    marks: Optional[int] = None

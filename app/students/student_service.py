@@ -7,6 +7,11 @@ from app.students.student_models import (
     ClassroomMembership, SubmissionStatus, PlagiarismFlag, SubmissionAudit
 )
 from fastapi import HTTPException
+import hashlib
+
+def hash_password(password: str) -> str:
+    """Hash password for comparison"""
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def generate_id(prefix: str) -> str:
     """Generate unique ID with prefix"""
@@ -128,7 +133,7 @@ async def discover_classrooms(student: StudentContext) -> List[dict]:
     
     return results
 
-async def join_classroom(classroom_id: str, student: StudentContext) -> dict:
+async def join_classroom(classroom_id: str, student: StudentContext, password: Optional[str] = None) -> dict:
     """
     Student joins a classroom
     Server-side validation of scope and lock status
@@ -169,6 +174,39 @@ async def join_classroom(classroom_id: str, student: StudentContext) -> dict:
             status_code=403,
             detail="Joining is currently locked by the teacher"
         )
+    
+    # ADD: Check password if required
+    if classroom.get("join_password_hash"):
+        if not password:
+            raise HTTPException(
+                status_code=403,
+                detail="Password required to join this classroom"
+            )
+        if hash_password(password) != classroom["join_password_hash"]:
+            await log_student_audit(
+                student, "blocked_join_password", classroom_id, False,
+                "Incorrect password"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="Incorrect password"
+            )
+    
+    # ADD: Check max students capacity
+    if classroom.get("max_students"):
+        current_count = await db.classroom_memberships.count_documents({
+            "classroom_id": classroom_id,
+            "is_active": True
+        })
+        if current_count >= classroom["max_students"]:
+            await log_student_audit(
+                student, "blocked_join_capacity", classroom_id, False,
+                "Classroom is full"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="Classroom has reached maximum capacity"
+            )
     
     # Create membership
     membership_id = generate_id("MEM")
@@ -368,6 +406,9 @@ async def get_assignment_detail(assignment_id: str, student: StudentContext) -> 
     # Check if can submit
     can_submit, blocked_reason = check_can_submit(assignment, attempts)
     
+    # ADD: Get questions
+    questions = assignment.get("questions", [])
+    
     return {
         "assignment_id": assignment_id,
         "classroom_id": assignment["classroom_id"],
@@ -377,6 +418,7 @@ async def get_assignment_detail(assignment_id: str, student: StudentContext) -> 
         "allow_late": assignment.get("allow_late", True),
         "max_attempts": assignment.get("max_attempts", 3),
         "allowed_languages": assignment.get("allowed_languages", ["python"]),
+        "questions": questions,  # ADD THIS
         "attempts_used": attempts,
         "status": status.value,
         "can_submit": can_submit,

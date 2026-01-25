@@ -8,10 +8,19 @@ from app.teachers.teacher_models import (
 )
 from app.teachers.common_audit import log_audit
 from fastapi import HTTPException
+import hashlib
+import csv
+import io
+from app.ai.gemini_core import run_gemini
+import json
 
 def generate_id(prefix: str) -> str:
     """Generate unique ID with prefix"""
     return f"{prefix}_{secrets.token_hex(8).upper()}"
+
+def hash_password(password: str) -> str:
+    """Hash classroom password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
 
 # ==================== TEACHER PROFILE ====================
 
@@ -57,6 +66,9 @@ async def update_teacher_profile(teacher: TeacherContext, data: dict) -> dict:
 async def create_classroom(teacher: TeacherContext, data: dict) -> dict:
     """Create a new classroom"""
     classroom_id = generate_id("CLS")
+    join_password_hash = None
+    if data.get('join_password'):
+        join_password_hash = hash_password(data.pop('join_password'))
     
     classroom = Classroom(
         classroom_id=classroom_id,
@@ -65,6 +77,7 @@ async def create_classroom(teacher: TeacherContext, data: dict) -> dict:
         university_id=teacher.university_id,
         college_id=teacher.college_id,
         branch_id=teacher.branch_id,
+        join_password_hash=join_password_hash,
         **data
     )
     
@@ -226,7 +239,191 @@ async def get_assignment_with_stats(assignment_id: str) -> dict:
     assignment.pop("_id", None)
     
     return assignment
+async def generate_assignment_with_ai(
+    classroom_id: str,
+    teacher: TeacherContext,
+    topic: str,
+    num_questions: int,
+    allowed_languages: List[str]
+) -> dict:
+    """
+    Generate assignment questions and test cases using AI
+    """
+    # Build prompt for question generation
+    prompt = f"""You are an expert programming instructor. Generate {num_questions} coding questions on the topic: "{topic}".
 
+For each question:
+1. Write a clear problem statement
+2. Choose ONE language from: {', '.join(allowed_languages)}
+3. Assign difficulty-appropriate marks (5-20)
+4. Make questions progressively harder
+
+Return ONLY valid JSON in this exact format:
+{{
+  "questions": [
+    {{
+      "prompt": "Write a function that...",
+      "language": "python",
+      "marks": 10
+    }}
+  ]
+}}
+
+Generate {num_questions} questions now."""
+
+    # Call Gemini
+    response = run_gemini(prompt)
+    
+    # Parse response
+    try:
+        # Remove markdown code blocks if present
+        clean_response = response.strip()
+        if clean_response.startswith('```'):
+            clean_response = '\n'.join(clean_response.split('\n')[1:-1])
+        
+        questions_data = json.loads(clean_response)
+        questions = questions_data.get('questions', [])
+        
+        if not questions:
+            raise ValueError("No questions generated")
+        
+        # Limit to requested number
+        questions = questions[:num_questions]
+        
+    except json.JSONDecodeError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI generated invalid response. Please try again."
+        )
+    
+    # Generate question IDs
+    for q in questions:
+        q['question_id'] = generate_id("Q")
+    
+    # Now generate test cases for each question
+    testcases_generated = 0
+    all_testcases = []
+    
+    for question in questions:
+        tc_prompt = f"""Generate 3 test cases for this coding problem:
+
+Problem: {question['prompt']}
+Language: {question['language']}
+
+Return ONLY valid JSON:
+{{
+  "testcases": [
+    {{
+      "input_data": "sample input",
+      "expected_output": "sample output",
+      "weight": 1.0,
+      "is_hidden": false
+    }}
+  ]
+}}
+
+Generate 3 test cases (2 visible, 1 hidden)."""
+
+        try:
+            tc_response = run_gemini(tc_prompt)
+            clean_tc = tc_response.strip()
+            if clean_tc.startswith('```'):
+                clean_tc = '\n'.join(clean_tc.split('\n')[1:-1])
+            
+            tc_data = json.loads(clean_tc)
+            testcases = tc_data.get('testcases', [])
+            
+            # Mark last one as hidden
+            if len(testcases) >= 3:
+                testcases[2]['is_hidden'] = True
+            
+            all_testcases.extend(testcases)
+            testcases_generated += len(testcases)
+            
+        except:
+            # Skip if test case generation fails
+            continue
+    
+    return {
+        "questions": questions,
+        "testcases": all_testcases,
+        "questions_generated": len(questions),
+        "testcases_generated": testcases_generated
+    }
+
+
+# ADD CSV export function
+async def export_assignment_submissions_csv(assignment_id: str) -> str:
+    """
+    Export all submissions for an assignment as CSV
+    Returns CSV content as string
+    """
+    assignment = await db.assignments.find_one({"assignment_id": assignment_id})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    submissions = await db.submissions.find({
+        "assignment_id": assignment_id
+    }).sort("student_user_id", 1).to_list(length=None)
+    
+    # Build CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Headers
+    writer.writerow([
+        'Student ID',
+        'Student SIDHI ID',
+        'Student Name',
+        'Attempt Number',
+        'Score',
+        'Passed Tests',
+        'Failed Tests',
+        'Approved',
+        'Submission Time',
+        'Reviewed Time',
+        'Notes'
+    ])
+    
+    # Fetch student profiles
+    for sub in submissions:
+        profile = await db.users_profile.find_one({"user_id": sub["student_user_id"]})
+        
+        test_result = sub.get("test_result", {})
+        override_result = sub.get("teacher_override_result")
+        
+        # Use override if exists
+        if override_result:
+            score = override_result.get("score", 0)
+            passed = override_result.get("passed", 0)
+            failed = override_result.get("failed", 0)
+        else:
+            score = test_result.get("score", 0)
+            passed = test_result.get("passed", 0)
+            failed = test_result.get("failed", 0)
+        
+        approved_status = "Approved" if sub.get("approved") is True else \
+                         "Rejected" if sub.get("approved") is False else \
+                         "Pending"
+        
+        writer.writerow([
+            sub["student_user_id"],
+            sub["student_sidhi_id"],
+            profile.get("username", "Unknown") if profile else "Unknown",
+            sub.get("attempt_number", 1),
+            f"{score:.2f}",
+            passed,
+            failed,
+            approved_status,
+            sub["submitted_at"].strftime("%Y-%m-%d %H:%M:%S"),
+            sub["reviewed_at"].strftime("%Y-%m-%d %H:%M:%S") if sub.get("reviewed_at") else "",
+            sub.get("approval_notes", "")
+        ])
+    
+    csv_content = output.getvalue()
+    output.close()
+    
+    return csv_content
 async def update_assignment(assignment_id: str, teacher: TeacherContext, data: dict) -> dict:
     """Update assignment details"""
     update_data = {k: v for k, v in data.items() if v is not None}

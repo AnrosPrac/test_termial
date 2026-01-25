@@ -10,8 +10,9 @@ passlib[bcrypt]
 python-dotenv
 pynacl
 
-# --- Database (THE MISSING LINK) ---
-motor               # For Async MongoDB connection
+# --- Database ---
+motor               # Async MongoDB
+pymongo             # MongoDB operations (ADDED)
 
 # --- Real-time & Asynchronous ---
 websockets
@@ -28,8 +29,8 @@ pydantic
 
 # --- Cloud Sync & Vault ---
 GitPython
-datetime
 firebase-admin
+# datetime - REMOVED (built-in library)
 
-# JWT handling
+# --- JWT handling ---
 PyJWT

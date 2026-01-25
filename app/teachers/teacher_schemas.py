@@ -12,19 +12,12 @@ class TeacherProfileUpdate(BaseModel):
     designation: Optional[str] = None
     bio: Optional[str] = None
 
-class ClassroomCreate(BaseModel):
-    name: str = Field(..., min_length=3, max_length=100)
-    year: Optional[int] = None
-    section: Optional[str] = None
-    join_mode: JoinMode = JoinMode.OPEN
-    visibility: ClassroomVisibility = ClassroomVisibility.DRAFT
-    late_submission_policy: Optional[str] = None
-    
-    @validator('year')
-    def validate_year(cls, v):
-        if v and (v < 1 or v > 5):
-            raise ValueError('Year must be between 1 and 5')
-        return v
+
+class AssignmentQuestion(BaseModel):
+    question_id: str
+    prompt: str
+    language: str
+    marks: Optional[int] = None
 
 class ClassroomUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=3, max_length=100)
@@ -33,22 +26,6 @@ class ClassroomUpdate(BaseModel):
     join_mode: Optional[JoinMode] = None
     visibility: Optional[ClassroomVisibility] = None
     late_submission_policy: Optional[str] = None
-
-class AssignmentCreate(BaseModel):
-    title: str = Field(..., min_length=3, max_length=200)
-    description: str
-    source_type: SourceType = SourceType.MANUAL
-    due_date: Optional[datetime] = None
-    allow_late: bool = True
-    max_attempts: int = Field(3, ge=1, le=10)
-    allowed_languages: List[str] = ["python"]
-    
-    @validator('allowed_languages')
-    def validate_languages(cls, v):
-        valid = {"python", "java", "cpp", "c", "javascript"}
-        if not all(lang in valid for lang in v):
-            raise ValueError(f'Invalid language. Allowed: {valid}')
-        return v
 
 class AssignmentUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=200)
@@ -220,3 +197,81 @@ class AssignmentScorecard(BaseModel):
     avg_attempts: float
     on_time_submissions: int
     late_submissions: int
+# Modify ClassroomCreate - ADD password and max_students
+class ClassroomCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=100)
+    year: Optional[int] = None
+    section: Optional[str] = None
+    join_mode: JoinMode = JoinMode.OPEN
+    visibility: ClassroomVisibility = ClassroomVisibility.DRAFT
+    late_submission_policy: Optional[str] = None
+    join_password: Optional[str] = None  # ADDED
+    max_students: Optional[int] = None  # ADDED
+
+    @validator('year')
+    def validate_year(cls, v):
+        if v and (v < 1 or v > 5):
+            raise ValueError('Year must be between 1 and 5')
+        return v
+    
+    @validator('join_password')
+    def validate_password(cls, v):
+        if v and len(v) < 6:
+            raise ValueError('Password must be at least 6 characters')
+        return v
+    
+    @validator('max_students')
+    def validate_max_students(cls, v):
+        if v and v < 1:
+            raise ValueError('Maximum students must be at least 1')
+        return v
+
+
+# AssignmentCreate already has questions - verify validator
+class AssignmentCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=200)
+    description: str
+    source_type: SourceType = SourceType.MANUAL
+    due_date: Optional[datetime] = None
+    allow_late: bool = True
+    max_attempts: int = Field(3, ge=1, le=10)
+    allowed_languages: List[str] = ["python"]
+    questions: Optional[List[AssignmentQuestion]] = []  # Already exists
+    plagiarism_enabled: Optional[bool] = True  # Already exists
+    
+    # ADD AI generation fields
+    ai_topic: Optional[str] = None  # For AI generation
+    ai_num_questions: Optional[int] = Field(None, ge=1, le=15)
+    
+    @validator('allowed_languages')
+    def validate_languages(cls, v):
+        valid = {"python", "java", "cpp", "c", "javascript"}
+        if not all(lang in valid for lang in v):
+            raise ValueError(f'Invalid language. Allowed: {valid}')
+        return v
+    
+    @validator("questions")
+    def limit_questions(cls, v):
+        if v and len(v) > 15:
+            raise ValueError("Maximum 15 questions allowed")
+        return v
+
+
+# ADD new schema for CSV export
+class ExportSubmissionSheet(BaseModel):
+    format: str = "csv"
+    
+    @validator('format')
+    def validate_format(cls, v):
+        if v not in ["csv", "xlsx"]:
+            raise ValueError("Format must be csv or xlsx")
+        return v
+
+
+# ADD response for AI generation
+class AIGenerationResponse(BaseModel):
+    status: str
+    message: str
+    assignment_id: str
+    questions_generated: int
+    testcases_generated: int

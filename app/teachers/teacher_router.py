@@ -19,6 +19,10 @@ from app.teachers.teacher_schemas import (
     ClassroomAnalytics, AssignmentScorecard
 )
 from app.teachers import teacher_service as service
+from fastapi.responses import StreamingResponse
+import io
+from app.teachers.teacher_models import SourceType
+
 
 router = APIRouter(prefix="/teacher", tags=["Teacher Management"])
 
@@ -496,18 +500,95 @@ async def get_record_notes(
         "record_notes": []
     }
 
-@router.post("/assignments/{assignment_id}/export-submission-sheet")
-async def export_submission_sheet(
+
+# Add to imports
+from fastapi.responses import StreamingResponse
+import io
+
+# ADD AI generation endpoint
+@router.post("/assignments/generate-with-ai", response_model=AssignmentResponse, status_code=201)
+async def generate_assignment_with_ai(
+    classroom_id: str,
+    data: AssignmentCreate,
+    teacher: TeacherContext = Depends(get_current_teacher)
+):
+    """
+    Generate assignment questions and test cases using AI
+    Requires: source_type=AI, ai_topic, ai_num_questions
+    """
+    await verify_classroom_ownership(classroom_id, teacher)
+    
+    if data.source_type != SourceType.AI:
+        raise HTTPException(
+            status_code=400,
+            detail="Source type must be 'ai' for AI generation"
+        )
+    
+    if not data.ai_topic:
+        raise HTTPException(
+            status_code=400,
+            detail="ai_topic is required for AI generation"
+        )
+    
+    if not data.ai_num_questions:
+        raise HTTPException(
+            status_code=400,
+            detail="ai_num_questions is required (1-15)"
+        )
+    
+    # Generate questions and test cases
+    ai_result = await service.generate_assignment_with_ai(
+        classroom_id=classroom_id,
+        teacher=teacher,
+        topic=data.ai_topic,
+        num_questions=data.ai_num_questions,
+        allowed_languages=data.allowed_languages
+    )
+    
+    # Create assignment with generated questions
+    assignment_data = data.dict(exclude={'ai_topic', 'ai_num_questions'})
+    assignment_data['questions'] = ai_result['questions']
+    
+    assignment = await service.create_assignment(classroom_id, teacher, assignment_data)
+    assignment_id = assignment['assignment_id']
+    
+    # Create test cases
+    for tc_data in ai_result['testcases']:
+        await service.create_testcase(assignment_id, teacher, tc_data)
+    
+    await service.log_audit(
+        teacher,
+        "generate_assignment_ai",
+        "assignment",
+        assignment_id,
+        {
+            "topic": data.ai_topic,
+            "questions": ai_result['questions_generated'],
+            "testcases": ai_result['testcases_generated']
+        }
+    )
+    
+    return await service.get_assignment_with_stats(assignment_id)
+
+
+# MODIFY export endpoint to actually return CSV
+@router.get("/assignments/{assignment_id}/export-csv")
+async def export_assignment_csv(
     assignment_id: str,
     teacher: TeacherContext = Depends(get_current_teacher)
 ):
     """
-    Export all submissions as Excel/CSV (implementation pending)
+    Export all submissions as CSV file
     """
     await verify_assignment_ownership(assignment_id, teacher)
     
-    return {
-        "status": "success",
-        "message": "Export generation queued",
-        "assignment_id": assignment_id
-    }
+    csv_content = await service.export_assignment_submissions_csv(assignment_id)
+    
+    # Return as downloadable file
+    return StreamingResponse(
+        io.StringIO(csv_content),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=assignment_{assignment_id}_submissions.csv"
+        }
+    )

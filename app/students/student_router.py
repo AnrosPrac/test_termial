@@ -12,7 +12,7 @@ from app.students.student_schemas import (
     ClassroomDiscovery, JoinedClassroom, ClassroomDetail,
     AssignmentDetail, AssignmentSummary,
     SubmissionCreate, ResubmissionCreate,
-    SubmissionResponse, SubmissionListItem, SubmitSuccess
+    SubmissionResponse, SubmissionListItem, SubmitSuccess,JoinClassroomRequest
 )
 from app.students import student_service as service
 
@@ -45,6 +45,7 @@ async def discover_classrooms(student: StudentContext = Depends(get_current_stud
 @router.post("/classrooms/{classroom_id}/join")
 async def join_classroom(
     classroom_id: str,
+    data: JoinClassroomRequest,  # CHANGE THIS
     student: StudentContext = Depends(get_current_student)
 ):
     """
@@ -53,9 +54,11 @@ async def join_classroom(
     Server-side validations:
     - Scope must match (403 if mismatch)
     - Joining must not be locked (403 if locked)
+    - Password must be correct if required (403 if wrong)
     - Cannot join twice (409 if already joined)
+    - Capacity not exceeded (403 if full)
     """
-    result = await service.join_classroom(classroom_id, student)
+    result = await service.join_classroom(classroom_id, student, data.password)  # ADD password param
     return {
         "status": "success",
         "message": f"Successfully joined {result['classroom_name']}",
