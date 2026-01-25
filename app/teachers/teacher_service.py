@@ -609,43 +609,41 @@ async def delete_assignment(assignment_id: str, teacher: TeacherContext):
 
 async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dict) -> dict:
     """Create a new test case"""
-    
-    # ✅ VALIDATE: question_id must be provided
-    question_id = data.get('question_id')
+
+    # ✅ Extract and validate question_id
+    question_id = data.get("question_id")
     if not question_id:
         raise HTTPException(
             status_code=400,
             detail="question_id is required when creating test case"
         )
-    
-    # ✅ VALIDATE: question must exist in assignment
+
+    # ✅ Validate assignment exists
     assignment = await db.assignments.find_one({"assignment_id": assignment_id})
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    
-    question_exists = any(
-        q.get('question_id') == question_id 
-        for q in assignment.get('questions', [])
-    )
-    
-    if not question_exists:
+
+    # ✅ Validate question belongs to assignment
+    if not any(q.get("question_id") == question_id for q in assignment.get("questions", [])):
         raise HTTPException(
             status_code=400,
             detail=f"Question {question_id} does not exist in assignment {assignment_id}"
         )
-    
-    testcase_id = generate_id("TC")
-    
+
+    # ✅ CRITICAL FIX: remove question_id from data to avoid duplication
+    data = data.copy()
+    data.pop("question_id", None)
+
     testcase = TestCase(
-        testcase_id=testcase_id,
+        testcase_id=generate_id("TC"),
         assignment_id=assignment_id,
-        question_id=question_id,  # ✅ Required field
+        question_id=question_id,  # ✅ SINGLE SOURCE OF TRUTH
         **data
     )
-    
+
     await db.testcases.insert_one(testcase.dict())
-    await log_audit(teacher, "create_testcase", "testcase", testcase_id)
-    
+    await log_audit(teacher, "create_testcase", "testcase", testcase.testcase_id)
+
     result = testcase.dict()
     result.pop("_id", None)
     return result
