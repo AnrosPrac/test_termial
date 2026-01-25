@@ -582,7 +582,9 @@ async def generate_assignment_with_ai(
     
     # Create test cases
     for tc_data in ai_result['testcases']:
-        await service.create_testcase(assignment_id, teacher, tc_data)
+        result = await service.create_testcase(assignment_id, teacher, tc_data)
+        if result is None:
+            continue
     
     await service.log_audit(
         teacher,

@@ -610,50 +610,46 @@ async def delete_assignment(assignment_id: str, teacher: TeacherContext):
 
 # ==================== TEST CASE MANAGEMENT ====================
 
-async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dict) -> dict:
-    """Create a new test case"""
+async def create_testcase(
+    assignment_id: str,
+    teacher: TeacherContext,
+    data: dict
+) -> Optional[dict]:
+    """Create a new test case safely (AI-proof)"""
 
-    # ✅ Extract and validate question_id
+    if not data or not isinstance(data, dict):
+        print("[WARNING] Invalid testcase payload:", data)
+        return None
+
     question_id = data.get("question_id")
     if not question_id:
-        raise HTTPException(
-            status_code=400,
-            detail="question_id is required when creating test case"
-        )
+        print("[WARNING] Missing question_id, skipping testcase")
+        return None
 
-    # ✅ Validate assignment exists
     assignment = await db.assignments.find_one({"assignment_id": assignment_id})
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
 
-    # ✅ Validate question belongs to assignment
     if not any(q.get("question_id") == question_id for q in assignment.get("questions", [])):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Question {question_id} does not exist in assignment {assignment_id}"
-        )
+        print("[WARNING] Question not in assignment:", question_id)
+        return None
 
-    # ✅ CRITICAL FIX: remove question_id from data to avoid duplication
-    data = data.copy()
-    data.pop("question_id", None)
-        # 🧹 Sanitize AI-generated testcase
-    input_data = (data.get("input_data") or "").strip()
-    expected_output = (data.get("expected_output") or "").strip()
+    input_data = str(data.get("input_data") or "").strip()
+    expected_output = str(data.get("expected_output") or "").strip()
 
     if not input_data or not expected_output:
-        # Skip invalid AI testcase silently
-        print("[WARNING] Skipping invalid testcase (empty input/output):", data)
+        print("[WARNING] Empty input/output, skipping testcase:", data)
         return None
 
     testcase = TestCase(
-    testcase_id=generate_id("TC"),
-    assignment_id=assignment_id,
-    question_id=question_id,
-    input_data=input_data,
-    expected_output=expected_output,
-    weight=float(data.get("weight", 1.0)),
-    is_hidden=bool(data.get("is_hidden", False))
-)
+        testcase_id=generate_id("TC"),
+        assignment_id=assignment_id,
+        question_id=question_id,
+        input_data=input_data,
+        expected_output=expected_output,
+        weight=float(data.get("weight", 1.0)),
+        is_hidden=bool(data.get("is_hidden", False))
+    )
 
     await db.testcases.insert_one(testcase.dict())
     await log_audit(teacher, "create_testcase", "testcase", testcase.testcase_id)
@@ -662,66 +658,6 @@ async def create_testcase(assignment_id: str, teacher: TeacherContext, data: dic
     result.pop("_id", None)
     return result
 
-async def get_assignment_testcases(assignment_id: str) -> List[dict]:
-    """Get all test cases for an assignment"""
-    cursor = db.testcases.find({"assignment_id": assignment_id}).sort("created_at", 1)
-    testcases = await cursor.to_list(length=None)
-    
-    for tc in testcases:
-        tc.pop("_id", None)
-    
-    return testcases
-async def get_question_testcases(assignment_id: str, question_id: str) -> List[dict]:
-    """
-    Get all test cases for a specific question
-    ✅ NEW: Query test cases by question_id
-    """
-    cursor = db.testcases.find({
-        "assignment_id": assignment_id,
-        "question_id": question_id
-    }).sort("created_at", 1)
-    
-    testcases = await cursor.to_list(length=None)
-    
-    for tc in testcases:
-        tc.pop("_id", None)
-    
-    return testcases
-
-async def update_testcase(testcase_id: str, teacher: TeacherContext, data: dict) -> dict:
-    """Update test case (only if not locked)"""
-    update_data = {k: v for k, v in data.items() if v is not None}
-    update_data["updated_at"] = datetime.utcnow()
-    
-    await db.testcases.update_one(
-        {"testcase_id": testcase_id},
-        {"$set": update_data}
-    )
-    
-    await log_audit(teacher, "update_testcase", "testcase", testcase_id, update_data)
-    
-    testcase = await db.testcases.find_one({"testcase_id": testcase_id})
-    testcase.pop("_id", None)
-    return testcase
-
-async def delete_testcase(testcase_id: str, teacher: TeacherContext):
-    """Delete test case (only if not locked)"""
-    await db.testcases.delete_one({"testcase_id": testcase_id})
-    await log_audit(teacher, "delete_testcase", "testcase", testcase_id)
-
-async def lock_assignment_testcases(assignment_id: str, teacher: TeacherContext):
-    """Lock all testcases - makes them immutable"""
-    await db.assignments.update_one(
-        {"assignment_id": assignment_id},
-        {"$set": {"testcases_locked": True, "updated_at": datetime.utcnow()}}
-    )
-    
-    await db.testcases.update_many(
-        {"assignment_id": assignment_id},
-        {"$set": {"locked": True}}
-    )
-    
-    await log_audit(teacher, "lock_testcases", "assignment", assignment_id)
 
 # ==================== SUBMISSION MANAGEMENT ====================
 
