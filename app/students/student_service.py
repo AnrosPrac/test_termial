@@ -476,7 +476,7 @@ async def submit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "answers": answers,  # ✅ CRITICAL: Store the answers array
+        "answers": [a.dict() if hasattr(a, "dict") else a for a in answers],
         "attempt_number": attempts + 1,
         "test_result": None,  # Will be updated by test runner
         "approved": None,
@@ -634,7 +634,8 @@ async def resubmit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "answers": answers,  # ✅ FIXED: Store answers properly
+        "answers": [a.dict() if hasattr(a, "dict") else a for a in answers],
+  # ✅ FIXED: Store answers properly
         "attempt_number": attempts + 1,
         "test_result": None,
         "approved": None,
