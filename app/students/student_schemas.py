@@ -84,17 +84,7 @@ class JoinedClassroom(BaseModel):
     pending_submissions: int
     joined_at: datetime
 
-class ClassroomDetail(BaseModel):
-    """
-    Full classroom view with assignments
-    Student can only see this if they've joined
-    """
-    classroom_id: str
-    teacher_name: str
-    name: str
-    year: Optional[int]
-    section: Optional[str]
-    late_submission_policy: Optional[str]
+
     
 
 class AssignmentSummary(BaseModel):
@@ -175,3 +165,16 @@ class AssignmentQuestionView(BaseModel):
     prompt: str
     language: str
     marks: Optional[int] = None
+
+class ClassroomDetail(BaseModel):
+    """
+    Full classroom view with assignments
+    Student can only see this if they've joined
+    """
+    classroom_id: str
+    teacher_name: str
+    name: str
+    year: Optional[int]
+    section: Optional[str]
+    late_submission_policy: Optional[str]
+    assignments: List[AssignmentSummary] = []
