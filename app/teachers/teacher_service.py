@@ -685,7 +685,7 @@ async def get_assignment_submissions(assignment_id: str) -> List[dict]:
         profile = await db.users_profile.find_one({"user_id": sub["student_user_id"]})
         sub["student_username"] = profile.get("username", "Unknown") if profile else "Unknown"
         sub.pop("_id", None)
-        sub.pop("code", None)  # Don't send full code in list view
+        sub.pop("answers", None)  # Don't send full code in list view
         
         # Include plagiarism flag for teacher visibility
         sub["plagiarism_flag"] = sub.get("plagiarism_flag", "pending")
@@ -696,17 +696,40 @@ async def get_assignment_submissions(assignment_id: str) -> List[dict]:
     return results
 
 async def get_submission_detail(submission_id: str) -> dict:
-    """Get full submission details including code"""
-    submission = await db.submissions.find_one({"submission_id": submission_id})
-    
+    """Get full submission details including per-question code"""
+
+    submission = await db.submissions.find_one(
+        {"submission_id": submission_id}
+    )
+
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
-    
-    profile = await db.users_profile.find_one({"user_id": submission["student_user_id"]})
-    submission["student_username"] = profile.get("username", "Unknown") if profile else "Unknown"
+
+    # Attach student username
+    profile = await db.users_profile.find_one(
+        {"user_id": submission["student_user_id"]}
+    )
+    submission["student_username"] = (
+        profile.get("username", "Unknown") if profile else "Unknown"
+    )
+
+    # ✅ ENSURE answers exists and is well-formed
+    answers = submission.get("answers", [])
+
+    submission["answers"] = [
+        {
+            "question_id": ans.get("question_id"),
+            "code": ans.get("code", "")
+        }
+        for ans in answers
+    ]
+
+    # ❌ REMOVE legacy / internal fields
     submission.pop("_id", None)
-    
+    submission.pop("code", None)  # safety: if old data exists
+
     return submission
+
 
 async def approve_submission(submission_id: str, teacher: TeacherContext, notes: Optional[str]):
     """Approve a submission"""

@@ -112,11 +112,12 @@ class TestCase(BaseModel):
 class Submission(BaseModel):
     submission_id: str  # SUB_XXXXXX
     assignment_id: str
+    is_complete: bool = False
     classroom_id: str
     student_user_id: str  # SIDHI_XXXXXX
     student_sidhi_id: str
     language: str
-    code: str
+    answers: List[dict]
     attempt_number: int = 1
     test_result: Optional[dict] = None  # {passed: 5, failed: 2, score: 71.4}
     teacher_override_result: Optional[dict] = None  # Manual override

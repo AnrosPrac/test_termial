@@ -9,6 +9,8 @@ from app.teachers.teacher_permissions import (
     check_testcases_not_locked,
     TeacherContext
 )
+from app.teachers.common_audit import log_audit
+from app.teachers.teacher_permissions import TeacherContext, db
 from app.teachers.teacher_schemas import (
     TeacherProfile, TeacherProfileUpdate,
     ClassroomCreate, ClassroomUpdate, ClassroomResponse,
@@ -22,6 +24,7 @@ from app.teachers import teacher_service as service
 from fastapi.responses import StreamingResponse
 import io
 from app.teachers.teacher_models import SourceType
+from datetime import datetime
 
 
 router = APIRouter(prefix="/teacher", tags=["Teacher Management"])
@@ -100,7 +103,42 @@ async def delete_classroom(
     return None
 
 # ==================== CLASSROOM MEMBERSHIP ====================
-
+@router.delete("/classrooms/{classroom_id}/students/{student_user_id}")
+async def remove_student_from_classroom(
+    classroom_id: str,
+    student_user_id: str,
+    teacher: TeacherContext = Depends(get_current_teacher)
+):
+    """
+    Remove a student from the classroom
+    """
+    await verify_classroom_ownership(classroom_id, teacher)
+    
+    # Deactivate membership
+    result = await db.classroom_memberships.update_one(
+        {
+            "classroom_id": classroom_id,
+            "student_user_id": student_user_id,
+            "is_active": True
+        },
+        {"$set": {"is_active": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Student not found in classroom")
+    
+    await log_audit(
+        teacher, 
+        "remove_student", 
+        "classroom", 
+        classroom_id,
+        {"removed_student": student_user_id}
+    )
+    
+    return {
+        "status": "success",
+        "message": "Student removed from classroom"
+    }
 @router.get("/classrooms/{classroom_id}/students")
 async def get_classroom_students(
     classroom_id: str,
@@ -244,7 +282,40 @@ async def get_assignment_testcases(
     """
     await verify_assignment_ownership(assignment_id, teacher)
     return await service.get_assignment_testcases(assignment_id)
-
+@router.post("/assignments/{assignment_id}/approve-all")
+async def approve_all_submissions(
+    assignment_id: str,
+    teacher: TeacherContext = Depends(get_current_teacher)
+):
+    """
+    Approve all submissions that passed all test cases (score == 100)
+    """
+    await verify_assignment_ownership(assignment_id, teacher)
+    
+    # Find all submissions with 100% score
+    submissions = await db.submissions.find({
+        "assignment_id": assignment_id,
+        "test_result.score": 100,  # Only approve perfect scores
+        "approved": None  # Not yet approved
+    }).to_list(length=None)
+    
+    # Bulk approve
+    for sub in submissions:
+        await db.submissions.update_one(
+            {"submission_id": sub["submission_id"]},
+            {"$set": {
+                "approved": True,
+                "approval_notes": "Auto-approved: All test cases passed",
+                "reviewed_at": datetime.utcnow(),
+                "is_locked": True
+            }}
+        )
+    
+    return {
+        "status": "success",
+        "approved_count": len(submissions),
+        "message": f"Approved {len(submissions)} submissions"
+    }
 @router.post("/assignments/{assignment_id}/testcases", response_model=TestCaseResponse, status_code=201)
 async def create_testcase(
     assignment_id: str,

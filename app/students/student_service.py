@@ -427,6 +427,8 @@ async def get_assignment_detail(assignment_id: str, student: StudentContext) -> 
 
 # ==================== SUBMISSION ====================
 
+# Replace the submit_assignment function in student_service.py with this:
+
 async def submit_assignment(
     assignment_id: str,
     student: StudentContext,
@@ -436,7 +438,7 @@ async def submit_assignment(
     """
     Student submits code for assignment
     Validates attempts and deadline
-    Enqueues async test runner and plagiarism detector
+    Runs test cases asynchronously
     """
     assignment = await db.assignments.find_one({"assignment_id": assignment_id})
     
@@ -465,7 +467,7 @@ async def submit_assignment(
         )
         raise HTTPException(status_code=403, detail=reason)
     
-    # Create submission
+    # ✅ FIX: Store answers properly with question mapping
     submission_id = generate_id("SUB")
     submission = {
         "submission_id": submission_id,
@@ -474,9 +476,9 @@ async def submit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        
+        "answers": answers,  # ✅ CRITICAL: Store the answers array
         "attempt_number": attempts + 1,
-        "test_result": None,  # Will be updated by async test runner
+        "test_result": None,  # Will be updated by test runner
         "approved": None,
         "approval_notes": None,
         "plagiarism_flag": PlagiarismFlag.PENDING.value,
@@ -487,18 +489,18 @@ async def submit_assignment(
     
     await db.submissions.insert_one(submission)
     
-    # TODO: Enqueue async test runner
-    # await enqueue_test_runner(submission_id, assignment_id, code, language)
+    # ✅ FIX: Run tests asynchronously
+    from app.students.test_runner import run_assignment_tests
+    asyncio.create_task(run_assignment_tests(
+        submission_id=submission_id,
+        assignment_id=assignment_id,
+        student_answers=answers,
+        language=language
+    ))
     
-    # Enqueue plagiarism detection (runs in background)
-    from app.plagiarism.integration import trigger_plagiarism_check_for_submission
-    # asyncio.create_task(trigger_plagiarism_check_for_submission(
-    #     submission_id=submission_id,
-    #     assignment_id=assignment_id,
-    #     student_user_id=student.user_id,
-    #     code=code,
-    #     language=language
-    # ))
+    # Optional: Enqueue plagiarism detection
+    # from app.plagiarism.integration import trigger_plagiarism_check_for_submission
+    # asyncio.create_task(trigger_plagiarism_check_for_submission(...))
     
     await log_student_audit(student, "submit", assignment_id, True, metadata={
         "submission_id": submission_id,
@@ -508,7 +510,7 @@ async def submit_assignment(
     return {
         "submission_id": submission_id,
         "attempt_number": attempts + 1,
-        "message": "Submission received successfully",
+        "message": "Submission received successfully. Tests are running...",
         "processing_status": "queued"
     }
 
@@ -554,11 +556,19 @@ async def get_submission_detail(submission_id: str, student: StudentContext) -> 
     submission.pop("plagiarism_flag", None)
     submission.pop("_id", None)
     
+    # ✅ Format answers for display
+    formatted_answers = []
+    for ans in submission.get("answers", []):
+        formatted_answers.append({
+            "question_id": ans.get("question_id"),
+            "code": ans.get("code")
+        })
+    
     return {
         "submission_id": submission["submission_id"],
         "assignment_id": submission["assignment_id"],
         "language": submission["language"],
-        "code": submission["code"],
+        "answers": formatted_answers,  # ✅ Return structured answers
         "attempt_number": submission["attempt_number"],
         "test_result": submission.get("test_result"),
         "approved": submission.get("approved"),
@@ -568,11 +578,13 @@ async def get_submission_detail(submission_id: str, student: StudentContext) -> 
         "is_locked": submission.get("is_locked", False)
     }
 
+# Replace the resubmit_assignment function in student_service.py with this:
+
 async def resubmit_assignment(
     submission_id: str,
     student: StudentContext,
     language: str,
-    code: str
+    answers: list  # ✅ CHANGED from `code: str` to `answers: list`
 ) -> dict:
     """
     Resubmit after teacher requests changes
@@ -622,7 +634,7 @@ async def resubmit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "code": code,
+        "answers": answers,  # ✅ FIXED: Store answers properly
         "attempt_number": attempts + 1,
         "test_result": None,
         "approved": None,
@@ -635,8 +647,14 @@ async def resubmit_assignment(
     
     await db.submissions.insert_one(submission)
     
-    # TODO: Enqueue async test runner
-    # TODO: Enqueue async plagiarism detector
+    # ✅ FIX: Run tests asynchronously
+    from app.students.test_runner import run_assignment_tests
+    asyncio.create_task(run_assignment_tests(
+        submission_id=new_submission_id,
+        assignment_id=assignment_id,
+        student_answers=answers,
+        language=language
+    ))
     
     await log_student_audit(student, "resubmit", assignment_id, True, metadata={
         "new_submission_id": new_submission_id,
@@ -647,6 +665,6 @@ async def resubmit_assignment(
     return {
         "submission_id": new_submission_id,
         "attempt_number": attempts + 1,
-        "message": "Resubmission received successfully",
+        "message": "Resubmission received successfully. Tests are running...",
         "processing_status": "queued"
     }
