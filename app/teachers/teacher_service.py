@@ -202,26 +202,25 @@ async def generate_testcases_for_question(
     """
     Generate test cases for any question using AI
     Returns list of test case dictionaries
-    
-    Args:
-        question_prompt: The coding problem description
-        language: Programming language (python, java, cpp, etc.)
-        num_testcases: Number of test cases to generate (default 3)
-    
-    Returns:
-        List of test case dicts with input_data, expected_output, weight, is_hidden
     """
     tc_prompt = f"""Generate {num_testcases} test cases for this coding problem:
 
 Problem: {question_prompt}
 Language: {language}
 
-IMPORTANT: Return ONLY valid JSON in this exact format, nothing else:
+CRITICAL INSTRUCTIONS:
+- input_data = the INPUT values that will be given to the student's code
+- expected_output = the CORRECT OUTPUT for those inputs
+- For example, if the problem is "add two numbers", and input is "5 10", output is "15"
+- DO NOT write function calls or code in input_data
+- ONLY provide the raw input values as they would appear in stdin
+
+Return ONLY valid JSON in this exact format:
 {{
   "testcases": [
     {{
-      "input_data": "sample input as string",
-      "expected_output": "expected output as string",
+      "input_data": "5 10",
+      "expected_output": "15",
       "weight": 1.0,
       "is_hidden": false
     }}
@@ -229,15 +228,12 @@ IMPORTANT: Return ONLY valid JSON in this exact format, nothing else:
 }}
 
 Requirements:
-1. Generate {num_testcases} test cases
+1. Generate {num_testcases} test cases total
 2. First {num_testcases - 1} should be visible (is_hidden: false)
-IMPORTANT:HERE INPUT DATA IS NOT THE CODE IT IS THE MODEL INPUT WE NEED TO GIVE TO THAT SORT OF PROBLEM
-FOR EXAMPLE WHEN WE HAVE A PROBLEM LIKE ADDITION OF TWO NUMBERS THEN THE INPUT IS 5 10 or 5 \n10 and the OUTPUT IS 15 SO ALL THE PROBLEMS MSY BE DONE LIKE THIS DONT WRITE THE CODE OF THE FUNCTION
 3. Last test case should be hidden (is_hidden: true)
 4. Cover edge cases, normal cases, and boundary conditions
-THE TEST CAES MUST TEST THE CODES QUALITY
-5. Input and output should be strings that can be directly used in code execution
-6. Make sure test cases are diverse and comprehensive
+5. Input and output must be simple strings (like stdin/stdout)
+6. Test different scenarios to validate code quality
 
 Generate {num_testcases} test cases now."""
 
@@ -268,8 +264,8 @@ Generate {num_testcases} test cases now."""
         print(f"[WARNING] AI generated invalid JSON for test cases: {e}")
         return [
             {
-                "input_data": "# Test case 1 - Please update manually",
-                "expected_output": "# Expected output",
+                "input_data": "1 2",
+                "expected_output": "3",
                 "weight": 1.0,
                 "is_hidden": False
             }
@@ -618,45 +614,63 @@ async def create_testcase(
     """Create a new test case safely (AI-proof)"""
 
     if not data or not isinstance(data, dict):
-        print("[WARNING] Invalid testcase payload:", data)
+        print(f"[ERROR] Invalid testcase payload type: {type(data)}, value: {data}")
         return None
 
     question_id = data.get("question_id")
     if not question_id:
-        print("[WARNING] Missing question_id, skipping testcase")
+        print(f"[ERROR] Missing question_id in testcase data: {data}")
         return None
 
     assignment = await db.assignments.find_one({"assignment_id": assignment_id})
     if not assignment:
+        print(f"[ERROR] Assignment not found: {assignment_id}")
         raise HTTPException(status_code=404, detail="Assignment not found")
 
-    if not any(q.get("question_id") == question_id for q in assignment.get("questions", [])):
-        print("[WARNING] Question not in assignment:", question_id)
+    # Check if question exists in assignment
+    question_ids = [q.get("question_id") for q in assignment.get("questions", [])]
+    if question_id not in question_ids:
+        print(f"[ERROR] Question {question_id} not in assignment {assignment_id}")
+        print(f"[ERROR] Available questions: {question_ids}")
         return None
 
     input_data = str(data.get("input_data") or "").strip()
     expected_output = str(data.get("expected_output") or "").strip()
 
     if not input_data or not expected_output:
-        print("[WARNING] Empty input/output, skipping testcase:", data)
+        print(f"[ERROR] Empty input/output detected:")
+        print(f"  - input_data: '{input_data}'")
+        print(f"  - expected_output: '{expected_output}'")
+        print(f"  - Full data: {data}")
         return None
 
-    testcase = TestCase(
-        testcase_id=generate_id("TC"),
-        assignment_id=assignment_id,
-        question_id=question_id,
-        input_data=input_data,
-        expected_output=expected_output,
-        weight=float(data.get("weight", 1.0)),
-        is_hidden=bool(data.get("is_hidden", False))
-    )
+    try:
+        testcase = TestCase(
+            testcase_id=generate_id("TC"),
+            assignment_id=assignment_id,
+            question_id=question_id,
+            input_data=input_data,
+            expected_output=expected_output,
+            weight=float(data.get("weight", 1.0)),
+            is_hidden=bool(data.get("is_hidden", False))
+        )
 
-    await db.testcases.insert_one(testcase.dict())
-    await log_audit(teacher, "create_testcase", "testcase", testcase.testcase_id)
+        await db.testcases.insert_one(testcase.dict())
+        await log_audit(teacher, "create_testcase", "testcase", testcase.testcase_id)
 
-    result = testcase.dict()
-    result.pop("_id", None)
-    return result
+        result = testcase.dict()
+        result.pop("_id", None)
+        
+        print(f"[SUCCESS] Created testcase {testcase.testcase_id} for question {question_id}")
+        return result
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to create TestCase object:")
+        print(f"  - Exception: {e}")
+        print(f"  - Data: {data}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 # ==================== SUBMISSION MANAGEMENT ====================
@@ -869,3 +883,64 @@ async def get_assignment_scorecard(assignment_id: str) -> dict:
         "on_time_submissions": on_time,
         "late_submissions": late
     }
+async def get_assignment_testcases(assignment_id: str) -> List[dict]:
+        """Get all test cases for an assignment"""
+        cursor = db.testcases.find({"assignment_id": assignment_id}).sort("created_at", 1)
+        testcases = await cursor.to_list(length=None)
+        
+        for tc in testcases:
+            tc.pop("_id", None)
+        
+        return testcases
+
+async def get_question_testcases(assignment_id: str, question_id: str) -> List[dict]:
+    """
+    Get all test cases for a specific question
+    ✅ NEW: Query test cases by question_id
+    """
+    cursor = db.testcases.find({
+        "assignment_id": assignment_id,
+        "question_id": question_id
+    }).sort("created_at", 1)
+    
+    testcases = await cursor.to_list(length=None)
+    
+    for tc in testcases:
+        tc.pop("_id", None)
+    
+    return testcases
+
+async def update_testcase(testcase_id: str, teacher: TeacherContext, data: dict) -> dict:
+    """Update test case (only if not locked)"""
+    update_data = {k: v for k, v in data.items() if v is not None}
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.testcases.update_one(
+        {"testcase_id": testcase_id},
+        {"$set": update_data}
+    )
+    
+    await log_audit(teacher, "update_testcase", "testcase", testcase_id, update_data)
+    
+    testcase = await db.testcases.find_one({"testcase_id": testcase_id})
+    testcase.pop("_id", None)
+    return testcase
+
+async def delete_testcase(testcase_id: str, teacher: TeacherContext):
+    """Delete test case (only if not locked)"""
+    await db.testcases.delete_one({"testcase_id": testcase_id})
+    await log_audit(teacher, "delete_testcase", "testcase", testcase_id)
+
+async def lock_assignment_testcases(assignment_id: str, teacher: TeacherContext):
+    """Lock all testcases - makes them immutable"""
+    await db.assignments.update_one(
+        {"assignment_id": assignment_id},
+        {"$set": {"testcases_locked": True, "updated_at": datetime.utcnow()}}
+    )
+    
+    await db.testcases.update_many(
+        {"assignment_id": assignment_id},
+        {"$set": {"locked": True}}
+    )
+    
+    await log_audit(teacher, "lock_testcases", "assignment", assignment_id)

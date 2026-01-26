@@ -581,10 +581,30 @@ async def generate_assignment_with_ai(
     assignment_id = assignment['assignment_id']
     
     # Create test cases
+    # Create test cases (they should already have question_id from AI generation)
+    created_testcases = 0
+    failed_testcases = 0
+
     for tc_data in ai_result['testcases']:
-        result = await service.create_testcase(assignment_id, teacher, tc_data)
-        if result is None:
+        if 'question_id' not in tc_data:
+            print(f"[ERROR] Test case missing question_id: {tc_data}")
+            failed_testcases += 1
             continue
+        
+        try:
+            result = await service.create_testcase(assignment_id, teacher, tc_data)
+            if result:
+                created_testcases += 1
+                print(f"[SUCCESS] Created testcase for question {tc_data['question_id']}")
+            else:
+                failed_testcases += 1
+                print(f"[FAILED] Could not create testcase for question {tc_data['question_id']}")
+        except Exception as e:
+            print(f"[ERROR] Failed to create testcase: {e}")
+            failed_testcases += 1
+            continue
+
+    print(f"[AI SUMMARY] Created {created_testcases} testcases, failed {failed_testcases}")
     
     await service.log_audit(
         teacher,

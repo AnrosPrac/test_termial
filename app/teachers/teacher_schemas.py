@@ -212,7 +212,7 @@ class ClassroomCreate(BaseModel):
     year: Optional[int] = None
     section: Optional[str] = None
     join_mode: JoinMode = JoinMode.OPEN
-    visibility: ClassroomVisibility = ClassroomVisibility.DRAFT
+    visibility: ClassroomVisibility = ClassroomVisibility.ACTIVE
     late_submission_policy: Optional[str] = None
     join_password: Optional[str] = None  # ADDED
     max_students: Optional[int] = None  # ADDED
@@ -247,6 +247,7 @@ class AssignmentCreate(BaseModel):
     allowed_languages: List[str] = ["python"]
     questions: Optional[List[AssignmentQuestion]] = []  # Already exists
     plagiarism_enabled: Optional[bool] = True  # Already exists
+    status: AssignmentStatus = AssignmentStatus.PUBLISHED 
     
     # ADD AI generation fields
     ai_topic: Optional[str] = None  # For AI generation
