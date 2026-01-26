@@ -160,7 +160,7 @@ class SubmissionResponse(BaseModel):
     language: str
     attempt_number: int
     test_result: Optional[dict]
-    teacher_override_result: Optional[dict]
+    teacher_override_result: Optional[dict] = None
     approved: Optional[bool]
     approval_notes: Optional[str]
     submitted_at: datetime
