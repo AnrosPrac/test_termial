@@ -128,7 +128,8 @@ class SubmissionResponse(BaseModel):
     assignment_id: str
     language: str
     attempt_number: int
-    test_result: Optional[dict]  # {passed: int, failed: int, score: float}
+    test_result: Optional[dict]  
+    answers: List[dict]# {passed: int, failed: int, score: float}
     approved: Optional[bool]  # None=pending, True=approved, False=rejected
     approval_notes: Optional[str]  # Teacher feedback
     submitted_at: datetime
