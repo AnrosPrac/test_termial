@@ -46,7 +46,9 @@ class UserDetailCreate(BaseModel):
     department: str
     starting_year: str
     is_admin: bool = False
+    is_teacher: bool = False
     degree: str
+    role: str = "student"
     email_id: str
 
 
@@ -330,12 +332,18 @@ async def register_user_details(data: UserDetailCreate, user: str = Depends(veri
                 detail="User already exists. Data entry not allowed."
             )
 
-        new_user = data.dict()
-        await db.users_profile.insert_one(new_user)
+        user_data = data.model_dump()
+        
+        if user_data.get("is_teacher"):
+            user_data["role"] = "teacher"
+        else:
+            user_data["role"] = "student"
+
+        await db.users_profile.insert_one(user_data)
 
         return {
             "status": "success",
-            "message": "User details successfully registered"
+            "message": f"User details successfully registered as {user_data['role']}"
         }
     except HTTPException:
         raise
