@@ -305,6 +305,7 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
                     "email_id": user_record.get("email_id"),
                     "college": user_record.get("college"),
                     "department": user_record.get("department"),
+                    "terms_accepted": user_record.get("terms_accepted", False),
                     "starting_year": user_record.get("starting_year"),
                     "is_admin": user_record.get("is_admin"),
                     "is_teacher": user_record.get("is_teacher", False),
@@ -322,7 +323,36 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class TermsAcceptanceRequest(BaseModel):
+    accepted: bool
 
+@app.post("/user/accept-terms")
+async def accept_terms_and_conditions(
+    data: TermsAcceptanceRequest, 
+    user: dict = Depends(verify_client_bound_request)
+):
+    try:
+        user_id = user.get("sub")
+        
+        if not data.accepted:
+            raise HTTPException(status_code=400, detail="Terms must be accepted to proceed.")
+
+        await db.users_profile.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "terms_accepted": True,
+                    "terms_accepted_at": datetime.utcnow()
+                }
+            }
+        )
+
+        return {
+            "status": "success",
+            "message": "Terms and Conditions accepted successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.post("/user/register")
 async def register_user_details(data: UserDetailCreate, user: str = Depends(verify_client_bound_request)):
     try:
