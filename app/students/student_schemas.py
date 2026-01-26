@@ -4,13 +4,13 @@ from datetime import datetime
 from app.students.student_models import SubmissionStatus
 
 # ==================== REQUEST SCHEMAS ====================
+class QuestionAnswer(BaseModel):
+    question_id: str
+    code: str = Field(..., min_length=10)
 
 class SubmissionCreate(BaseModel):
-    """
-    Student submits code for an assignment
-    """
-    language: str = Field(..., min_length=1)
-    code: str = Field(..., min_length=10, max_length=50000)
+    language: str
+    answers: List[QuestionAnswer]
     
     @validator('language')
     def validate_language(cls, v):
