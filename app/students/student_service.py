@@ -469,6 +469,13 @@ async def submit_assignment(
     
     # ✅ FIX: Store answers properly with question mapping
     submission_id = generate_id("SUB")
+    normalized_answers = [
+    {
+        "question_id": ans.question_id,
+        "code": ans.code
+    }
+    for ans in answers
+]
     submission = {
         "submission_id": submission_id,
         "assignment_id": assignment_id,
@@ -476,7 +483,7 @@ async def submit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "answers": [a.dict() if hasattr(a, "dict") else a for a in answers],
+        "answers": normalized_answers,
         "attempt_number": attempts + 1,
         "test_result": None,  # Will be updated by test runner
         "approved": None,
@@ -494,7 +501,7 @@ async def submit_assignment(
     asyncio.create_task(run_assignment_tests(
         submission_id=submission_id,
         assignment_id=assignment_id,
-        student_answers=answers,
+        student_answers=normalized_answers,
         language=language
     ))
     
@@ -627,6 +634,13 @@ async def resubmit_assignment(
     
     # Create new submission
     new_submission_id = generate_id("SUB")
+    normalized_answers = [
+    {
+        "question_id": a.question_id,
+        "code": a.code
+    } if hasattr(a, "question_id") else a
+    for a in answers
+]
     submission = {
         "submission_id": new_submission_id,
         "assignment_id": assignment_id,
@@ -634,7 +648,7 @@ async def resubmit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "answers": [a.dict() if hasattr(a, "dict") else a for a in answers],
+        "answers": normalized_answers,
   # ✅ FIXED: Store answers properly
         "attempt_number": attempts + 1,
         "test_result": None,
@@ -653,7 +667,7 @@ async def resubmit_assignment(
     asyncio.create_task(run_assignment_tests(
         submission_id=new_submission_id,
         assignment_id=assignment_id,
-        student_answers=answers,
+        student_answers=normalized_answers,
         language=language
     ))
     
