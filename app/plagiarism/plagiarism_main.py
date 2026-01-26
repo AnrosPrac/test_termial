@@ -1,9 +1,6 @@
 """
-Plagiarism Detection System - Main Orchestrator
-Combines multiple detection layers for robust code similarity analysis
-
-Supports: C, C++, Python
-Detection Layers: AST, Token Fingerprinting, Control Flow, AI Detection
+Plagiarism Detection System - Main Orchestrator (UPDATED with AI)
+Now includes AI-powered semantic analysis for better accuracy
 """
 
 from typing import Dict, List, Tuple, Optional
@@ -50,31 +47,44 @@ class PlagiarismReport:
     recommendations: List[str]
     confidence: float
     processing_time: float
+    # New fields
+    is_natural_similarity: bool = False
+    ai_reasoning: str = ""
 
 
 class PlagiarismDetector:
     """
     Main plagiarism detection orchestrator
-    Combines multiple detection layers with weighted scoring
+    NOW WITH AI-POWERED SEMANTIC ANALYSIS
     """
     
-    # Layer weights (must sum to 1.0)
-    WEIGHTS = {
-        'ast': 0.35,           # Abstract Syntax Tree
-        'token': 0.25,         # Token Fingerprinting
-        'control_flow': 0.25,  # Control Flow Graph
-        'ai_detection': 0.15   # AI-generated code detection
+    # Updated weights for MANUAL comparison (with AI)
+    WEIGHTS_MANUAL = {
+        'ai_semantic': 0.50,   # AI gets 50% weight for manual comparisons
+        'ast': 0.20,           # AST reduced to 20%
+        'token': 0.15,         # Token reduced to 15%
+        'control_flow': 0.15,  # Control flow reduced to 15%
     }
     
-    # Similarity thresholds
+    # Original weights for BATCH comparison (without AI to save costs)
+    WEIGHTS_BATCH = {
+        'ast': 0.35,
+        'token': 0.30,
+        'control_flow': 0.35,
+    }
+    
     THRESHOLDS = {
         'clean': 0.30,
         'suspicious': 0.60
     }
     
-    def __init__(self):
-        """Initialize all detection layers"""
-        # Import detection modules (will create these next)
+    def __init__(self, use_ai: bool = True):
+        """
+        Initialize all detection layers
+        
+        Args:
+            use_ai: Whether to use AI semantic analysis (default: True for manual, False for batch)
+        """
         from app.plagiarism.ast_analyzer import ASTAnalyzer
         from app.plagiarism.token_fingerprinter import TokenFingerprinter
         from app.plagiarism.control_flow import ControlFlowAnalyzer
@@ -84,6 +94,11 @@ class PlagiarismDetector:
         self.token_fingerprinter = TokenFingerprinter()
         self.control_flow_analyzer = ControlFlowAnalyzer()
         self.ai_detector = AIDetector()
+        
+        self.use_ai = use_ai
+        if use_ai:
+            from app.plagiarism.ai_semnatic_analyzer import AISemanticAnalyzer
+            self.ai_semantic = AISemanticAnalyzer()
     
     async def compare_submissions(
         self,
@@ -91,20 +106,16 @@ class PlagiarismDetector:
         code2: str,
         language: str,
         submission1_id: str,
-        submission2_id: str
+        submission2_id: str,
+        problem_context: str = None,
+        use_ai_semantic: bool = None  # Override instance setting
     ) -> PlagiarismReport:
         """
-        Compare two code submissions using all detection layers
+        Compare two code submissions
         
         Args:
-            code1: First code submission
-            code2: Second code submission
-            language: Programming language (c, cpp, python)
-            submission1_id: ID of first submission
-            submission2_id: ID of second submission
-        
-        Returns:
-            Complete plagiarism report
+            use_ai_semantic: Override to force AI usage (None = use instance setting)
+            problem_context: Optional problem description for better AI analysis
         """
         import time
         start_time = time.time()
@@ -113,25 +124,56 @@ class PlagiarismDetector:
         if language.lower() not in ['c', 'cpp', 'python']:
             raise ValueError(f"Unsupported language: {language}")
         
-        # Run all detection layers in parallel
-        layer_results = await asyncio.gather(
-            self._run_ast_analysis(code1, code2, language),
-            self._run_token_analysis(code1, code2, language),
-            self._run_control_flow_analysis(code1, code2, language),
-            return_exceptions=True
-        )
+        # Determine if we should use AI
+        use_ai = self.use_ai if use_ai_semantic is None else use_ai_semantic
         
-        # Run AI detection on both submissions
+        # Run detection layers
+        if use_ai:
+            # WITH AI: Run all layers including semantic analysis
+            layer_results = await asyncio.gather(
+                self._run_ai_semantic_analysis(code1, code2, language, problem_context),
+                self._run_ast_analysis(code1, code2, language),
+                self._run_token_analysis(code1, code2, language),
+                self._run_control_flow_analysis(code1, code2, language),
+                return_exceptions=True
+            )
+            weights = self.WEIGHTS_MANUAL
+        else:
+            # WITHOUT AI: Skip semantic analysis (for batch operations)
+            layer_results = await asyncio.gather(
+                self._run_ast_analysis(code1, code2, language),
+                self._run_token_analysis(code1, code2, language),
+                self._run_control_flow_analysis(code1, code2, language),
+                return_exceptions=True
+            )
+            weights = self.WEIGHTS_BATCH
+        
+        # Run AI detection on individual submissions (lightweight)
         ai_result1 = await self._run_ai_detection(code1, language)
         ai_result2 = await self._run_ai_detection(code2, language)
         
-        # Filter out any exceptions
+        # Filter out exceptions
         valid_results = [r for r in layer_results if not isinstance(r, Exception)]
         
-        # Calculate weighted similarity score
-        overall_similarity = self._calculate_weighted_score(valid_results)
+        # Extract AI semantic analysis if present
+        is_natural_similarity = False
+        ai_reasoning = ""
+        if use_ai and valid_results:
+            for result in valid_results:
+                if result.layer_name == "AI Semantic Analysis":
+                    is_natural_similarity = result.details.get('is_natural_similarity', False)
+                    ai_reasoning = result.details.get('reasoning', '')
+                    break
         
-        # Determine similarity level and flag color
+        # Calculate weighted similarity
+        overall_similarity = self._calculate_weighted_score(valid_results, weights)
+        
+        # AI override: If AI says it's natural similarity, reduce final score
+        if is_natural_similarity and overall_similarity > 0.3:
+            print(f"🤖 AI detected natural similarity, adjusting score from {overall_similarity:.2%}")
+            overall_similarity = overall_similarity * 0.7  # Reduce by 30%
+        
+        # Determine similarity level and flag
         similarity_level = self._classify_similarity(overall_similarity)
         flag_color = self._assign_flag_color(similarity_level)
         
@@ -139,14 +181,13 @@ class PlagiarismDetector:
         is_likely_ai = ai_result1.similarity_score > 0.7 or ai_result2.similarity_score > 0.7
         ai_probability = max(ai_result1.similarity_score, ai_result2.similarity_score)
         
-        # Add AI detection to results
-        valid_results.append(ai_result1)
-        
         # Generate recommendations
         recommendations = self._generate_recommendations(
             overall_similarity,
             is_likely_ai,
-            valid_results
+            valid_results,
+            is_natural_similarity,
+            ai_reasoning
         )
         
         # Calculate confidence
@@ -165,24 +206,51 @@ class PlagiarismDetector:
             ai_probability=ai_probability,
             recommendations=recommendations,
             confidence=confidence,
-            processing_time=processing_time
+            processing_time=processing_time,
+            is_natural_similarity=is_natural_similarity,
+            ai_reasoning=ai_reasoning
         )
     
-    async def _run_ast_analysis(
+    async def _run_ai_semantic_analysis(
         self,
         code1: str,
         code2: str,
-        language: str
+        language: str,
+        problem_context: str = None
     ) -> DetectionResult:
+        """Run AI-powered semantic comparison"""
+        import time
+        start = time.time()
+        
+        try:
+            similarity, details = await self.ai_semantic.compare(
+                code1, code2, language, problem_context
+            )
+            
+            return DetectionResult(
+                layer_name="AI Semantic Analysis",
+                similarity_score=similarity,
+                confidence=details.get('confidence', 0.85),
+                details=details,
+                execution_time=time.time() - start
+            )
+        except Exception as e:
+            print(f"⚠️ AI Semantic Analysis failed: {e}")
+            return DetectionResult(
+                layer_name="AI Semantic Analysis",
+                similarity_score=0.5,  # Neutral fallback
+                confidence=0.0,
+                details={"error": str(e)},
+                execution_time=time.time() - start
+            )
+    
+    async def _run_ast_analysis(self, code1: str, code2: str, language: str) -> DetectionResult:
         """Run Abstract Syntax Tree comparison"""
         import time
         start = time.time()
         
         try:
-            similarity, details = await self.ast_analyzer.compare(
-                code1, code2, language
-            )
-            
+            similarity, details = await self.ast_analyzer.compare(code1, code2, language)
             return DetectionResult(
                 layer_name="AST Analysis",
                 similarity_score=similarity,
@@ -199,21 +267,13 @@ class PlagiarismDetector:
                 execution_time=time.time() - start
             )
     
-    async def _run_token_analysis(
-        self,
-        code1: str,
-        code2: str,
-        language: str
-    ) -> DetectionResult:
+    async def _run_token_analysis(self, code1: str, code2: str, language: str) -> DetectionResult:
         """Run token fingerprinting comparison"""
         import time
         start = time.time()
         
         try:
-            similarity, details = await self.token_fingerprinter.compare(
-                code1, code2, language
-            )
-            
+            similarity, details = await self.token_fingerprinter.compare(code1, code2, language)
             return DetectionResult(
                 layer_name="Token Fingerprinting",
                 similarity_score=similarity,
@@ -230,21 +290,13 @@ class PlagiarismDetector:
                 execution_time=time.time() - start
             )
     
-    async def _run_control_flow_analysis(
-        self,
-        code1: str,
-        code2: str,
-        language: str
-    ) -> DetectionResult:
+    async def _run_control_flow_analysis(self, code1: str, code2: str, language: str) -> DetectionResult:
         """Run control flow graph comparison"""
         import time
         start = time.time()
         
         try:
-            similarity, details = await self.control_flow_analyzer.compare(
-                code1, code2, language
-            )
-            
+            similarity, details = await self.control_flow_analyzer.compare(code1, code2, language)
             return DetectionResult(
                 layer_name="Control Flow Analysis",
                 similarity_score=similarity,
@@ -261,20 +313,13 @@ class PlagiarismDetector:
                 execution_time=time.time() - start
             )
     
-    async def _run_ai_detection(
-        self,
-        code: str,
-        language: str
-    ) -> DetectionResult:
+    async def _run_ai_detection(self, code: str, language: str) -> DetectionResult:
         """Detect if code is AI-generated"""
         import time
         start = time.time()
         
         try:
-            ai_probability, details = await self.ai_detector.analyze(
-                code, language
-            )
-            
+            ai_probability, details = await self.ai_detector.analyze(code, language)
             return DetectionResult(
                 layer_name="AI Detection",
                 similarity_score=ai_probability,
@@ -291,52 +336,35 @@ class PlagiarismDetector:
                 execution_time=time.time() - start
             )
     
-    def _calculate_weighted_score(self, results: List[DetectionResult]) -> float:
-        """
-        Calculate weighted similarity score from layer results
-        
-        FIXED: Proper layer name to weight mapping
-        """
+    def _calculate_weighted_score(self, results: List[DetectionResult], weights: Dict) -> float:
+        """Calculate weighted similarity score"""
         total_score = 0.0
         total_weight = 0.0
         
-        # Map layer names to weight keys
         LAYER_WEIGHT_MAP = {
+            "AI Semantic Analysis": "ai_semantic",
             "AST Analysis": "ast",
             "Token Fingerprinting": "token",
             "Control Flow Analysis": "control_flow",
-            "AI Detection": "ai_detection"
         }
         
         for result in results:
-            # Skip AI detection for overall similarity (it's tracked separately)
             if result.layer_name == "AI Detection":
                 continue
             
-            # Get weight using proper mapping
             weight_key = LAYER_WEIGHT_MAP.get(result.layer_name)
-            
-            if weight_key is None:
-                print(f"⚠️ WARNING: Unknown layer '{result.layer_name}', skipping")
+            if weight_key is None or weight_key not in weights:
                 continue
             
-            weight = self.WEIGHTS.get(weight_key, 0.0)
-            
-            if weight == 0.0:
-                print(f"⚠️ WARNING: Layer '{result.layer_name}' has 0 weight")
-                continue
-            
-            # Weight by confidence
+            weight = weights[weight_key]
             effective_weight = weight * result.confidence
             
             total_score += result.similarity_score * effective_weight
             total_weight += effective_weight
             
-            # Debug logging (remove in production)
             print(f"  {result.layer_name}: {result.similarity_score:.2%} × {weight} × {result.confidence} = {result.similarity_score * effective_weight:.4f}")
         
         if total_weight == 0:
-            print("⚠️ ERROR: Total weight is 0!")
             return 0.0
         
         final_score = total_score / total_weight
@@ -354,7 +382,7 @@ class PlagiarismDetector:
             return SimilarityLevel.HIGH
     
     def _assign_flag_color(self, level: SimilarityLevel) -> FlagColor:
-        """Assign visual flag color based on similarity level"""
+        """Assign visual flag color"""
         mapping = {
             SimilarityLevel.CLEAN: FlagColor.GREEN,
             SimilarityLevel.SUSPICIOUS: FlagColor.YELLOW,
@@ -366,24 +394,36 @@ class PlagiarismDetector:
         self,
         similarity: float,
         is_ai: bool,
-        results: List[DetectionResult]
+        results: List[DetectionResult],
+        is_natural: bool = False,
+        ai_reasoning: str = ""
     ) -> List[str]:
-        """Generate action recommendations based on analysis"""
+        """Generate action recommendations"""
         recommendations = []
+        
+        # AI override message
+        if is_natural and similarity < 0.60:
+            recommendations.append(
+                f"🤖 AI ANALYSIS: Natural similarity detected. {ai_reasoning}"
+            )
         
         if similarity >= 0.80:
             recommendations.append(
-                "CRITICAL: Extremely high similarity detected. "
-                "Manual review strongly recommended."
+                "CRITICAL: Extremely high similarity detected. Manual review strongly recommended."
             )
         elif similarity >= 0.60:
             recommendations.append(
                 "WARNING: High similarity detected. Review for potential plagiarism."
             )
         elif similarity >= 0.30:
-            recommendations.append(
-                "CAUTION: Moderate similarity. May be acceptable for similar problems."
-            )
+            if is_natural:
+                recommendations.append(
+                    "CAUTION: Moderate similarity, but AI detected natural patterns. Likely acceptable."
+                )
+            else:
+                recommendations.append(
+                    "CAUTION: Moderate similarity. May be acceptable for similar problems."
+                )
         else:
             recommendations.append(
                 "PASS: Low similarity. Code appears original."
@@ -391,60 +431,35 @@ class PlagiarismDetector:
         
         if is_ai:
             recommendations.append(
-                "AI DETECTION: Code shows patterns consistent with AI generation. "
-                "Verify student understanding."
+                "AI DETECTION: Code shows patterns consistent with AI generation. Verify student understanding."
             )
-        
-        # Check for specific patterns
-        for result in results:
-            if result.layer_name == "AST Analysis" and result.similarity_score > 0.9:
-                recommendations.append(
-                    "AST: Nearly identical program structure detected."
-                )
-            
-            if result.layer_name == "Token Fingerprinting" and result.similarity_score > 0.9:
-                recommendations.append(
-                    "TOKEN: Code appears to be copied with minimal changes."
-                )
         
         return recommendations
     
     def _calculate_confidence(self, results: List[DetectionResult]) -> float:
-        """Calculate overall confidence in the plagiarism detection"""
+        """Calculate overall confidence"""
         if not results:
             return 0.0
         
-        # Average confidence across all layers
         confidences = [r.confidence for r in results if r.confidence > 0]
-        
         if not confidences:
             return 0.0
         
         return sum(confidences) / len(confidences)
 
 
-# Batch comparison utilities
 class BatchDetector:
-    """Utility for comparing multiple submissions efficiently"""
+    """Utility for comparing multiple submissions (WITHOUT AI to save costs)"""
     
     def __init__(self):
-        self.detector = PlagiarismDetector()
+        self.detector = PlagiarismDetector(use_ai=False)  # Disable AI for batch
     
     async def compare_all_pairs(
         self,
-        submissions: List[Tuple[str, str, str]],  # (id, code, language)
+        submissions: List[Tuple[str, str, str]],
         progress_callback: Optional[callable] = None
     ) -> List[PlagiarismReport]:
-        """
-        Compare all pairs of submissions
-        
-        Args:
-            submissions: List of (submission_id, code, language) tuples
-            progress_callback: Optional callback for progress updates
-        
-        Returns:
-            List of plagiarism reports for all pairs
-        """
+        """Compare all pairs WITHOUT AI semantic analysis"""
         reports = []
         total_pairs = len(submissions) * (len(submissions) - 1) // 2
         completed = 0
@@ -454,12 +469,12 @@ class BatchDetector:
                 sub1_id, code1, lang1 = submissions[i]
                 sub2_id, code2, lang2 = submissions[j]
                 
-                # Skip if different languages
                 if lang1 != lang2:
                     continue
                 
                 report = await self.detector.compare_submissions(
-                    code1, code2, lang1, sub1_id, sub2_id
+                    code1, code2, lang1, sub1_id, sub2_id,
+                    use_ai_semantic=False  # Force disable AI
                 )
                 
                 reports.append(report)
@@ -469,14 +484,3 @@ class BatchDetector:
                     progress_callback(completed, total_pairs)
         
         return reports
-    
-    def filter_flagged_reports(
-        self,
-        reports: List[PlagiarismReport],
-        min_similarity: float = 0.60
-    ) -> List[PlagiarismReport]:
-        """Filter reports to only high-similarity cases"""
-        return [
-            r for r in reports
-            if r.overall_similarity >= min_similarity
-        ]

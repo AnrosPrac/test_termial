@@ -73,25 +73,79 @@ class PlagiarismReportResponse(BaseModel):
 
 # ==================== ENDPOINTS ====================
 
+class CodeComparisonRequest(BaseModel):
+    """Compare two code submissions with AI"""
+    code1: str
+    code2: str
+    language: str
+    submission1_id: Optional[str] = "code1"
+    submission2_id: Optional[str] = "code2"
+    problem_context: Optional[str] = None  # NEW: Problem description for better AI analysis
+    use_ai: Optional[bool] = True  # NEW: Enable/disable AI semantic analysis
+    
+    @validator('language')
+    def validate_language(cls, v):
+        if v.lower() not in ['c', 'cpp', 'python']:
+            raise ValueError('Language must be c, cpp, or python')
+        return v.lower()
+    
+    @validator('code1', 'code2')
+    def validate_code(cls, v):
+        if len(v.strip()) == 0:
+            raise ValueError('Code cannot be empty')
+        if len(v.encode('utf-8')) > 500 * 1024:  # 500KB
+            raise ValueError('Code too large (max 500KB)')
+        return v
+
+
+class PlagiarismReportResponse(BaseModel):
+    """Enhanced response with AI reasoning"""
+    submission1_id: str
+    submission2_id: str
+    overall_similarity: float
+    similarity_level: str
+    flag_color: str
+    is_likely_ai_generated: bool
+    ai_probability: float
+    recommendations: List[str]
+    confidence: float
+    processing_time: float
+    layer_results: List[dict]
+    # NEW fields
+    is_natural_similarity: Optional[bool] = False
+    ai_reasoning: Optional[str] = ""
+
+
+# ==================== ENDPOINTS ====================
+
 @router.post("/compare", response_model=PlagiarismReportResponse)
 async def compare_code_submissions(
     request: CodeComparisonRequest,
     user: dict = Depends(verify_client_bound_request)
 ):
     """
-    Compare two code submissions for plagiarism
+    Compare two code submissions for plagiarism WITH AI SEMANTIC ANALYSIS
     
-    Returns detailed similarity analysis with multiple detection layers
+    Now includes:
+    - AI-powered semantic comparison (50% weight)
+    - Intelligent boilerplate filtering
+    - Natural similarity detection
+    - Problem context awareness
+    
+    The AI understands that similarities in basic constructs (print, def, for, if)
+    are natural and not plagiarism. It focuses on unique algorithmic logic.
     """
     try:
-        detector = PlagiarismDetector()
+        detector = PlagiarismDetector(use_ai=request.use_ai)
         
         report = await detector.compare_submissions(
             code1=request.code1,
             code2=request.code2,
             language=request.language,
             submission1_id=request.submission1_id,
-            submission2_id=request.submission2_id
+            submission2_id=request.submission2_id,
+            problem_context=request.problem_context,
+            use_ai_semantic=request.use_ai
         )
         
         # Convert layer results to dict
@@ -116,11 +170,14 @@ async def compare_code_submissions(
             recommendations=report.recommendations,
             confidence=round(report.confidence, 4),
             processing_time=round(report.processing_time, 4),
-            layer_results=layer_dicts
+            layer_results=layer_dicts,
+            is_natural_similarity=report.is_natural_similarity,
+            ai_reasoning=report.ai_reasoning
         )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @router.post("/batch-analyze/{assignment_id}")
