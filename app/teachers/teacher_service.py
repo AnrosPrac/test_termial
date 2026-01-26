@@ -676,7 +676,7 @@ async def create_testcase(
 # ==================== SUBMISSION MANAGEMENT ====================
 
 async def get_assignment_submissions(assignment_id: str) -> List[dict]:
-    """Get all submissions for an assignment"""
+    """Get all submissions for an assignment - includes full code"""
     cursor = db.submissions.find({"assignment_id": assignment_id}).sort("submitted_at", -1)
     submissions = await cursor.to_list(length=None)
     
@@ -685,7 +685,19 @@ async def get_assignment_submissions(assignment_id: str) -> List[dict]:
         profile = await db.users_profile.find_one({"user_id": sub["student_user_id"]})
         sub["student_username"] = profile.get("username", "Unknown") if profile else "Unknown"
         sub.pop("_id", None)
-        sub.pop("answers", None)  # Don't send full code in list view
+        
+        # ✅ FIX: Keep answers field WITH full code for teacher review
+        if "answers" in sub:
+            sub["answers"] = [
+                {
+                    "question_id": ans.get("question_id"),
+                    "code": ans.get("code", "")  # Full code included
+                }
+                for ans in sub.get("answers", [])
+            ]
+        else:
+            # Fallback for old data structure (if code was stored at root level)
+            sub["answers"] = [{"question_id": "unknown", "code": sub.get("code", "")}]
         
         # Include plagiarism flag for teacher visibility
         sub["plagiarism_flag"] = sub.get("plagiarism_flag", "pending")
@@ -694,7 +706,6 @@ async def get_assignment_submissions(assignment_id: str) -> List[dict]:
         results.append(sub)
     
     return results
-
 async def get_submission_detail(submission_id: str) -> dict:
     """Get full submission details including per-question code"""
 
