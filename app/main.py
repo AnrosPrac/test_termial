@@ -307,6 +307,8 @@ async def check_user_exists(sidhi_user_id: str, user: str = Depends(verify_clien
                     "department": user_record.get("department"),
                     "starting_year": user_record.get("starting_year"),
                     "is_admin": user_record.get("is_admin"),
+                    "is_teacher": user_record.get("is_teacher", False),
+                    "role": user_record.get("role", "student"),
                     "degree": user_record.get("degree"),
                     "sidhi_id": user_record.get("sidhi_id")
                 }
