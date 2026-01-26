@@ -431,7 +431,7 @@ async def submit_assignment(
     assignment_id: str,
     student: StudentContext,
     language: str,
-    code: str
+    answers: list   
 ) -> dict:
     """
     Student submits code for assignment
@@ -474,7 +474,7 @@ async def submit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "code": code,
+        "code": answers,
         "attempt_number": attempts + 1,
         "test_result": None,  # Will be updated by async test runner
         "approved": None,
@@ -492,13 +492,13 @@ async def submit_assignment(
     
     # Enqueue plagiarism detection (runs in background)
     from app.plagiarism.integration import trigger_plagiarism_check_for_submission
-    asyncio.create_task(trigger_plagiarism_check_for_submission(
-        submission_id=submission_id,
-        assignment_id=assignment_id,
-        student_user_id=student.user_id,
-        code=code,
-        language=language
-    ))
+    # asyncio.create_task(trigger_plagiarism_check_for_submission(
+    #     submission_id=submission_id,
+    #     assignment_id=assignment_id,
+    #     student_user_id=student.user_id,
+    #     code=code,
+    #     language=language
+    # ))
     
     await log_student_audit(student, "submit", assignment_id, True, metadata={
         "submission_id": submission_id,

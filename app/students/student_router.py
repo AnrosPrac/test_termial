@@ -148,7 +148,7 @@ async def submit_assignment(
         assignment_id,
         student,
         data.language,
-        data.code
+        answers=data.answers 
     )
 
 @router.get("/assignments/{assignment_id}/submissions", response_model=List[SubmissionListItem])
@@ -211,5 +211,5 @@ async def resubmit_assignment(
         submission_id,
         student,
         data.language,
-        data.code
+        answers=data.answers 
     )

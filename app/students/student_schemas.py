@@ -24,7 +24,7 @@ class ResubmissionCreate(BaseModel):
     Student resubmits after teacher requests changes
     """
     language: str = Field(..., min_length=1)
-    code: str = Field(..., min_length=10, max_length=50000)
+    answers: List[QuestionAnswer]
     
     @validator('language')
     def validate_language(cls, v):
