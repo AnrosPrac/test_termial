@@ -474,7 +474,7 @@ async def submit_assignment(
         "student_user_id": student.user_id,
         "student_sidhi_id": student.sidhi_id,
         "language": language,
-        "code": answers,
+        
         "attempt_number": attempts + 1,
         "test_result": None,  # Will be updated by async test runner
         "approved": None,
