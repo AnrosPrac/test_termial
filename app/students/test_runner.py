@@ -9,6 +9,7 @@ import os
 from typing import Dict, List
 from motor.motor_asyncio import AsyncIOMotorClient
 import asyncio
+from datetime import datetime
 
 # Reuse your existing judge service configuration
 JUDGE_API_URL = os.getenv("JUDGE_API_URL")
@@ -286,7 +287,7 @@ async def run_assignment_tests(
             "questions_tested": len(answered_question_ids),
             "question_results": question_results,  # ✅ Per-question breakdown
             "is_complete": final_score == 100.0,  # ✅ Flag for auto-approval
-            "tested_at": db.submissions.find_one({"submission_id": submission_id})
+            "tested_at": datetime.utcnow()
         }
         
         # Step 5: Update submission with results
