@@ -27,12 +27,14 @@ db = client.lumetrics_db
 # ==================== MODELS ====================
 
 class CodeComparisonRequest(BaseModel):
-    """Compare two code submissions"""
+    """Compare two code submissions with AI"""
     code1: str
     code2: str
     language: str
     submission1_id: Optional[str] = "code1"
     submission2_id: Optional[str] = "code2"
+    problem_context: Optional[str] = None  # Problem description for better AI analysis
+    use_ai: Optional[bool] = True  # Enable/disable AI semantic analysis
     
     @validator('language')
     def validate_language(cls, v):
@@ -54,48 +56,6 @@ class BatchComparisonRequest(BaseModel):
     assignment_id: str
     question_number: int
     recompute: bool = False  # Force recomputation
-
-
-class PlagiarismReportResponse(BaseModel):
-    """Plagiarism report response"""
-    submission1_id: str
-    submission2_id: str
-    overall_similarity: float
-    similarity_level: str
-    flag_color: str
-    is_likely_ai_generated: bool
-    ai_probability: float
-    recommendations: List[str]
-    confidence: float
-    processing_time: float
-    layer_results: List[dict]
-
-
-# ==================== ENDPOINTS ====================
-
-class CodeComparisonRequest(BaseModel):
-    """Compare two code submissions with AI"""
-    code1: str
-    code2: str
-    language: str
-    submission1_id: Optional[str] = "code1"
-    submission2_id: Optional[str] = "code2"
-    problem_context: Optional[str] = None  # NEW: Problem description for better AI analysis
-    use_ai: Optional[bool] = True  # NEW: Enable/disable AI semantic analysis
-    
-    @validator('language')
-    def validate_language(cls, v):
-        if v.lower() not in ['c', 'cpp', 'python']:
-            raise ValueError('Language must be c, cpp, or python')
-        return v.lower()
-    
-    @validator('code1', 'code2')
-    def validate_code(cls, v):
-        if len(v.strip()) == 0:
-            raise ValueError('Code cannot be empty')
-        if len(v.encode('utf-8')) > 500 * 1024:  # 500KB
-            raise ValueError('Code too large (max 500KB)')
-        return v
 
 
 class PlagiarismReportResponse(BaseModel):

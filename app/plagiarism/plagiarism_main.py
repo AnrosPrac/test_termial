@@ -97,7 +97,7 @@ class PlagiarismDetector:
         
         self.use_ai = use_ai
         if use_ai:
-            from app.plagiarism.ai_semnatic_analyzer import AISemanticAnalyzer
+            from app.plagiarism.ai_semantic_analyzer import AISemanticAnalyzer
             self.ai_semantic = AISemanticAnalyzer()
     
     async def compare_submissions(
