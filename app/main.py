@@ -37,7 +37,7 @@ MONGO_URL = os.getenv("MONGO_URL")
 VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
-
+setup_course_routes(app)   
 
 class UserDetailCreate(BaseModel):
     username: str
@@ -60,7 +60,7 @@ async def startup_event():
     await create_teacher_indexes()
     await create_student_indexes()
     
-    setup_course_routes(app)        # ← Register routes FIRST
+         # ← Register routes FIRST
     await startup_course_system()    # ← Then initialize system
 
 app.add_middleware(
