@@ -58,7 +58,7 @@ async def create_course_indexes():
 def setup_course_routes(app: FastAPI):
     """Register all course-related routers"""
     
-    app.include_router(course_router, prefix="/courses")
+    app.include_router(course_router, prefix="/api/courses")
     app.include_router(enrollment_router, prefix="/courses")
     app.include_router(submission_router, prefix="/courses")
     app.include_router(leaderboard_router, prefix="/courses")

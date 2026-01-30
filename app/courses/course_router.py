@@ -8,7 +8,7 @@ from app.courses.database import (
 )
 
 from app.courses.dependencies import get_db,get_current_user_id
-router = APIRouter(prefix="/api/courses", tags=["Course Management"])
+router = APIRouter( tags=["Course Management"])
 
 # ==================== COURSE CRUD ====================
 
@@ -86,7 +86,7 @@ async def publish_course_endpoint(
         "course_id": course_id
     }
 
-@router.get("/")
+@router.get("/list")
 async def list_courses_endpoint(
     course_type: str = None,
     domain: str = None,
