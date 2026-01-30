@@ -11,6 +11,14 @@ from app.courses.dependencies import get_db,get_current_user_id
 router = APIRouter( tags=["Course Management"])
 
 # ==================== COURSE CRUD ====================
+from bson import ObjectId
+
+def serialize_mongo(doc: dict) -> dict:
+    doc["_id"] = str(doc["_id"])
+    return doc
+
+def serialize_many(docs: list[dict]) -> list[dict]:
+    return [{**doc, "_id": str(doc["_id"])} for doc in docs]
 
 @router.get("/list")
 async def list_courses_endpoint(
@@ -29,7 +37,7 @@ async def list_courses_endpoint(
     
     courses = await list_courses(db, filters, skip, limit)
     return {
-        "courses": courses,
+        "courses": serialize_many(courses),
         "count": len(courses),
         "skip": skip,
         "limit": limit
@@ -60,7 +68,7 @@ async def get_course_endpoint(
     course = await get_course(db, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    return course
+    return serialize_mongo(course)
 
 @router.put("/{course_id}")
 async def update_course_endpoint(
