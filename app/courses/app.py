@@ -7,13 +7,6 @@ from fastapi import FastAPI, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import os
 
-# Import routers
-from app.courses.course_router import router as course_router
-from app.courses.enrollment_router import router as enrollment_router
-from app.courses.submission_router import router as submission_router
-from app.courses.leaderboard_router import router as leaderboard_router
-from app.courses.certificate_router import router as certificate_router
-
 # Import auth from client_bound_guard (matches your main.py pattern)
 from app.ai.client_bound_guard import verify_client_bound_request
 from app.courses.dependencies import get_db_instance
@@ -57,14 +50,8 @@ async def create_course_indexes():
 
 def setup_course_routes(app: FastAPI):
     """Register all course-related routers"""
+    pass
 
-    app.include_router(course_router, prefix="/api/courses")
-    app.include_router(enrollment_router, prefix="/api/enrollments")
-    app.include_router(submission_router, prefix="/api/submissions")
-    app.include_router(leaderboard_router, prefix="/api/leaderboards")
-    app.include_router(certificate_router, prefix="/api/certificates")
-    
-    print("✅ Course routes registered")
 
 # ==================== STARTUP ====================
 

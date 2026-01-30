@@ -28,6 +28,11 @@ from app.teachers.database_setup import create_teacher_indexes, create_student_i
 from app.courses.app import startup_course_system
 from app.courses.app import setup_course_routes, startup_course_system
 from app.courses.practice_router import router as practice_router
+from app.courses.course_router import router as course_router
+from app.courses.enrollment_router import router as enrollment_router
+from app.courses.submission_router import router as submission_router
+from app.courses.leaderboard_router import router as leaderboard_router
+from app.courses.certificate_router import router as certificate_router
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -37,7 +42,7 @@ MONGO_URL = os.getenv("MONGO_URL")
 VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
-setup_course_routes(app)   
+
 
 class UserDetailCreate(BaseModel):
     username: str
@@ -103,6 +108,11 @@ app.include_router(payment_router, prefix="/payment")
 app.include_router(teacher_router)  # ✅ ADD THIS
 app.include_router(practice_router)
 app.include_router(student_router)  # ✅ ADD THIS
+app.include_router(course_router, prefix="/api/courses")
+app.include_router(enrollment_router, prefix="/api/enrollments")
+app.include_router(submission_router, prefix="/api/submissions")
+app.include_router(leaderboard_router, prefix="/api/leaderboards")
+app.include_router(certificate_router, prefix="/api/certificates")
 # ============================================================
 
 
