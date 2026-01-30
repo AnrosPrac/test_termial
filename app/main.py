@@ -25,8 +25,8 @@ from app.plagiarism.plagiarism_router import router as plag_router
 from app.teachers.teacher_router import router as teacher_router
 from app.students.student_router import router as student_router
 from app.teachers.database_setup import create_teacher_indexes, create_student_indexes
-
-
+from app.courses.app import setup_course_routes, startup_course_system
+from app.courses.practice_router import router as practice_router
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -59,6 +59,7 @@ async def startup_event():
     await create_indexes()
     await create_teacher_indexes()  # ✅ ADD THIS
     await create_student_indexes()  # ✅ ADD THIS
+    await startup_course_system()
 
 
 app.add_middleware(
@@ -99,6 +100,7 @@ app.include_router(coding_router, prefix="/coding")
 app.include_router(training_router, prefix="/training")
 app.include_router(payment_router, prefix="/payment")
 app.include_router(teacher_router)  # ✅ ADD THIS
+app.include_router(practice_router)
 app.include_router(student_router)  # ✅ ADD THIS
 # ============================================================
 

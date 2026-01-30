@@ -1,0 +1,873 @@
+# 🎯 GEMINI 2.5 PRO - TRAINING ROUTER REFACTORING TASK
+
+## 📋 TASK OVERVIEW
+
+You are refactoring an **existing FastAPI router** for Lumetrix's learning platform. This router currently serves 5,000 training sample questions but lacks progress tracking and language-based filtering needed for the gamification system.
+
+**Current File:** `app/training/training_router.py` (480 lines)
+**Database:** MongoDB (Motor async driver)
+**Collection:** `training_samples_filtered` (5,000 documents)
+
+---
+
+## 🎯 YOUR MISSION
+
+Transform the existing training router from a **simple content delivery system** into a **progress-tracking learning platform** with:
+
+1. ✅ Language-based filtering (C, C++, Python)
+2. ✅ Knowledge area classification
+3. ✅ Per-student read tracking
+4. ✅ Progress analytics
+5. ✅ Points system integration
+
+---
+
+## 📊 CURRENT STATE (What You're Starting With)
+
+### **Existing Collection: `training_samples_filtered`**
+
+```javascript
+// Current Document Structure (5,000 documents):
+{
+  "_id": ObjectId("69746036f3d083fa27647ec3"),
+  "sample_id": "c_ch1_q_000025",
+  "chapter": 1,
+  "type": "program",
+  "difficulty": "easy",
+  "question": "Write a C program that prints the message \"Hello, C Programming!\" to the console.",
+  "answer": "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, C Programming!\");\n    return 0;\n}\n"
+}
+```
+
+### **Existing Endpoints (8 total):**
+
+```python
+GET    /samples                    # Paginated list with filters
+GET    /chapters                   # Chapter statistics
+GET    /filters                    # Available filter options
+GET    /samples/{sample_id}        # Get specific sample
+GET    /stats                      # Dataset statistics
+GET    /random                     # Random sample
+GET    /search                     # Search samples
+```
+
+### **What's Already Working:**
+- ✅ Pagination (page, limit)
+- ✅ Filtering by chapter, type, difficulty
+- ✅ JWT authentication (`verify_client_bound_request`)
+- ✅ MongoDB async operations (Motor)
+- ✅ Proper error handling
+
+---
+
+## 🔧 REQUIRED CHANGES
+
+### **CHANGE 1: Add Fields to Existing Collection**
+
+**Migration Script Needed:**
+
+```python
+# Create this as: app/migrations/add_language_to_samples.py
+
+async def migrate_add_language_and_knowledge():
+    """
+    Add 'language', 'knowledge_area', and 'read_points' to all training samples
+    Based on sample_id prefix: c_ch1_xxx → language: "c"
+    """
+    
+    # Language mapping based on sample_id prefix
+    language_map = {
+        "c_": "c",
+        "cpp_": "cpp",
+        "py_": "python"
+    }
+    
+    # Knowledge area mapping based on chapter
+    # You'll need to define this based on curriculum
+    knowledge_area_map = {
+        "c": {
+            1: "basics",
+            2: "control_flow",
+            3: "functions",
+            4: "arrays",
+            5: "strings",
+            6: "pointers",
+            7: "structures",
+            8: "file_io",
+            9: "memory_management",
+            10: "advanced"
+        },
+        "cpp": {
+            1: "basics",
+            2: "control_flow",
+            3: "functions",
+            4: "arrays",
+            5: "strings",
+            6: "pointers",
+            7: "oop",
+            8: "inheritance",
+            9: "polymorphism",
+            10: "stl",
+            11: "templates",
+            12: "exception_handling"
+        },
+        "python": {
+            1: "basics",
+            2: "control_flow",
+            3: "functions",
+            4: "data_structures",
+            5: "strings",
+            6: "file_io",
+            7: "oop",
+            8: "modules"
+        }
+    }
+    
+    samples = await db.training_samples_filtered.find({}).to_list(length=None)
+    
+    updated = 0
+    for sample in samples:
+        sample_id = sample["sample_id"]
+        
+        # Determine language from sample_id prefix
+        language = None
+        for prefix, lang in language_map.items():
+            if sample_id.startswith(prefix):
+                language = lang
+                break
+        
+        if not language:
+            language = "c"  # Default fallback
+        
+        # Determine knowledge area from chapter
+        chapter = sample.get("chapter", 1)
+        knowledge_area = knowledge_area_map.get(language, {}).get(chapter, "general")
+        
+        # Update document
+        await db.training_samples_filtered.update_one(
+            {"_id": sample["_id"]},
+            {
+                "$set": {
+                    "language": language,
+                    "knowledge_area": knowledge_area,
+                    "read_points": 1,
+                    "tags": []  # Empty array for future use
+                }
+            }
+        )
+        updated += 1
+    
+    return updated
+
+# Run this migration first before deploying new router
+```
+
+**Expected Result:**
+```javascript
+// After migration, documents look like:
+{
+  "_id": ObjectId,
+  "sample_id": "c_ch1_q_000025",
+  "chapter": 1,
+  "type": "program",
+  "difficulty": "easy",
+  "question": "...",
+  "answer": "...",
+  
+  // NEW FIELDS:
+  "language": "c",              // ← ADDED
+  "knowledge_area": "basics",   // ← ADDED
+  "read_points": 1,             // ← ADDED
+  "tags": []                    // ← ADDED
+}
+```
+
+---
+
+### **CHANGE 2: Create New Collection for Progress Tracking**
+
+**New Collection: `sample_progress`**
+
+```javascript
+// This collection tracks which samples each student has read
+{
+  "_id": ObjectId,
+  "sidhi_id": "SIDHI_A6281C8BA865",        // Student ID
+  "sample_id": "c_ch1_q_000025",           // Sample ID
+  "language": "c",                          // Denormalized for fast queries
+  "knowledge_area": "basics",               // Denormalized for fast queries
+  "read_at": ISODate("2026-01-29T12:00:00Z"),
+  "time_spent": 45,                         // Seconds spent reading
+  "revisited_count": 1,                     // How many times student visited
+  "last_revisited": ISODate("2026-01-29T12:00:00Z")
+}
+
+// Indexes needed:
+db.sample_progress.createIndex({ "sidhi_id": 1, "sample_id": 1 }, { unique: true })
+db.sample_progress.createIndex({ "sidhi_id": 1, "language": 1 })
+db.sample_progress.createIndex({ "sidhi_id": 1, "knowledge_area": 1 })
+```
+
+---
+
+### **CHANGE 3: Modify Existing Endpoints**
+
+#### **A. GET /samples - Add Language Filter (REQUIRED)**
+
+**Current:**
+```python
+@router.get("/samples")
+async def get_training_samples(
+    user: dict = Depends(verify_client_bound_request),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    chapter: Optional[int] = Query(None),
+    type: Optional[str] = Query(None),
+    difficulty: Optional[str] = Query(None)
+):
+```
+
+**Change To:**
+```python
+@router.get("/samples")
+async def get_training_samples(
+    user: dict = Depends(verify_client_bound_request),
+    language: str = Query(..., description="Language: c, cpp, python"),  # ← ADD THIS (REQUIRED)
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    chapter: Optional[int] = Query(None),
+    knowledge_area: Optional[str] = Query(None),  # ← ADD THIS (OPTIONAL)
+    type: Optional[str] = Query(None),
+    difficulty: Optional[str] = Query(None)
+):
+    """
+    Get paginated training samples filtered by language.
+    
+    IMPORTANT: Now returns 'isRead' and 'readAt' for each sample based on current user.
+    """
+    
+    # Validate language
+    if language not in ["c", "cpp", "python"]:
+        raise HTTPException(status_code=400, detail="Language must be c, cpp, or python")
+    
+    # Build filter query
+    filter_query = {"language": language}  # ← LANGUAGE IS NOW REQUIRED
+    
+    if chapter is not None:
+        filter_query["chapter"] = chapter
+    
+    if knowledge_area:  # ← ADD THIS
+        filter_query["knowledge_area"] = knowledge_area
+    
+    if type:
+        filter_query["type"] = type
+    
+    if difficulty:
+        filter_query["difficulty"] = difficulty
+    
+    # ... rest of pagination logic (keep as-is) ...
+    
+    samples = await samples_cursor.to_list(length=limit)
+    
+    # ← ADD THIS: Get user's read progress
+    sidhi_id = user.get("sub")
+    read_samples = await db.sample_progress.find(
+        {"sidhi_id": sidhi_id, "language": language},
+        {"sample_id": 1, "read_at": 1}
+    ).to_list(length=None)
+    
+    read_map = {s["sample_id"]: s["read_at"] for s in read_samples}
+    
+    # ← ADD THIS: Enrich samples with read status
+    for sample in samples:
+        sid = sample["sample_id"]
+        sample["isRead"] = sid in read_map
+        sample["readAt"] = read_map.get(sid, None)
+    
+    return {
+        "status": "success",
+        "data": samples,
+        "pagination": {
+            # ... keep existing pagination ...
+        }
+    }
+```
+
+#### **B. GET /samples/{sample_id} - Add Read Status**
+
+**Current:** Returns just the sample
+**Change:** Add `isRead` and `readAt` for the current user
+
+```python
+@router.get("/samples/{sample_id}")
+async def get_sample_by_id(
+    sample_id: str,
+    user: dict = Depends(verify_client_bound_request)
+):
+    sample = await db.training_samples_filtered.find_one(
+        {"sample_id": sample_id},
+        {"_id": 0}
+    )
+    
+    if not sample:
+        raise HTTPException(status_code=404, detail="Sample not found")
+    
+    # ← ADD THIS: Check if user has read this sample
+    sidhi_id = user.get("sub")
+    progress = await db.sample_progress.find_one({
+        "sidhi_id": sidhi_id,
+        "sample_id": sample_id
+    })
+    
+    sample["isRead"] = progress is not None
+    sample["readAt"] = progress["read_at"] if progress else None
+    sample["timeSpent"] = progress["time_spent"] if progress else 0
+    sample["revisitedCount"] = progress["revisited_count"] if progress else 0
+    
+    return {
+        "status": "success",
+        "data": sample
+    }
+```
+
+#### **C. GET /chapters - Add Language Parameter**
+
+**Change:** Filter chapters by language
+
+```python
+@router.get("/chapters")
+async def get_available_chapters(
+    user: dict = Depends(verify_client_bound_request),
+    language: str = Query(..., description="Language: c, cpp, python")  # ← ADD THIS
+):
+    if language not in ["c", "cpp", "python"]:
+        raise HTTPException(status_code=400, detail="Invalid language")
+    
+    # ← CHANGE: Add language filter to aggregation
+    chapter_stats = await db.training_samples_filtered.aggregate([
+        {"$match": {"language": language}},  # ← ADD THIS LINE
+        {
+            "$group": {
+                "_id": "$chapter",
+                # ... rest of aggregation (keep as-is) ...
+            }
+        },
+        {"$sort": {"_id": 1}}
+    ]).to_list(length=None)
+    
+    # ← ADD THIS: Get user's progress per chapter
+    sidhi_id = user.get("sub")
+    progress_by_chapter = await db.sample_progress.aggregate([
+        {"$match": {"sidhi_id": sidhi_id, "language": language}},
+        {"$group": {"_id": "$chapter", "read_count": {"$sum": 1}}}
+    ]).to_list(length=None)
+    
+    progress_map = {p["_id"]: p["read_count"] for p in progress_by_chapter}
+    
+    # ← CHANGE: Enrich chapters with progress
+    chapters = []
+    for item in chapter_stats:
+        chapter_num = item["_id"]
+        total = item["total_count"]
+        read = progress_map.get(chapter_num, 0)
+        
+        chapters.append({
+            "chapter": chapter_num,
+            "total_questions": total,
+            "read_questions": read,  # ← ADD
+            "progress_percentage": round((read / total * 100), 2),  # ← ADD
+            "breakdown": {
+                # ... keep existing breakdown ...
+            }
+        })
+    
+    return {
+        "status": "success",
+        "language": language,  # ← ADD
+        "total_chapters": len(chapters),
+        "chapters": chapters
+    }
+```
+
+#### **D. GET /stats - Add Language Parameter**
+
+Just add `language` as a required query parameter and filter by it.
+
+#### **E. GET /random - Add Language Parameter**
+
+Just add `language` as a required query parameter and filter by it.
+
+#### **F. GET /search - Add Language Parameter**
+
+Just add `language` as a required query parameter and filter by it.
+
+---
+
+### **CHANGE 4: Add NEW Endpoints**
+
+#### **NEW ENDPOINT 1: POST /samples/{sample_id}/mark-read**
+
+**Purpose:** Track when a student reads a sample and award points
+
+```python
+@router.post("/samples/{sample_id}/mark-read")
+async def mark_sample_read(
+    sample_id: str,
+    time_spent: int = Query(..., ge=1, le=3600, description="Time spent in seconds"),
+    user: dict = Depends(verify_client_bound_request)
+):
+    """
+    Mark a sample as read by the current user.
+    
+    - Awards points to the student
+    - Tracks reading time
+    - Counts revisits
+    - Updates student stats (triggers background job)
+    
+    Body Parameters:
+    - time_spent: Time spent reading in seconds (1-3600)
+    """
+    
+    sidhi_id = user.get("sub")
+    
+    # Verify sample exists
+    sample = await db.training_samples_filtered.find_one(
+        {"sample_id": sample_id},
+        {"language": 1, "knowledge_area": 1, "read_points": 1}
+    )
+    
+    if not sample:
+        raise HTTPException(status_code=404, detail="Sample not found")
+    
+    # Check if already read
+    existing = await db.sample_progress.find_one({
+        "sidhi_id": sidhi_id,
+        "sample_id": sample_id
+    })
+    
+    is_first_read = existing is None
+    
+    # Update or create progress record
+    now = datetime.utcnow()
+    
+    if is_first_read:
+        # First time reading - insert new record
+        await db.sample_progress.insert_one({
+            "sidhi_id": sidhi_id,
+            "sample_id": sample_id,
+            "language": sample["language"],
+            "knowledge_area": sample["knowledge_area"],
+            "read_at": now,
+            "time_spent": time_spent,
+            "revisited_count": 1,
+            "last_revisited": now
+        })
+        
+        points_awarded = sample.get("read_points", 1)
+        
+    else:
+        # Revisiting - update existing record
+        await db.sample_progress.update_one(
+            {"sidhi_id": sidhi_id, "sample_id": sample_id},
+            {
+                "$set": {
+                    "last_revisited": now,
+                    "time_spent": existing["time_spent"] + time_spent
+                },
+                "$inc": {"revisited_count": 1}
+            }
+        )
+        
+        points_awarded = 0  # Don't award points for revisits
+    
+    # TODO: Trigger stats recalculation job
+    # This will be handled by the background job system
+    # For now, just track the read
+    
+    return {
+        "status": "success",
+        "is_first_read": is_first_read,
+        "points_awarded": points_awarded,
+        "message": "Sample marked as read" if is_first_read else "Sample revisited"
+    }
+```
+
+#### **NEW ENDPOINT 2: GET /my-progress**
+
+**Purpose:** Get user's overall reading progress for a language
+
+```python
+@router.get("/my-progress")
+async def get_my_progress(
+    user: dict = Depends(verify_client_bound_request),
+    language: str = Query(..., description="Language: c, cpp, python")
+):
+    """
+    Get current user's reading progress for specified language.
+    
+    Returns:
+    - Total samples read vs total available
+    - Progress percentage
+    - Breakdown by chapter
+    - Breakdown by knowledge area
+    - Recent activity
+    """
+    
+    if language not in ["c", "cpp", "python"]:
+        raise HTTPException(status_code=400, detail="Invalid language")
+    
+    sidhi_id = user.get("sub")
+    
+    # Get total samples for this language
+    total_samples = await db.training_samples_filtered.count_documents({
+        "language": language
+    })
+    
+    # Get samples read by user
+    samples_read = await db.sample_progress.count_documents({
+        "sidhi_id": sidhi_id,
+        "language": language
+    })
+    
+    # Progress by chapter
+    chapter_progress = await db.sample_progress.aggregate([
+        {"$match": {"sidhi_id": sidhi_id, "language": language}},
+        {
+            "$lookup": {
+                "from": "training_samples_filtered",
+                "localField": "sample_id",
+                "foreignField": "sample_id",
+                "as": "sample"
+            }
+        },
+        {"$unwind": "$sample"},
+        {
+            "$group": {
+                "_id": "$sample.chapter",
+                "read_count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"_id": 1}}
+    ]).to_list(length=None)
+    
+    # Get total per chapter
+    chapter_totals = await db.training_samples_filtered.aggregate([
+        {"$match": {"language": language}},
+        {"$group": {"_id": "$chapter", "total": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]).to_list(length=None)
+    
+    chapter_totals_map = {c["_id"]: c["total"] for c in chapter_totals}
+    
+    # Progress by knowledge area
+    knowledge_progress = await db.sample_progress.aggregate([
+        {"$match": {"sidhi_id": sidhi_id, "language": language}},
+        {
+            "$group": {
+                "_id": "$knowledge_area",
+                "read_count": {"$sum": 1},
+                "total_time": {"$sum": "$time_spent"}
+            }
+        }
+    ]).to_list(length=None)
+    
+    # Get total per knowledge area
+    knowledge_totals = await db.training_samples_filtered.aggregate([
+        {"$match": {"language": language}},
+        {"$group": {"_id": "$knowledge_area", "total": {"$sum": 1}}}
+    ]).to_list(length=None)
+    
+    knowledge_totals_map = {k["_id"]: k["total"] for k in knowledge_totals}
+    
+    # Recent activity (last 10 reads)
+    recent_reads = await db.sample_progress.find(
+        {"sidhi_id": sidhi_id, "language": language},
+        {"sample_id": 1, "read_at": 1, "time_spent": 1}
+    ).sort("read_at", -1).limit(10).to_list(length=10)
+    
+    # Calculate total time invested
+    total_time = await db.sample_progress.aggregate([
+        {"$match": {"sidhi_id": sidhi_id, "language": language}},
+        {"$group": {"_id": None, "total": {"$sum": "$time_spent"}}}
+    ]).to_list(length=1)
+    
+    total_time_seconds = total_time[0]["total"] if total_time else 0
+    
+    return {
+        "status": "success",
+        "language": language,
+        "overview": {
+            "samples_read": samples_read,
+            "samples_total": total_samples,
+            "progress_percentage": round((samples_read / total_samples * 100), 2) if total_samples > 0 else 0,
+            "total_time_seconds": total_time_seconds,
+            "total_time_minutes": round(total_time_seconds / 60, 1)
+        },
+        "by_chapter": [
+            {
+                "chapter": cp["_id"],
+                "read": cp["read_count"],
+                "total": chapter_totals_map.get(cp["_id"], 0),
+                "percentage": round((cp["read_count"] / chapter_totals_map.get(cp["_id"], 1) * 100), 2)
+            }
+            for cp in chapter_progress
+        ],
+        "by_knowledge_area": [
+            {
+                "area": kp["_id"],
+                "read": kp["read_count"],
+                "total": knowledge_totals_map.get(kp["_id"], 0),
+                "percentage": round((kp["read_count"] / knowledge_totals_map.get(kp["_id"], 1) * 100), 2),
+                "time_spent_minutes": round(kp["total_time"] / 60, 1)
+            }
+            for kp in knowledge_progress
+        ],
+        "recent_activity": recent_reads
+    }
+```
+
+#### **NEW ENDPOINT 3: GET /knowledge-areas**
+
+**Purpose:** Get list of all knowledge areas for a language
+
+```python
+@router.get("/knowledge-areas")
+async def get_knowledge_areas(
+    user: dict = Depends(verify_client_bound_request),
+    language: str = Query(..., description="Language: c, cpp, python")
+):
+    """
+    Get all knowledge areas for specified language with sample counts.
+    """
+    
+    if language not in ["c", "cpp", "python"]:
+        raise HTTPException(status_code=400, detail="Invalid language")
+    
+    # Get unique knowledge areas with counts
+    knowledge_areas = await db.training_samples_filtered.aggregate([
+        {"$match": {"language": language}},
+        {
+            "$group": {
+                "_id": "$knowledge_area",
+                "sample_count": {"$sum": 1},
+                "by_difficulty": {
+                    "$push": "$difficulty"
+                }
+            }
+        },
+        {"$sort": {"_id": 1}}
+    ]).to_list(length=None)
+    
+    # Count by difficulty for each area
+    result = []
+    for area in knowledge_areas:
+        difficulties = area["by_difficulty"]
+        result.append({
+            "knowledge_area": area["_id"],
+            "total_samples": area["sample_count"],
+            "by_difficulty": {
+                "easy": difficulties.count("easy"),
+                "medium": difficulties.count("medium"),
+                "hard": difficulties.count("hard")
+            }
+        })
+    
+    return {
+        "status": "success",
+        "language": language,
+        "knowledge_areas": result,
+        "total_areas": len(result)
+    }
+```
+
+---
+
+## 📝 COMPLETE FILE STRUCTURE
+
+After refactoring, your `training_router.py` should have:
+
+```python
+# Endpoints Summary (11 total):
+
+# EXISTING (Modified):
+GET    /samples                           # Now requires language, returns isRead
+GET    /chapters                          # Now requires language, shows progress
+GET    /filters                           # Now includes language filter
+GET    /samples/{sample_id}               # Now includes read status
+GET    /stats                             # Now requires language
+GET    /random                            # Now requires language
+GET    /search                            # Now requires language
+
+# NEW:
+POST   /samples/{sample_id}/mark-read     # Track reading + award points
+GET    /my-progress                       # User's overall progress
+GET    /knowledge-areas                   # List of knowledge areas
+```
+
+---
+
+## ✅ VALIDATION & TESTING CHECKLIST
+
+After refactoring, test these scenarios:
+
+### **1. Migration Test:**
+```bash
+# Run migration script
+python -m app.migrations.add_language_to_samples
+
+# Verify fields added
+db.training_samples_filtered.findOne()
+# Should show: language, knowledge_area, read_points
+```
+
+### **2. Language Filter Test:**
+```bash
+GET /samples?language=c&page=1&limit=20
+# Should return only C samples
+
+GET /samples?language=cpp&page=1&limit=20
+# Should return only C++ samples
+
+GET /samples?language=invalid
+# Should return 400 error
+```
+
+### **3. Mark Read Test:**
+```bash
+POST /samples/c_ch1_q_000025/mark-read?time_spent=45
+# Should return: points_awarded: 1, is_first_read: true
+
+POST /samples/c_ch1_q_000025/mark-read?time_spent=30
+# Should return: points_awarded: 0, is_first_read: false
+```
+
+### **4. Progress Test:**
+```bash
+GET /my-progress?language=c
+# Should return progress stats
+
+GET /samples?language=c&page=1
+# Samples should have isRead: true for marked ones
+```
+
+### **5. Knowledge Areas Test:**
+```bash
+GET /knowledge-areas?language=c
+# Should return list of areas (basics, pointers, etc.)
+```
+
+---
+
+## ⚠️ CRITICAL REQUIREMENTS
+
+### **DO:**
+- ✅ Keep all existing functionality working
+- ✅ Use async/await for all DB operations
+- ✅ Validate language parameter in every endpoint
+- ✅ Add proper error handling
+- ✅ Use existing authentication (`verify_client_bound_request`)
+- ✅ Return consistent response format
+- ✅ Add docstrings to all new functions
+- ✅ Use type hints
+- ✅ Handle edge cases (empty results, invalid IDs)
+
+### **DON'T:**
+- ❌ Break existing API contracts
+- ❌ Remove any existing endpoints
+- ❌ Change response structure of existing endpoints (only add fields)
+- ❌ Use synchronous DB operations
+- ❌ Hardcode values (use env vars for DB connection)
+- ❌ Skip input validation
+- ❌ Forget to add indexes on new collection
+
+---
+
+## 📦 DELIVERABLES
+
+Provide the following files:
+
+1. **`training_router_refactored.py`** - Complete refactored router
+2. **`add_language_to_samples.py`** - Migration script
+3. **`README_CHANGES.md`** - Document all changes made
+4. **`API_EXAMPLES.md`** - Example requests/responses for new endpoints
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+Your refactoring is successful when:
+
+1. ✅ All existing endpoints still work with backward compatibility
+2. ✅ Language filter works on all endpoints
+3. ✅ Mark-read endpoint tracks progress correctly
+4. ✅ Progress endpoint returns accurate statistics
+5. ✅ No breaking changes to existing functionality
+6. ✅ Code is clean, documented, and follows FastAPI best practices
+7. ✅ All edge cases handled (invalid IDs, missing data, etc.)
+8. ✅ Response times are acceptable (<500ms for most endpoints)
+
+---
+
+## 💡 IMPLEMENTATION TIPS
+
+1. **Start with Migration:** Run the migration script first to add fields
+2. **Test Incrementally:** Test each modified endpoint before moving to next
+3. **Use Existing Patterns:** Follow the code style already in the file
+4. **Optimize Queries:** Use aggregation pipelines efficiently
+5. **Cache User Progress:** Consider caching read_map for performance
+6. **Handle Concurrent Reads:** Use upsert operations properly
+
+---
+
+## 🚀 EXECUTION ORDER
+
+**Phase 1: Preparation**
+1. Create migration script
+2. Run migration to add language, knowledge_area fields
+3. Create sample_progress collection with indexes
+
+**Phase 2: Modify Existing**
+1. Add language parameter to GET /samples
+2. Add isRead logic to GET /samples
+3. Modify GET /chapters for language filter
+4. Update other existing endpoints similarly
+
+**Phase 3: Add New**
+1. Implement POST /mark-read
+2. Implement GET /my-progress
+3. Implement GET /knowledge-areas
+
+**Phase 4: Testing**
+1. Test all existing endpoints still work
+2. Test new endpoints work correctly
+3. Test progress tracking is accurate
+
+---
+
+## 📞 QUESTIONS TO ASK IF UNCLEAR
+
+If anything is unclear, ask specifically about:
+
+1. Knowledge area mapping logic (which chapters map to which areas)
+2. Points calculation (should it be different based on difficulty?)
+3. Response format preferences
+4. Any additional validation rules needed
+5. Whether to include additional analytics
+
+**DO NOT GUESS - ASK FIRST IF UNSURE**
+
+---
+
+**END OF REFACTORING INSTRUCTIONS**
+
+Generated: January 29, 2026
+For: Lumetrix Training Router Refactoring
+Built by: Claude (Anthropic) for Arshad Azeez M
+
+---
+
+## 🎓 FINAL NOTE
+
+This is a **production system** serving real students. Your code will be deployed to https://lumetrix.sidhi.xyz.
+
+Write clean, maintainable, production-ready code. Make Arshad proud! 🚀
