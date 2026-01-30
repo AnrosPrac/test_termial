@@ -4,7 +4,7 @@ from app.ai.client_bound_guard import verify_client_bound_request
 
 def get_db_instance():
     """Get database from main module"""
-    from main import db
+    from app.main import db
     return db
 
 # ==================== DEPENDENCY FUNCTIONS ====================
