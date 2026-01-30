@@ -25,7 +25,7 @@ from app.plagiarism.plagiarism_router import router as plag_router
 from app.teachers.teacher_router import router as teacher_router
 from app.students.student_router import router as student_router
 from app.teachers.database_setup import create_teacher_indexes, create_student_indexes
-from app.courses.app import setup_course_routes, startup_course_system
+from app.courses.app import startup_course_system
 from app.courses.practice_router import router as practice_router
 
 app = FastAPI(title="Lumetrics AI Engine")
