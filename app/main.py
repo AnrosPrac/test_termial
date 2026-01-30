@@ -52,16 +52,16 @@ class UserDetailCreate(BaseModel):
     role: str = "student"
     email_id: str
 
-
 @app.on_event("startup")
 async def startup_event():
     init_auth()
     setup_repo()
     await create_indexes()
-    await create_teacher_indexes()  # ✅ ADD THIS
-    await create_student_indexes()  # ✅ ADD THIS
-    await startup_course_system()
-    setup_course_routes(app)
+    await create_teacher_indexes()
+    await create_student_indexes()
+    
+    setup_course_routes(app)        # ← Register routes FIRST
+    await startup_course_system()    # ← Then initialize system
 
 app.add_middleware(
     CORSMiddleware,

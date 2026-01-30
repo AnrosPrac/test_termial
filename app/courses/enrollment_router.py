@@ -8,7 +8,7 @@ from app.courses.database import (
 )
 from app.courses.dependencies import get_db,get_current_user_id,get_sidhi_id
 
-router = APIRouter(prefix="/api/enrollments", tags=["Enrollments"])
+router = APIRouter( tags=["Enrollments"])
 
 # ==================== ENROLLMENT ====================
 

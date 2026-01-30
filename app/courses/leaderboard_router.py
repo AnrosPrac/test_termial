@@ -4,7 +4,7 @@ from typing import List, Optional
 from app.courses.models import LeaderboardEntry, LeaderboardResponse
 
 from app.courses.dependencies import get_db,get_current_user_id
-router = APIRouter(prefix="/api/leaderboards", tags=["Leaderboards"])
+router = APIRouter(tags=["Leaderboards"])
 
 # ==================== LEADERBOARD QUERIES ====================
 

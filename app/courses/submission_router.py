@@ -11,7 +11,7 @@ from app.courses.database import (
 )
 from app.courses.dependencies import get_db,get_current_user_id
 
-router = APIRouter(prefix="/api/submissions", tags=["Submissions"])
+router = APIRouter( tags=["Submissions"])
 
 # Judge service URLs from environment
 SOFTWARE_JUDGE_URL = os.getenv("JUDGE_API_URL", "http://localhost:8000")

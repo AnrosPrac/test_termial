@@ -7,7 +7,7 @@ from app.courses.dependencies import get_db,get_current_user_id
 from datetime import datetime
 import os
 
-router = APIRouter(prefix="/api/certificates", tags=["Certificates"])
+router = APIRouter( tags=["Certificates"])
 
 # ==================== CERTIFICATE HELPERS ====================
 
