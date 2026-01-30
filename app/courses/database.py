@@ -5,6 +5,16 @@ import uuid
 from app.courses.models import CourseType, CourseStatus, LeagueTier
 
 # ==================== COURSE CRUD ====================
+from bson import ObjectId
+
+def serialize_mongo(doc: dict) -> dict:
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
+
+def serialize_many(docs: list[dict]) -> list[dict]:
+    return [serialize_mongo(doc) for doc in docs]
+
 
 async def create_course(db: AsyncIOMotorDatabase, course_data: dict, creator_id: str) -> str:
     """Create new course"""
@@ -173,15 +183,16 @@ async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id
     }).sort("difficulty", 1)
     
     questions = await cursor.to_list(length=None)
-    
-    # Remove test case outputs (only show inputs)
+
+# Remove test case outputs (only show inputs)
     for q in questions:
         if "test_cases" in q:
             for tc in q["test_cases"]:
                 if not tc.get("is_sample", False):
                     tc.pop("output", None)
-    
-    return questions
+
+    return serialize_many(questions)
+
 
 # ==================== SUBMISSION CRUD ====================
 
