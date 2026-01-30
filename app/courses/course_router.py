@@ -12,6 +12,28 @@ router = APIRouter( tags=["Course Management"])
 
 # ==================== COURSE CRUD ====================
 
+@router.get("/list")
+async def list_courses_endpoint(
+    course_type: str = None,
+    domain: str = None,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """List all courses with filters"""
+    filters = {}
+    if course_type:
+        filters["course_type"] = course_type
+    if domain:
+        filters["domain"] = domain
+    
+    courses = await list_courses(db, filters, skip, limit)
+    return {
+        "courses": courses,
+        "count": len(courses),
+        "skip": skip,
+        "limit": limit
+    }
 @router.post("/create")
 async def create_course_endpoint(
     course: CourseCreate,
@@ -86,28 +108,6 @@ async def publish_course_endpoint(
         "course_id": course_id
     }
 
-@router.get("/list")
-async def list_courses_endpoint(
-    course_type: str = None,
-    domain: str = None,
-    skip: int = 0,
-    limit: int = 20,
-    db: AsyncIOMotorDatabase = Depends(get_db)
-):
-    """List all courses with filters"""
-    filters = {}
-    if course_type:
-        filters["course_type"] = course_type
-    if domain:
-        filters["domain"] = domain
-    
-    courses = await list_courses(db, filters, skip, limit)
-    return {
-        "courses": courses,
-        "count": len(courses),
-        "skip": skip,
-        "limit": limit
-    }
 
 # ==================== QUESTION MANAGEMENT ====================
 
