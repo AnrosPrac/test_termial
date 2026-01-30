@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from app.courses.models import CertificateData
-from app.courses.app import get_db, get_current_user_id
+from app.courses.dependencies import get_db,get_current_user_id
 from datetime import datetime
 import os
 

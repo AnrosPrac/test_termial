@@ -9,7 +9,7 @@ from app.courses.database import (
     create_submission, get_submission, update_submission_result,
     get_question, get_enrollment, mark_question_solved, update_league_points
 )
-from app.courses.app import get_db, get_current_user_id
+from app.courses.dependencies import get_db,get_current_user_id
 
 router = APIRouter(prefix="/api/submissions", tags=["Submissions"])
 

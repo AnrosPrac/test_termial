@@ -6,7 +6,7 @@ from app.courses.database import (
     enroll_user, get_enrollment, get_user_enrollments,
     get_course, get_course_questions
 )
-from app.courses.app import get_db, get_current_user_id, get_sidhi_id
+from app.courses.dependencies import get_db,get_current_user_id,get_sidhi_id
 
 router = APIRouter(prefix="/api/enrollments", tags=["Enrollments"])
 

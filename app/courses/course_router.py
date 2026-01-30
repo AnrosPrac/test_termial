@@ -6,8 +6,8 @@ from app.courses.database import (
     create_course, get_course, update_course, publish_course, list_courses,
     create_question, get_question
 )
-from app.courses.app import get_db, get_current_user_id
 
+from app.courses.dependencies import get_db,get_current_user_id
 router = APIRouter(prefix="/api/courses", tags=["Course Management"])
 
 # ==================== COURSE CRUD ====================

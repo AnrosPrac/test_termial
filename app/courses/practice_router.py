@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 from pydantic import BaseModel
-from app.courses.app import get_db, get_current_user_id
 
+from app.courses.dependencies import get_db,get_current_user_id
 router = APIRouter(prefix="/api/practice", tags=["Practice Samples"])
 
 # ==================== MODELS ====================
