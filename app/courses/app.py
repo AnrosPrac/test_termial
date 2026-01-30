@@ -24,9 +24,21 @@ async def create_course_indexes():
     await db.courses.create_index("creator_id")
     
     # Course Questions
-    await db.course_questions.create_index("question_id", unique=True)
-    await db.course_questions.create_index([("course_id", 1), ("is_active", 1)])
-    await db.course_questions.create_index("difficulty")
+    await db.course_questions.create_index(
+    [("question_id", 1)],
+    unique=True,
+    sparse=True,
+    name="question_id_1"
+)
+
+    await db.course_questions.create_index(
+        [("course_id", 1), ("is_active", 1)]
+    )
+
+    await db.course_questions.create_index(
+        [("difficulty", 1)]
+    )
+
     
     # Enrollments
     await db.course_enrollments.create_index("enrollment_id", unique=True)
