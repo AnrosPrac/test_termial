@@ -18,7 +18,7 @@ async def get_course_leaderboard(
     pipeline = [
         {"$match": {"course_id": course_id, "is_active": True}},
         {"$lookup": {
-            "from": "user_profiles",
+            "from": "users_profile",
             "localField": "user_id",
             "foreignField": "user_id",
             "as": "user"
@@ -76,7 +76,7 @@ async def get_global_leaderboard(
             "current_league": {"$max": "$current_league"}
         }},
         {"$lookup": {
-            "from": "user_profiles",
+            "from": "users_profile",
             "localField": "_id",
             "foreignField": "user_id",
             "as": "user"
@@ -133,7 +133,7 @@ async def get_filtered_leaderboard(
             "current_league": {"$max": "$current_league"}
         }},
         {"$lookup": {
-            "from": "user_profiles",
+            "from": "users_profile",
             "localField": "_id",
             "foreignField": "user_id",
             "as": "user"
@@ -175,7 +175,7 @@ async def get_alumni_leaderboard(
         {"$skip": skip},
         {"$limit": limit},
         {"$lookup": {
-            "from": "user_profiles",
+            "from": "users_profile",
             "localField": "user_id",
             "foreignField": "user_id",
             "as": "user"
@@ -301,7 +301,7 @@ async def department_leaderboard(
             "current_league": {"$max": "$current_league"}
         }},
         {"$lookup": {
-            "from": "user_profiles",
+            "from": "users_profile",
             "localField": "_id",
             "foreignField": "user_id",
             "as": "user"
