@@ -36,3 +36,27 @@ async def get_sidhi_id(user: str = Depends(verify_client_bound_request)):
     if user_record:
         return user_record.get("sidhi_id")
     return None
+# app/courses/dependencies.py
+
+from fastapi import Depends, HTTPException
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+async def verify_enrollment(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+) -> dict:
+    """Verify user is enrolled in course"""
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id,
+        "is_active": True
+    })
+    
+    if not enrollment:
+        raise HTTPException(
+            status_code=403,
+            detail="Not enrolled in this course. Please enroll first."
+        )
+    
+    return enrollment

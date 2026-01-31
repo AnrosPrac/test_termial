@@ -106,13 +106,13 @@ app.include_router(coding_router, prefix="/coding")
 app.include_router(training_router, prefix="/training")
 app.include_router(payment_router, prefix="/payment")
 app.include_router(teacher_router)  # ✅ ADD THIS
-app.include_router(practice_router)
 app.include_router(student_router)  # ✅ ADD THIS
 app.include_router(course_router, prefix="/api/courses")
 app.include_router(enrollment_router, prefix="/api/enrollments")
 app.include_router(submission_router, prefix="/api/submissions")
 app.include_router(leaderboard_router, prefix="/api/leaderboards")
 app.include_router(certificate_router, prefix="/api/certificates")
+app.include_router(practice_router,prefix="/api/samples")
 # ============================================================
 
 

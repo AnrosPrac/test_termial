@@ -3,13 +3,14 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 from pydantic import BaseModel
 
-from app.courses.dependencies import get_db,get_current_user_id
-router = APIRouter( tags=["Practice Samples"])
+from app.courses.dependencies import get_db, get_current_user_id
+router = APIRouter(tags=["Practice Samples"])
 
 # ==================== MODELS ====================
 
 class SampleQuestionResponse(BaseModel):
     sample_id: str
+    course_id: str  # ⭐ ADDED
     chapter: int
     type: str
     difficulty: str
@@ -20,6 +21,7 @@ class SampleQuestionResponse(BaseModel):
 
 @router.get("/samples")
 async def get_practice_samples(
+    course_id: str,  # ⭐ NOW REQUIRED - Must specify which course
     chapter: Optional[int] = None,
     difficulty: Optional[str] = None,
     skip: int = 0,
@@ -29,7 +31,9 @@ async def get_practice_samples(
     user_id: str = Depends(get_current_user_id)
 ):
     """
-    Get practice sample questions (5000 theory/MCQ questions)
+    Get practice sample questions for a specific course
+    
+    Each course has its own set of samples (e.g., 5000 for C, 3000 for Python)
     
     Features:
     - Unread questions appear first
@@ -37,15 +41,23 @@ async def get_practice_samples(
     - No grading, just read tracking
     """
     
-    # Build query
-    query = {}
+    # ⭐ Verify course exists first
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Build query - ALWAYS filter by course_id
+    query = {"course_id": course_id}  # ⭐ COURSE-SPECIFIC
     if chapter:
         query["chapter"] = chapter
     if difficulty:
         query["difficulty"] = difficulty
     
-    # Get user's read samples
-    user_progress = await db.user_sample_progress.find_one({"user_id": user_id})
+    # Get user's read samples FOR THIS COURSE
+    user_progress = await db.user_sample_progress.find_one({
+        "user_id": user_id,
+        "course_id": course_id  # ⭐ PER-COURSE PROGRESS
+    })
     read_samples = set(user_progress.get("read_samples", [])) if user_progress else set()
     
     if show_unread_first:
@@ -77,6 +89,8 @@ async def get_practice_samples(
     total = await db.training_samples.count_documents(query)
     
     return {
+        "course_id": course_id,  # ⭐ ADDED
+        "course_title": course.get("title"),  # ⭐ ADDED
         "samples": samples,
         "count": len(samples),
         "total": total,
@@ -98,12 +112,22 @@ async def mark_sample_read(
     if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
     
-    # Add to user's read list
+    course_id = sample.get("course_id")  # ⭐ GET COURSE FROM SAMPLE
+    if not course_id:
+        raise HTTPException(status_code=400, detail="Sample not linked to course")
+    
+    # Add to user's read list FOR THIS COURSE
     await db.user_sample_progress.update_one(
-        {"user_id": user_id},
+        {
+            "user_id": user_id,
+            "course_id": course_id  # ⭐ PER-COURSE PROGRESS
+        },
         {
             "$addToSet": {"read_samples": sample_id},
-            "$setOnInsert": {"user_id": user_id}
+            "$setOnInsert": {
+                "user_id": user_id,
+                "course_id": course_id
+            }
         },
         upsert=True
     )
@@ -111,6 +135,7 @@ async def mark_sample_read(
     return {
         "success": True,
         "sample_id": sample_id,
+        "course_id": course_id,  # ⭐ ADDED
         "answer": sample.get("answer"),  # Now they can see the answer
         "message": "Sample marked as read"
     }
@@ -127,8 +152,13 @@ async def get_sample_detail(
     if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
     
-    # Check if read
-    user_progress = await db.user_sample_progress.find_one({"user_id": user_id})
+    course_id = sample.get("course_id")  # ⭐ GET COURSE
+    
+    # Check if read FOR THIS COURSE
+    user_progress = await db.user_sample_progress.find_one({
+        "user_id": user_id,
+        "course_id": course_id  # ⭐ PER-COURSE PROGRESS
+    })
     is_read = sample_id in user_progress.get("read_samples", []) if user_progress else False
     
     sample["is_read"] = is_read
@@ -141,37 +171,62 @@ async def get_sample_detail(
 
 @router.get("/stats")
 async def get_practice_stats(
+    course_id: str,  # ⭐ NOW REQUIRED - Must specify which course
     db: AsyncIOMotorDatabase = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
-    """Get user's practice statistics"""
+    """Get user's practice statistics FOR A SPECIFIC COURSE"""
     
-    user_progress = await db.user_sample_progress.find_one({"user_id": user_id})
+    # ⭐ Verify course exists
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Get user progress FOR THIS COURSE
+    user_progress = await db.user_sample_progress.find_one({
+        "user_id": user_id,
+        "course_id": course_id  # ⭐ PER-COURSE PROGRESS
+    })
     read_count = len(user_progress.get("read_samples", [])) if user_progress else 0
     
-    total_samples = await db.training_samples.count_documents({})
+    # Total samples FOR THIS COURSE
+    total_samples = await db.training_samples.count_documents({"course_id": course_id})
     
-    # Get breakdown by difficulty
-    easy_total = await db.training_samples.count_documents({"difficulty": "easy"})
-    medium_total = await db.training_samples.count_documents({"difficulty": "medium"})
-    hard_total = await db.training_samples.count_documents({"difficulty": "hard"})
+    # Get breakdown by difficulty FOR THIS COURSE
+    easy_total = await db.training_samples.count_documents({
+        "course_id": course_id,
+        "difficulty": "easy"
+    })
+    medium_total = await db.training_samples.count_documents({
+        "course_id": course_id,
+        "difficulty": "medium"
+    })
+    hard_total = await db.training_samples.count_documents({
+        "course_id": course_id,
+        "difficulty": "hard"
+    })
     
     read_samples = user_progress.get("read_samples", []) if user_progress else []
     
     easy_read = await db.training_samples.count_documents({
+        "course_id": course_id,
         "difficulty": "easy",
         "sample_id": {"$in": read_samples}
     })
     medium_read = await db.training_samples.count_documents({
+        "course_id": course_id,
         "difficulty": "medium",
         "sample_id": {"$in": read_samples}
     })
     hard_read = await db.training_samples.count_documents({
+        "course_id": course_id,
         "difficulty": "hard",
         "sample_id": {"$in": read_samples}
     })
     
     return {
+        "course_id": course_id,  # ⭐ ADDED
+        "course_title": course.get("title"),  # ⭐ ADDED
         "total_samples": total_samples,
         "read_samples": read_count,
         "unread_samples": total_samples - read_count,
@@ -181,4 +236,46 @@ async def get_practice_stats(
             "medium": {"total": medium_total, "read": medium_read},
             "hard": {"total": hard_total, "read": hard_read}
         }
+    }
+
+# ⭐ NEW ENDPOINT: Get all courses with sample counts
+@router.get("/courses-with-samples")
+async def get_courses_with_samples(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get all courses with their sample counts and user progress"""
+    
+    courses = await db.courses.find({
+        "status": {"$in": ["PUBLISHED", "ACTIVE"]}
+    }).to_list(length=None)
+    
+    result = []
+    for course in courses:
+        course_id = course["course_id"]
+        
+        # Count total samples for this course
+        total_samples = await db.training_samples.count_documents({
+            "course_id": course_id
+        })
+        
+        # Get user's progress for this course
+        user_progress = await db.user_sample_progress.find_one({
+            "user_id": user_id,
+            "course_id": course_id
+        })
+        read_count = len(user_progress.get("read_samples", [])) if user_progress else 0
+        
+        result.append({
+            "course_id": course_id,
+            "title": course.get("title"),
+            "domain": course.get("domain"),
+            "total_samples": total_samples,
+            "read_samples": read_count,
+            "progress_percentage": round((read_count / total_samples * 100) if total_samples > 0 else 0, 2)
+        })
+    
+    return {
+        "courses": result,
+        "count": len(result)
     }
