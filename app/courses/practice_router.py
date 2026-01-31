@@ -18,7 +18,13 @@ class SampleQuestionResponse(BaseModel):
     answer: Optional[str] = None  # Only for read questions
 
 # ==================== ENDPOINTS ====================
+def serialize_mongo(doc: dict) -> dict:
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
 
+def serialize_many(docs: list[dict]) -> list[dict]:
+    return [serialize_mongo(doc) for doc in docs]
 @router.get("/samples")
 async def get_practice_samples(
     course_id: str,  # ⭐ NOW REQUIRED - Must specify which course
@@ -91,7 +97,7 @@ async def get_practice_samples(
     return {
         "course_id": course_id,  # ⭐ ADDED
         "course_title": course.get("title"),  # ⭐ ADDED
-        "samples": samples,
+        "samples": serialize_many(samples),
         "count": len(samples),
         "total": total,
         "unread_count": total - len(read_samples),
@@ -167,7 +173,7 @@ async def get_sample_detail(
     if not is_read:
         sample.pop("answer", None)
     
-    return sample
+    return serialize_mongo(sample)
 
 @router.get("/stats")
 async def get_practice_stats(
