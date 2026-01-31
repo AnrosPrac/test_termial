@@ -39,7 +39,7 @@ def get_mongo_config_from_env() -> MongoDBConfig:
         MONGO_URI=mongodb+srv://user:pass@cluster/db
     """
 
-    uri = os.getenv("MONGO_URI")
+    uri = os.getenv("MONGO_URL")
 
     if not uri:
         raise RuntimeError(
