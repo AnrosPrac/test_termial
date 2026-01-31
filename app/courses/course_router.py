@@ -160,4 +160,4 @@ async def get_question_endpoint(
             if not tc.get("is_sample", False):
                 tc.pop("output", None)
     
-    return question
+    return serialize_mongo(question)
