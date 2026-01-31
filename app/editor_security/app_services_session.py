@@ -9,8 +9,8 @@ import os
 from typing import Optional, Dict, Any
 import uuid
 
-from app.db.models import EditorSession, CodeCheckpointLog, SecurityEvent
-from app.models.security import (
+from app.editor_security.app_db_models import EditorSession, CodeCheckpointLog, SecurityEvent
+from app.editor_security.app_models_security import (
     SessionStatus,
     EventType,
     EventSeverity,

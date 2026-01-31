@@ -34,3 +34,4 @@ firebase-admin
 
 # --- JWT handling ---
 PyJWT
+mongoengine

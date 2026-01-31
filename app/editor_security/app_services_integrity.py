@@ -4,8 +4,8 @@ Code integrity analysis service
 """
 
 from typing import Dict, Any, Optional
-from app.db.models import SubmissionIntegrity, CodeCheckpointLog
-from app.models.security import IntegrityStatus
+from app.editor_security.app_db_models import SubmissionIntegrity, CodeCheckpointLog
+from app.editor_security.app_models_security import IntegrityStatus
 
 
 class IntegrityAnalyzerService:

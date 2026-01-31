@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Header, Depends, Query
 from typing import Optional
 import uuid
 
-from app.models.security import (
+from app.editor_security.app_models_security import (
     CreateSessionRequest,
     SessionTokenResponse,
     BatchSecurityEventsRequest,
@@ -17,9 +17,9 @@ from app.models.security import (
     SubmissionIntegrityResult,
     SessionInfoResponse,
 )
-from app.services.session_service import SessionService
-from app.services.integrity_service import IntegrityAnalyzerService
-from app.db.models import EditorSession
+from app.editor_security.app_services_session import SessionService
+from app.editor_security.app_services_integrity import IntegrityAnalyzerService
+from app.editor_security.app_db_models import EditorSession
 
 router = APIRouter(prefix="/api/v1/editor", tags=["security"])
 
@@ -215,7 +215,7 @@ async def submit_code(
         submission_id = str(uuid.uuid4())
         
         # Update analysis with submission ID
-        from app.db.models import SubmissionIntegrity
+        from app.editor_security.app_db_models import SubmissionIntegrity
         SubmissionIntegrity.objects(
             session_id=request.session_id
         ).order_by('-created_at').first().update(submission_id=submission_id)
@@ -273,7 +273,7 @@ async def get_session_events(
     Get all security events for a session (admin only)
     """
     try:
-        from app.db.models import SecurityEvent
+        from app.editor_security.app_db_models import SecurityEvent
         
         events = SecurityEvent.objects(session_id=session_id).order_by('-timestamp')
         
@@ -304,7 +304,7 @@ async def get_statistics(
     Get security statistics (admin only)
     """
     try:
-        from app.db.models import SecurityEvent, SubmissionIntegrity
+        from app.editor_security.app_db_models import SecurityEvent, SubmissionIntegrity
         
         # Count events by type
         event_counts = {}
