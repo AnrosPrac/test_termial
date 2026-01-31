@@ -75,7 +75,7 @@ async def get_certificate_data(db: AsyncIOMotorDatabase, certificate_id: str) ->
     certificate_data = {
         "certificate_id": certificate_id,
         "user_id": enrollment["user_id"],
-        "sidhi_id": enrollment.get("sidhi_id", "N/A"),  # Fallback if null
+        "sidhi_id": user.get("sidhi_id", "N/A"),  # Fallback if null
         "username": username,
         "college": college,
         "department": department,
