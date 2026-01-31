@@ -60,9 +60,9 @@ class Language(str, Enum):
 # ============ Request Models ============
 
 class CreateSessionRequest(BaseModel):
-    """Request to create a new editor session"""
     question_id: str
     course_id: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 class SecurityEventRequest(BaseModel):
