@@ -23,7 +23,7 @@ async def get_certificate_data(db: AsyncIOMotorDatabase, certificate_id: str) ->
     print(f"✅ Found enrollment: {enrollment.get('enrollment_id')}")
     
     # Step 2: Get user profile (OPTIONAL - use enrollment data as fallback)
-    user = await db.user_profiles.find_one({"user_id": enrollment["user_id"]})
+    user = await db.users_profile.find_one({"user_id": enrollment["user_id"]})
     if not user:
         print(f"⚠️ User profile not found for user_id: {enrollment['user_id']}, using enrollment data")
         # Use enrollment data as fallback
