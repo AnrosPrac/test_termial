@@ -285,3 +285,73 @@ async def get_courses_with_samples(
         "courses": result,
         "count": len(result)
     }
+@router.get("/chapters")
+async def get_available_chapters(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    try:
+        course = await db.courses.find_one({"course_id": course_id})
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+
+        chapter_stats = await db.training_samples.aggregate([
+            {
+                "$match": {"course_id": course_id}
+            },
+            {
+                "$group": {
+                    "_id": "$chapter",
+                    "total_count": {"$sum": 1},
+                    "program_count": {
+                        "$sum": {"$cond": [{"$eq": ["$type", "program"]}, 1, 0]}
+                    },
+                    "realworld_count": {
+                        "$sum": {"$cond": [{"$eq": ["$type", "realworld"]}, 1, 0]}
+                    },
+                    "easy_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "easy"]}, 1, 0]}
+                    },
+                    "medium_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "medium"]}, 1, 0]}
+                    },
+                    "hard_count": {
+                        "$sum": {"$cond": [{"$eq": ["$difficulty", "hard"]}, 1, 0]}
+                    }
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]).to_list(length=None)
+        
+        chapters = [
+            {
+                "chapter": item["_id"],
+                "total_questions": item["total_count"],
+                "breakdown": {
+                    "by_type": {
+                        "program": item["program_count"],
+                        "realworld": item["realworld_count"]
+                    },
+                    "by_difficulty": {
+                        "easy": item["easy_count"],
+                        "medium": item["medium_count"],
+                        "hard": item["hard_count"]
+                    }
+                }
+            }
+            for item in chapter_stats
+        ]
+        
+        return {
+            "status": "success",
+            "course_id": course_id,
+            "course_title": course.get("title"),
+            "total_chapters": len(chapters),
+            "chapters": chapters
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
