@@ -241,7 +241,7 @@ def generate_certificate_html(data: dict) -> str:
 
 # ==================== ENDPOINTS ====================
 
-@router.get("/{certificate_id}", response_class=HTMLResponse)
+@router.get("/certi/{certificate_id}", response_class=HTMLResponse)
 async def view_certificate(
     certificate_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db)
