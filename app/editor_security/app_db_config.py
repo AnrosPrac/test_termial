@@ -91,7 +91,7 @@ def get_mongo_config_from_env() -> MongoDBConfig:
     """
     
     # Check for full URI first
-    uri = os.getenv("MONGODB_URI")
+    uri = os.getenv("MONGO_URI")
     if uri:
         # Parse connection string
         from urllib.parse import urlparse
