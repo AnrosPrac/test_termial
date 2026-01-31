@@ -12,50 +12,73 @@ router = APIRouter( tags=["Certificates"])
 # ==================== CERTIFICATE HELPERS ====================
 
 async def get_certificate_data(db: AsyncIOMotorDatabase, certificate_id: str) -> Optional[dict]:
-    """Get complete certificate data"""
-    # Find enrollment by certificate_id
+    """Get complete certificate data with fallbacks for missing data"""
+    
+    # Step 1: Find enrollment by certificate_id
     enrollment = await db.course_enrollments.find_one({"certificate_id": certificate_id})
     if not enrollment:
+        print(f"❌ Enrollment not found for certificate_id: {certificate_id}")
         return None
     
-    # Get user profile
+    print(f"✅ Found enrollment: {enrollment.get('enrollment_id')}")
+    
+    # Step 2: Get user profile (OPTIONAL - use enrollment data as fallback)
     user = await db.user_profiles.find_one({"user_id": enrollment["user_id"]})
     if not user:
-        return None
+        print(f"⚠️ User profile not found for user_id: {enrollment['user_id']}, using enrollment data")
+        # Use enrollment data as fallback
+        username = enrollment.get("user_id", "Student")
+        college = None
+        department = None
+    else:
+        print(f"✅ Found user profile for: {user.get('username')}")
+        username = user.get("username", "Student")
+        college = user.get("college")
+        department = user.get("department")
     
-    # Get course details
+    # Step 3: Get course details
     course = await db.courses.find_one({"course_id": enrollment["course_id"]})
     if not course:
+        print(f"❌ Course not found for course_id: {enrollment['course_id']}")
         return None
     
-    # Get submission stats
+    print(f"✅ Found course: {course.get('title')}")
+    
+    # Step 4: Get submission stats
     submissions = await db.course_submissions.find({
         "course_id": enrollment["course_id"],
         "user_id": enrollment["user_id"],
         "verdict": "Accepted"
     }).to_list(length=None)
     
-    # Calculate stats
+    print(f"✅ Found {len(submissions)} accepted submissions")
+    
+    # Step 5: Calculate stats
     total_questions = await db.course_questions.count_documents({
         "course_id": enrollment["course_id"],
         "is_active": True
     })
     
+    print(f"✅ Total questions in course: {total_questions}")
+    
     solved_count = len(enrollment.get("solved_questions", []))
     
-    # Get badges/achievements
+    # Step 6: Get badges/achievements (OPTIONAL)
     achievements = await db.user_achievements.find({
         "user_id": enrollment["user_id"],
         "course_id": enrollment["course_id"]
     }).to_list(length=None)
     
-    return {
+    print(f"✅ Found {len(achievements)} achievements")
+    
+    # Build certificate data
+    certificate_data = {
         "certificate_id": certificate_id,
         "user_id": enrollment["user_id"],
-        "sidhi_id": enrollment["sidhi_id"],
-        "username": user.get("username", "Student"),
-        "college": user.get("college"),
-        "department": user.get("department"),
+        "sidhi_id": enrollment.get("sidhi_id", "N/A"),  # Fallback if null
+        "username": username,
+        "college": college,
+        "department": department,
         "course_id": course["course_id"],
         "course_title": course["title"],
         "course_domain": course["domain"],
@@ -69,6 +92,9 @@ async def get_certificate_data(db: AsyncIOMotorDatabase, certificate_id: str) ->
         "badges": [a.get("badge_id") for a in achievements],
         "skills": get_skills_from_course(course["domain"])
     }
+    
+    print(f"✅ Successfully built certificate data")
+    return certificate_data
 
 def get_skills_from_course(domain: str) -> list:
     """Extract skills based on course domain"""
@@ -194,8 +220,8 @@ def generate_certificate_html(data: dict) -> str:
                     <div class="profile-info">
                         <h2>{data['username']}</h2>
                         <p><strong>Sidhi ID:</strong> {data['sidhi_id']}</p>
-                        <p><strong>College:</strong> {data.get('college', 'N/A')}</p>
-                        <p><strong>Department:</strong> {data.get('department', 'N/A')}</p>
+                        {f"<p><strong>College:</strong> {data['college']}</p>" if data.get('college') else ""}
+                        {f"<p><strong>Department:</strong> {data['department']}</p>" if data.get('department') else ""}
                     </div>
                 </div>
                 
@@ -241,16 +267,20 @@ def generate_certificate_html(data: dict) -> str:
 
 # ==================== ENDPOINTS ====================
 
-@router.get("/certi/{certificate_id}", response_class=HTMLResponse)
+@router.get("/{certificate_id}", response_class=HTMLResponse)
 async def view_certificate(
     certificate_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """View dynamic certificate portfolio"""
+    print(f"\n🔍 Attempting to view certificate: {certificate_id}")
+    
     data = await get_certificate_data(db, certificate_id)
     if not data:
-        raise HTTPException(status_code=404, detail="Certificate not found")
+        print(f"❌ Certificate data could not be retrieved")
+        raise HTTPException(status_code=404, detail="Certificate not found or incomplete data")
     
+    print(f"✅ Certificate data retrieved successfully")
     html = generate_certificate_html(data)
     return HTMLResponse(content=html)
 
@@ -260,10 +290,14 @@ async def get_certificate_json(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get certificate data as JSON"""
+    print(f"\n🔍 Attempting to get certificate JSON: {certificate_id}")
+    
     data = await get_certificate_data(db, certificate_id)
     if not data:
-        raise HTTPException(status_code=404, detail="Certificate not found")
+        print(f"❌ Certificate data could not be retrieved")
+        raise HTTPException(status_code=404, detail="Certificate not found or incomplete data")
     
+    print(f"✅ Certificate data retrieved successfully")
     return data
 
 @router.get("/verify/{certificate_id}")
@@ -283,7 +317,7 @@ async def verify_certificate(
     return {
         "valid": True,
         "certificate_id": certificate_id,
-        "issued_to": enrollment["sidhi_id"],
+        "issued_to": enrollment.get("sidhi_id"),  # Added .get() for safety
         "course_id": enrollment["course_id"],
         "issued_at": enrollment["enrolled_at"],
         "message": "Certificate is valid"
