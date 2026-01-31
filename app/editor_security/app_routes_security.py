@@ -21,7 +21,7 @@ from app.editor_security.app_services_session import SessionService
 from app.editor_security.app_services_integrity import IntegrityAnalyzerService
 from app.editor_security.app_db_models import EditorSession
 
-router = APIRouter(prefix="/api/v1/editor", tags=["security"])
+router = APIRouter(tags=["security"])
 
 # Dependency injection
 session_service = SessionService()
