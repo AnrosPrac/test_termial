@@ -11,7 +11,7 @@ router = APIRouter()
 # MongoDB Configuration
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
-db = client.sheepswag  # Your database name
+db = client.lumetrics_db  # Your database name
 
 
 class TrainingSample(BaseModel):
@@ -69,10 +69,10 @@ async def get_training_samples(
         skip = (page - 1) * limit
         
         # Get total count
-        total_count = await db.training_samples_filtered.count_documents(filter_query)
+        total_count = await db.training_samples.count_documents(filter_query)
         
         # Fetch samples
-        samples_cursor = db.training_samples_filtered.find(
+        samples_cursor = db.training_samples.find(
             filter_query,
             {"_id": 0}
         ).skip(skip).limit(limit)
@@ -113,7 +113,7 @@ async def get_available_chapters(
     Useful for building chapter navigation in the frontend.
     """
     try:
-        chapter_stats = await db.training_samples_filtered.aggregate([
+        chapter_stats = await db.training_samples.aggregate([
             {
                 "$group": {
                     "_id": "$chapter",
@@ -177,15 +177,15 @@ async def get_available_filters(
     """
     try:
         # Get unique chapters
-        chapters = await db.training_samples_filtered.distinct("chapter")
+        chapters = await db.training_samples.distinct("chapter")
         chapters = sorted(chapters)
         
         # Get unique types
-        types = await db.training_samples_filtered.distinct("type")
+        types = await db.training_samples.distinct("type")
         types = sorted(types)
         
         # Get unique difficulties
-        difficulties = await db.training_samples_filtered.distinct("difficulty")
+        difficulties = await db.training_samples.distinct("difficulty")
         # Sort difficulties by severity
         difficulty_order = {"easy": 1, "medium": 2, "hard": 3}
         difficulties = sorted(difficulties, key=lambda x: difficulty_order.get(x, 99))
@@ -220,7 +220,7 @@ async def get_sample_by_id(
     - sample_id: The sample_id to fetch (e.g., c_ch1_q_000122)
     """
     try:
-        sample = await db.training_samples_filtered.find_one(
+        sample = await db.training_samples.find_one(
             {"sample_id": sample_id},
             {"_id": 0}
         )
@@ -260,28 +260,28 @@ async def get_training_stats(
     """
     try:
         # Total count
-        total_count = await db.training_samples_filtered.count_documents({})
+        total_count = await db.training_samples.count_documents({})
         
         # Count by type
-        type_stats = await db.training_samples_filtered.aggregate([
+        type_stats = await db.training_samples.aggregate([
             {"$group": {"_id": "$type", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}}
         ]).to_list(length=None)
         
         # Count by difficulty
-        difficulty_stats = await db.training_samples_filtered.aggregate([
+        difficulty_stats = await db.training_samples.aggregate([
             {"$group": {"_id": "$difficulty", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}}
         ]).to_list(length=None)
         
         # Count by chapter
-        chapter_stats = await db.training_samples_filtered.aggregate([
+        chapter_stats = await db.training_samples.aggregate([
             {"$group": {"_id": "$chapter", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}}
         ]).to_list(length=None)
         
         # Count by type and difficulty combined
-        type_difficulty_stats = await db.training_samples_filtered.aggregate([
+        type_difficulty_stats = await db.training_samples.aggregate([
             {
                 "$group": {
                     "_id": {"type": "$type", "difficulty": "$difficulty"},
@@ -292,7 +292,7 @@ async def get_training_stats(
         ]).to_list(length=None)
         
         # Count by chapter and difficulty
-        chapter_difficulty_stats = await db.training_samples_filtered.aggregate([
+        chapter_difficulty_stats = await db.training_samples.aggregate([
             {
                 "$group": {
                     "_id": {"chapter": "$chapter", "difficulty": "$difficulty"},
@@ -303,7 +303,7 @@ async def get_training_stats(
         ]).to_list(length=None)
         
         # Count by chapter and type
-        chapter_type_stats = await db.training_samples_filtered.aggregate([
+        chapter_type_stats = await db.training_samples.aggregate([
             {
                 "$group": {
                     "_id": {"chapter": "$chapter", "type": "$type"},
@@ -400,7 +400,7 @@ async def get_random_sample(
             {"$project": {"_id": 0}}
         ]
         
-        result = await db.training_samples_filtered.aggregate(pipeline).to_list(length=1)
+        result = await db.training_samples.aggregate(pipeline).to_list(length=1)
         
         if not result:
             raise HTTPException(
@@ -449,10 +449,10 @@ async def search_samples(
         skip = (page - 1) * limit
         
         # Get total count
-        total_count = await db.training_samples_filtered.count_documents(search_filter)
+        total_count = await db.training_samples.count_documents(search_filter)
         
         # Fetch samples
-        samples_cursor = db.training_samples_filtered.find(
+        samples_cursor = db.training_samples.find(
             search_filter,
             {"_id": 0}
         ).skip(skip).limit(limit)
