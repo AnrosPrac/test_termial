@@ -92,14 +92,16 @@ async def get_course_progress(
     progress = (solved_count / total_questions * 100) if total_questions > 0 else 0
     
     return {
-        "course_id": course_id,
-        "total_questions": total_questions,
-        "solved_questions": solved_count,
-        "progress": round(progress, 2),
-        "league": enrollment.get("current_league", "BRONZE"),
-        "league_points": enrollment.get("league_points", 0),
-        "certificate_id": enrollment.get("certificate_id")
-    }
+    "course_id": course_id,
+    "total_questions": total_questions,
+    "solved_questions": enrollment.get("solved_questions", []),  # ← ARRAY
+    "solved_count": solved_count,                                # ← COUNT
+    "progress": round(progress, 2),
+    "league": enrollment.get("current_league", "BRONZE"),
+    "league_points": enrollment.get("league_points", 0),
+    "certificate_id": enrollment.get("certificate_id")
+}
+
 
 @router.get("/course/{course_id}/questions")
 async def get_available_questions(
