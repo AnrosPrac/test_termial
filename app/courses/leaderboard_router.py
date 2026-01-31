@@ -8,44 +8,93 @@ router = APIRouter(tags=["Leaderboards"])
 
 # ==================== LEADERBOARD QUERIES ====================
 
+def serialize_mongo(doc: dict) -> dict:
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
+
+def serialize_many(docs: list[dict]) -> list[dict]:
+    return [serialize_mongo(doc) for doc in docs]
+
+
 async def get_course_leaderboard(
     db: AsyncIOMotorDatabase,
     course_id: str,
     skip: int = 0,
     limit: int = 50
 ) -> List[dict]:
-    """Get leaderboard for specific course"""
+    """
+    Get leaderboard for specific course
+    Output strictly matches LeaderboardEntry model
+    """
+
     pipeline = [
-        {"$match": {"course_id": course_id, "is_active": True}},
-        {"$lookup": {
-            "from": "users_profile",
-            "localField": "user_id",
-            "foreignField": "user_id",
-            "as": "user"
-        }},
+        # 1️⃣ only active enrollments of this course
+        {
+            "$match": {
+                "course_id": course_id,
+                "is_active": True
+            }
+        },
+
+        # 2️⃣ join user profile
+        {
+            "$lookup": {
+                "from": "users_profile",
+                "localField": "user_id",
+                "foreignField": "user_id",
+                "as": "user"
+            }
+        },
         {"$unwind": "$user"},
-        {"$project": {
-            "user_id": 1,
-            "sidhi_id": 1,
-            "username": "$user.username",
-            "college": "$user.college",
-            "league": "$current_league",
-            "points": "$league_points",
-            "solved": {"$size": {"$ifNull": ["$solved_questions", []]}},
-            "avg_efficiency": {"$ifNull": ["$avg_efficiency", 0]}
-        }},
-        {"$sort": {"points": -1, "solved": -1}},
+
+        # 3️⃣ shape EXACTLY like LeaderboardEntry
+        {
+            "$project": {
+                "_id": 0,
+
+                "user_id": 1,
+
+                # required string → never null
+                "sidhi_id": {"$ifNull": ["$sidhi_id", ""]},
+
+                "username": {"$ifNull": ["$user.username", "Anonymous"]},
+                "college": "$user.college",
+
+                "league": "$current_league",
+
+                # model names must match
+                "total_points": {"$ifNull": ["$league_points", 0]},
+
+                "problems_solved": {
+                    "$size": {"$ifNull": ["$solved_questions", []]}
+                },
+
+                "avg_efficiency": {"$ifNull": ["$avg_efficiency", 0.0]}
+            }
+        },
+
+        # 4️⃣ CORRECT sorting (IMPORTANT)
+        {
+            "$sort": {
+                "total_points": -1,
+                "problems_solved": -1
+            }
+        },
+
+        # 5️⃣ pagination
         {"$skip": skip},
         {"$limit": limit}
     ]
-    
+
     results = await db.course_enrollments.aggregate(pipeline).to_list(length=limit)
-    
-    # Add rank
-    for idx, entry in enumerate(results):
-        entry["rank"] = skip + idx + 1
-    
+
+    # 6️⃣ rank injection (after pagination)
+    for idx, row in enumerate(results):
+        row["rank"] = skip + idx + 1
+
     return results
+
 
 async def get_global_leaderboard(
     db: AsyncIOMotorDatabase,
