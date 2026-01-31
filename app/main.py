@@ -33,6 +33,17 @@ from app.courses.enrollment_router import router as enrollment_router
 from app.courses.submission_router import router as submission_router
 from app.courses.leaderboard_router import router as leaderboard_router
 from app.courses.certificate_router import router as certificate_router
+from app.editor_security.app_db_config import get_mongo_config_from_env
+from app.editor_security.app_db_models import EditorSession, SecurityEvent, CodeCheckpointLog, SubmissionIntegrity
+from app.editor_security.app_models_security import (
+    CreateSessionRequest, SessionTokenResponse, 
+    BatchSecurityEventsRequest, BatchEventsResponse,
+    SubmitCodeRequest, SubmitCodeResponse,
+    SessionInfoResponse
+)
+from app.editor_security.app_services_session import SessionService
+from app.editor_security.app_services_integrity import IntegrityAnalyzerService
+from app.editor_security.app_routes_security import router as security_router
 
 app = FastAPI(title="Lumetrics AI Engine")
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
@@ -42,7 +53,11 @@ MONGO_URL = os.getenv("MONGO_URL")
 VERSION = os.getenv("VERSION")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.lumetrics_db 
+ession_service = SessionService()
+integrity_service = IntegrityAnalyzerService()
 
+# MongoDB Config for editor_security
+mongo_config = get_mongo_config_from_env()
 
 class UserDetailCreate(BaseModel):
     username: str
@@ -66,7 +81,16 @@ async def startup_event():
     await create_student_indexes()
     
          # ← Register routes FIRST
-    await startup_course_system()    # ← Then initialize system
+    await startup_course_system() 
+    try:
+        mongo_config.connect()
+        EditorSession.ensure_indexes()
+        SecurityEvent.ensure_indexes()
+        CodeCheckpointLog.ensure_indexes()
+        SubmissionIntegrity.ensure_indexes()
+        print("✅ Editor Security System Initialized")
+    except Exception as e:
+        print(f"⚠️ Editor Security Setup: {e}")   # ← Then initialize system
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,6 +137,8 @@ app.include_router(submission_router, prefix="/api/submissions")
 app.include_router(leaderboard_router, prefix="/api/leaderboards")
 app.include_router(certificate_router, prefix="/api/certificates")
 app.include_router(practice_router,prefix="/api/samples")
+app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_security"])
+
 # ============================================================
 
 
