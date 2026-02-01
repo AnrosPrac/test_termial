@@ -4,10 +4,36 @@ from datetime import datetime
 from enum import Enum
 
 # ==================== ENUMS ====================
+from typing import List
+from pydantic import BaseModel
+class SampleUpdate(BaseModel):
+    chapter: int | None = None
+    type: str | None = None
+    difficulty: str | None = None
+    question: str | None = None
+    answer: str | None = None
+
+class SampleBulkItem(BaseModel):
+    chapter: int
+    type: str
+    difficulty: str
+    question: str
+    answer: str
+
+class SampleBulkCreate(BaseModel):
+    course_id: str
+    samples: List[SampleBulkItem]
 
 class CourseType(str, Enum):
     OFFICIAL = "OFFICIAL"
     CREATOR = "CREATOR"
+class SampleCreate(BaseModel):
+    course_id: str
+    chapter: int
+    type: str
+    difficulty: str
+    question: str
+    answer: str
 
 class CourseDomain(str, Enum):
     SOFTWARE = "SOFTWARE"

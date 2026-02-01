@@ -45,7 +45,12 @@ async def create_course_indexes():
     await db.course_enrollments.create_index([("user_id", 1), ("course_id", 1)], unique=True)
     await db.course_enrollments.create_index("certificate_id", unique=True)
     await db.course_enrollments.create_index([("course_id", 1), ("league_points", -1)])
-    
+    await db.modules.create_index("module_id", unique=True)
+    await db.lessons.create_index("lesson_id", unique=True)
+    await db.modules.create_index([("course_id", 1), ("order", 1)])
+    await db.lessons.create_index([("module_id", 1), ("order", 1)])
+    await db.lesson_progress.create_index(
+    [("user_id", 1), ("lesson_id", 1)],unique=True)
     # Submissions
     await db.course_submissions.create_index("submission_id", unique=True)
     await db.course_submissions.create_index([("user_id", 1), ("course_id", 1)])

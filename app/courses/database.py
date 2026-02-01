@@ -192,7 +192,48 @@ async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id
                     tc.pop("output", None)
 
     return serialize_many(questions)
+import uuid
+from datetime import datetime
 
+async def create_sample(db, data: dict) -> str:
+    sample_id = f"SAMP_{uuid.uuid4().hex[:10].upper()}"
+
+    doc = {
+        "sample_id": sample_id,
+        "course_id": data["course_id"],
+        "chapter": data["chapter"],
+        "type": data["type"],
+        "difficulty": data["difficulty"],
+        "question": data["question"],
+        "answer": data["answer"],
+        "created_at": datetime.utcnow()
+    }
+
+    await db.training_samples.insert_one(doc)
+    return sample_id
+
+import uuid
+from datetime import datetime
+
+async def bulk_create_samples(db, course_id: str, samples: list):
+    docs = []
+
+    for s in samples:
+        docs.append({
+            "sample_id": f"SAMP_{uuid.uuid4().hex[:10].upper()}",
+            "course_id": course_id,
+            "chapter": s["chapter"],
+            "type": s["type"],
+            "difficulty": s["difficulty"],
+            "question": s["question"],
+            "answer": s["answer"],
+            "created_at": datetime.utcnow()
+        })
+
+    if docs:
+        await db.training_samples.insert_many(docs)
+
+    return len(docs)
 
 # ==================== SUBMISSION CRUD ====================
 
