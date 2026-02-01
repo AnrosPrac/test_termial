@@ -111,11 +111,32 @@ class TimestampItem(BaseModel):
     start: int
     end: Optional[int] = None
 
-
+from app.ai.client_bound_guard import verify_client_bound_request
 class TimestampBulkCreate(BaseModel):
     module_id: str
     video_url: str
     lessons: List[TimestampItem]
+
+@router.get("/my")
+async def list_my_courses(
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(verify_client_bound_request)
+):
+    cursor = db.courses.find(
+        {"creator_id": user_id}
+    ).sort("created_at", -1).skip(skip).limit(limit)
+
+    courses = await cursor.to_list(length=limit)
+
+    return {
+        "courses": serialize_many(courses),
+        "count": len(courses),
+        "skip": skip,
+        "limit": limit
+    }
+
 
 @router.get("/list")
 async def list_courses_endpoint(
