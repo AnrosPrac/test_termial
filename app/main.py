@@ -44,8 +44,10 @@ from app.editor_security.app_models_security import (
 from app.editor_security.app_services_session import SessionService
 from app.editor_security.app_services_integrity import IntegrityAnalyzerService
 from app.editor_security.app_routes_security import router as security_router
-
-app = FastAPI(title="Lumetrics AI Engine")
+from app.system.health_router import monitor_heartbeat
+import asyncio  # Required for create_task and sleep
+import httpx    # Required for the async server pings
+from contextlib import asynccontextmanager # Required for the lifespan handler
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
 
 # MongoDB Configuration
@@ -72,16 +74,19 @@ class UserDetailCreate(BaseModel):
     role: str = "student"
     email_id: str
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ==================== SENSITIVE STARTUP SEQUENCE ====================
+    # We keep your exact order of execution to maintain system integrity
     init_auth()
     setup_repo()
     await create_indexes()
     await create_teacher_indexes()
     await create_student_indexes()
     
-         # ← Register routes FIRST
-    await startup_course_system() 
+    # Course system must register before routes
+    await startup_course_system()
+    
     try:
         mongo_config.connect()
         EditorSession.ensure_indexes()
@@ -90,7 +95,28 @@ async def startup_event():
         SubmissionIntegrity.ensure_indexes()
         print("✅ Editor Security System Initialized")
     except Exception as e:
-        print(f"⚠️ Editor Security Setup: {e}")   # ← Then initialize system
+        print(f"⚠️ Editor Security Setup: {e}")
+
+    # ==================== HEALTH MONITOR SETUP ====================
+    # Initialize TTL index to auto-clear records older than 25 hours
+    await db.system_health_records.create_index("timestamp", expireAfterSeconds=90000)
+    
+    # Start the heartbeat pinger in the background
+    monitor_task = asyncio.create_task(monitor_heartbeat())
+    print("💓 System Health Heartbeat Started (5m interval)")
+
+    yield # Server stays alive and serves requests
+
+    # ==================== SHUTDOWN SEQUENCE ====================
+    monitor_task.cancel()
+    try:
+        await monitor_task
+    except asyncio.CancelledError:
+        pass
+    print("🛑 Health Monitor Stopped")
+
+# Apply the lifespan to your app
+app = FastAPI(title="Lumetrics AI Engine", lifespan=lifespan)  # ← Then initialize system
 
 app.add_middleware(
     CORSMiddleware,

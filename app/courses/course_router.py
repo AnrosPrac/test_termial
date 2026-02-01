@@ -8,7 +8,7 @@ from app.courses.database import (
 )
 import uuid
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime,timedelta
 from typing import Optional
 from app.courses.dependencies import get_db,get_current_user_id
 router = APIRouter( tags=["Course Management"])
@@ -597,7 +597,31 @@ async def create_question_endpoint(
         "question_id": question_id,
         "message": "Question created successfully"
     }
+@router.get("/system/health-report")
+async def get_health_report(db: AsyncIOMotorDatabase = Depends(get_db)):
+    last_24h = datetime.utcnow() - timedelta(hours=24)
+    
+    # Fetch all records from the last 24 hours
+    cursor = db.system_health_records.find({"timestamp": {"$gte": last_24h}}).sort("timestamp", 1)
+    records = await cursor.to_list(length=None)
+    
+    if not records:
+        return {"message": "No data collected yet"}
 
+    # Calculate Uptime Percentages
+    total_pings = len(records)
+    uptime_summary = {}
+    
+    # Check key servers for uptime stats
+    for key in ["auth_server", "softjudge_server", "hardjudge_server"]:
+        up_count = sum(1 for r in records if r["status"].get(key) == "UP")
+        uptime_summary[key] = f"{(up_count / total_pings) * 100:.2f}%"
+
+    return {
+        "summary": uptime_summary,
+        "total_records": total_pings,
+        "history": serialize_many(records) # Raw data for the frontend heatmap/linechart
+    }
 @router.get("/questions/{question_id}")
 async def get_question_endpoint(
     question_id: str,
