@@ -236,6 +236,31 @@ async def list_modules(course_id: str, db: AsyncIOMotorDatabase = Depends(get_db
     cursor = db.modules.find({"course_id": course_id}).sort("order", 1)
     modules = await cursor.to_list(None)
     return [serialize(m) for m in modules]
+@router.get("/samples/all/{course_id}")
+async def list_all_course_samples(
+    course_id: str, 
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    # Verify ownership so only the teacher sees the full sample bank
+    await verify_course_owner(db, course_id, user_id)
+    
+    cursor = db.training_samples.find({"course_id": course_id})
+    samples = await cursor.to_list(length=500)
+    return serialize_many(samples)
+
+@router.get("/questions/all/{course_id}")
+async def list_all_course_questions(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    # Verify ownership to show all questions (including solved/unsolved and hidden outputs)
+    await verify_course_owner(db, course_id, user_id)
+    
+    cursor = db.course_questions.find({"course_id": course_id})
+    questions = await cursor.to_list(length=500)
+    return serialize_many(questions)
 @router.put("/modules/{module_id}")
 async def update_module(
     module_id: str,
