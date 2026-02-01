@@ -102,7 +102,8 @@ async def lifespan(app: FastAPI):
     await db.system_health_records.create_index("timestamp", expireAfterSeconds=90000)
     
     # Start the heartbeat pinger in the background
-    monitor_task = asyncio.create_task(monitor_heartbeat())
+    # Line 105 - Pass the global 'db' object defined earlier in main.py
+    monitor_task = asyncio.create_task(monitor_heartbeat(db))
     print("💓 System Health Heartbeat Started (5m interval)")
 
     yield # Server stays alive and serves requests
