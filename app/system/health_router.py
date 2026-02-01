@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 # Configuration for the target servers
 SERVERS = {
-    "auth": "http://auth.sidhi.xyz/health",
+    "auth": "https://auth.sidhi.xyz/health",
     "softjudge": "https://lumterix-judge.onrender.com/health",
     "hardjudge": "https://hdl-engine.onrender.com/health"
 }
