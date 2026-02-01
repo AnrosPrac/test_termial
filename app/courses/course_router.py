@@ -129,7 +129,7 @@ async def list_my_courses(
     ).sort("created_at", -1).skip(skip).limit(limit)
 
     courses = await cursor.to_list(length=limit)
-
+    print(f"{serialize_many(courses)} , { len(courses)}")
     return {
         "courses": serialize_many(courses),
         "count": len(courses),
