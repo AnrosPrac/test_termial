@@ -122,8 +122,9 @@ async def list_my_courses(
     skip: int = 0,
     limit: int = 20,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(verify_client_bound_request)
+    user: str = Depends(verify_client_bound_request)
 ):
+    user_id = user.get("sub")
     cursor = db.courses.find(
         {"creator_id": user_id}
     ).sort("created_at", -1).skip(skip).limit(limit)
