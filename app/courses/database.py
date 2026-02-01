@@ -222,11 +222,11 @@ async def bulk_create_samples(db, course_id: str, samples: list):
         docs.append({
             "sample_id": f"SAMP_{uuid.uuid4().hex[:10].upper()}",
             "course_id": course_id,
-            "chapter": s["chapter"],
-            "type": s["type"],
-            "difficulty": s["difficulty"],
-            "question": s["question"],
-            "answer": s["answer"],
+            "chapter": s.chapter,
+            "type": s.type,
+            "difficulty": s.difficulty,
+            "question": s.question,
+            "answer": s.answer,
             "created_at": datetime.utcnow()
         })
 
@@ -234,6 +234,7 @@ async def bulk_create_samples(db, course_id: str, samples: list):
         await db.training_samples.insert_many(docs)
 
     return len(docs)
+
 
 # ==================== SUBMISSION CRUD ====================
 
