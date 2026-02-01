@@ -142,9 +142,18 @@ async def get_user_enrollments(db: AsyncIOMotorDatabase, user_id: str) -> List[d
 # ==================== QUESTION CRUD ====================
 
 async def create_question(db: AsyncIOMotorDatabase, question_data: dict) -> str:
-    """Create course question"""
+    """Create course question (supports both software & hardware)"""
+
     question_id = f"Q_{uuid.uuid4().hex[:8].upper()}"
-    
+
+    language = question_data["language"].lower()
+
+    software_langs = {"c", "cpp", "python", "java", "javascript"}
+    hardware_langs = {"verilog", "vhdl", "systemverilog"}
+
+    # -------------------------
+    # COMMON FIELDS
+    # -------------------------
     question = {
         "question_id": question_id,
         "course_id": question_data["course_id"],
@@ -152,18 +161,44 @@ async def create_question(db: AsyncIOMotorDatabase, question_data: dict) -> str:
         "title": question_data["title"],
         "description": question_data["description"],
         "difficulty": question_data["difficulty"],
-        "language": question_data["language"],
+        "language": language,
         "problem_type": question_data.get("problem_type", "coding"),
-        "test_cases": question_data.get("test_cases", []),
-        "time_limit": question_data.get("time_limit", 2.0),
-        "memory_limit": question_data.get("memory_limit", 256),
         "points": question_data.get("points", 100),
         "created_at": datetime.utcnow(),
         "is_active": True
     }
-    
+
+    # -------------------------
+    # SOFTWARE QUESTION
+    # -------------------------
+    if language in software_langs:
+        question.update({
+            "judge_type": "software",
+            "test_cases": question_data.get("test_cases", []),
+            "time_limit": question_data.get("time_limit", 2.0),
+            "memory_limit": question_data.get("memory_limit", 256)
+        })
+
+    # -------------------------
+    # HARDWARE QUESTION
+    # -------------------------
+    elif language in hardware_langs:
+        # Extract from the nested config provided by QuestionCreate model
+        hdl = question_data.get("hdl_config") or {}
+        
+        question.update({
+            "judge_type": "hardware",
+            "problem_id": hdl.get("problem_id") or question_data.get("problem_id"),
+            "module_name": hdl.get("module_name") or question_data.get("module_name"),
+            "testbench_template": hdl.get("testbench_template") or question_data.get("testbench_template"),
+            "time_limit": hdl.get("time_limit", 30)
+        })
+    else:
+        raise ValueError(f"Unsupported language: {language}")
+
     await db.course_questions.insert_one(question)
     return question_id
+
 
 async def get_question(db: AsyncIOMotorDatabase, question_id: str) -> Optional[dict]:
     """Get question details"""

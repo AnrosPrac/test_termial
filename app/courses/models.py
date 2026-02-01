@@ -12,6 +12,11 @@ class SampleUpdate(BaseModel):
     difficulty: str | None = None
     question: str | None = None
     answer: str | None = None
+class HDLConfig(BaseModel):
+    problem_id: str
+    module_name: str
+    testbench_template: str
+    time_limit: int = 30
 
 class SampleBulkItem(BaseModel):
     chapter: int
@@ -104,12 +109,17 @@ class QuestionCreate(BaseModel):
     title: str
     description: str
     difficulty: DifficultyLevel
-    language: str  # c, cpp, python, verilog, vhdl, systemverilog
-    problem_type: str = "coding"  # coding, mcq, theory
+    language: str
+    problem_type: str = "coding"
+
     test_cases: List[TestCase] = []
+
+    hdl_config: Optional[HDLConfig] = None   # 👈 ADD THIS
+
     time_limit: float = 2.0
     memory_limit: int = 256
-    points: int = 100  # base points
+    points: int = 100
+
     
     @validator('language')
     def validate_language(cls, v):
