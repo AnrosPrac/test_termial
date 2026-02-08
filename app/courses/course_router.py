@@ -466,7 +466,10 @@ async def publish_course_endpoint(
     db: AsyncIOMotorDatabase = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
-    """Publish course (locks editing)"""
+    """
+    Publish course (locks editing)
+    🔒 SECURITY: Validates pricing before publishing
+    """
     course = await get_course(db, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -474,13 +477,21 @@ async def publish_course_endpoint(
     if course["creator_id"] != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    success = await publish_course(db, course_id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Course already published")
+    # ✅ Call secured publish function (returns validation result)
+    result = await publish_course(db, course_id)
+    
+    if not result["success"]:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": result["message"],
+                "errors": result["errors"]
+            }
+        )
     
     return {
         "success": True,
-        "message": "Course published successfully",
+        "message": result["message"],
         "course_id": course_id
     }
 

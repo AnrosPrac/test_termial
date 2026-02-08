@@ -8,7 +8,7 @@ from app.api.auth_proxy import router as auth_router
 from app.courses.ai_doubt_solver import router as ai_doubt_router
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
-from app.ai.payment_router import router as payment_router, create_indexes
+from app.ai.payment_router import router as payment_router, create_payment_indexes
 import binascii
 from app.lum_cloud.sync_server import LOCAL_REPO_DIR
 import os
@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI):
     # We keep your exact order of execution to maintain system integrity
     init_auth()
     setup_repo()
-    await create_indexes()
+    await create_payment_indexes()
     await create_teacher_indexes()
     await create_student_indexes()
     

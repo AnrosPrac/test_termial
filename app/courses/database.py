@@ -17,7 +17,10 @@ def serialize_many(docs: list[dict]) -> list[dict]:
 
 
 async def create_course(db: AsyncIOMotorDatabase, course_data: dict, creator_id: str) -> str:
-    """Create new course"""
+    """
+    Create new course
+    🆕 SECURITY: Initializes with default FREE pricing
+    """
     course_id = f"COURSE_{uuid.uuid4().hex[:12].upper()}"
     
     course = {
@@ -32,6 +35,24 @@ async def create_course(db: AsyncIOMotorDatabase, course_data: dict, creator_id:
         "thumbnail_url": course_data.get("thumbnail_url"),
         "tags": course_data.get("tags", []),
         "external_resources": course_data.get("external_resources", []),
+        
+        # 🆕 DEFAULT PRICING (FREE until instructor sets price)
+        "pricing": {
+            "is_free": True,
+            "price": 0,
+            "original_price": 0,
+            "currency": "INR",
+            "tier_access": [],
+            "discount_percentage": 0,
+            "pricing_set": False  # Track if instructor explicitly set pricing
+        },
+        
+        # 🆕 PURCHASE STATS
+        "purchase_stats": {
+            "total_purchases": 0,
+            "revenue_generated": 0
+        },
+        
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
         "published_at": None,
@@ -50,7 +71,10 @@ async def get_course(db: AsyncIOMotorDatabase, course_id: str) -> Optional[dict]
     return await db.courses.find_one({"course_id": course_id})
 
 async def update_course(db: AsyncIOMotorDatabase, course_id: str, updates: dict) -> bool:
-    """Update course (only if DRAFT)"""
+    """
+    Update course (only if DRAFT)
+    🔒 SECURITY: Cannot update after published
+    """
     course = await get_course(db, course_id)
     if not course or course["status"] != CourseStatus.DRAFT:
         return False
@@ -62,8 +86,48 @@ async def update_course(db: AsyncIOMotorDatabase, course_id: str, updates: dict)
     )
     return result.modified_count > 0
 
-async def publish_course(db: AsyncIOMotorDatabase, course_id: str) -> bool:
-    """Publish course (lock rules)"""
+async def publish_course(db: AsyncIOMotorDatabase, course_id: str) -> dict:
+    """
+    Publish course (lock rules)
+    🆕 SECURITY: Validates pricing is set before publishing
+    
+    Returns:
+    {
+        "success": bool,
+        "message": str,
+        "errors": list (if validation fails)
+    }
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    
+    if not course:
+        return {"success": False, "message": "Course not found", "errors": ["Course not found"]}
+    
+    if course["status"] != CourseStatus.DRAFT:
+        return {"success": False, "message": "Course already published", "errors": ["Already published"]}
+    
+    # 🔒 VALIDATION: Check pricing is explicitly set
+    pricing = course.get("pricing", {})
+    
+    validation_errors = []
+    
+    # Check 1: Pricing must be explicitly set by instructor
+    if not pricing.get("pricing_set", False):
+        validation_errors.append("Pricing not configured. Please set course pricing before publishing.")
+    
+    # Check 2: If paid course, price must be > 0
+    if not pricing.get("is_free", True) and pricing.get("price", 0) <= 0:
+        validation_errors.append("Paid course must have price greater than 0.")
+    
+    # If validation fails, return errors
+    if validation_errors:
+        return {
+            "success": False,
+            "message": "Cannot publish course. Please fix the following issues:",
+            "errors": validation_errors
+        }
+    
+    # All validations passed - publish course
     result = await db.courses.update_one(
         {"course_id": course_id, "status": CourseStatus.DRAFT},
         {"$set": {
@@ -71,7 +135,19 @@ async def publish_course(db: AsyncIOMotorDatabase, course_id: str) -> bool:
             "published_at": datetime.utcnow()
         }}
     )
-    return result.modified_count > 0
+    
+    if result.modified_count > 0:
+        return {
+            "success": True,
+            "message": "Course published successfully",
+            "errors": []
+        }
+    else:
+        return {
+            "success": False,
+            "message": "Failed to publish course",
+            "errors": ["Database update failed"]
+        }
 
 async def list_courses(db: AsyncIOMotorDatabase, filters: dict, skip: int = 0, limit: int = 20) -> List[dict]:
     """List courses with filters"""
@@ -219,7 +295,7 @@ async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id
     
     questions = await cursor.to_list(length=None)
 
-# Remove test case outputs (only show inputs)
+    # Remove test case outputs (only show inputs)
     for q in questions:
         if "test_cases" in q:
             for tc in q["test_cases"]:
@@ -227,6 +303,7 @@ async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id
                     tc.pop("output", None)
 
     return serialize_many(questions)
+
 import uuid
 from datetime import datetime
 
