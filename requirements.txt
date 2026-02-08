@@ -15,7 +15,7 @@ PyJWT
 motor
 pymongo
 mongoengine
-bson
+
 
 # --- Real-time & Async ---
 websockets
