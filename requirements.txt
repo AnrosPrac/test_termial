@@ -9,29 +9,31 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 pynacl
+PyJWT
 
 # --- Database ---
-motor               # Async MongoDB
-pymongo             # MongoDB operations (ADDED)
+motor
+pymongo
+mongoengine
+bson
 
-# --- Real-time & Asynchronous ---
+# --- Real-time & Async ---
 websockets
 aiofiles
 watchdog
 
-# --- AI & Visualization ---
+# --- AI & HTTP ---
 google-generativeai
-graphviz
 httpx
+graphviz
 
 # --- Data Validation ---
 pydantic
+email-validator
 
-# --- Cloud Sync & Vault ---
+# --- Cloud ---
 GitPython
 firebase-admin
-# datetime - REMOVED (built-in library)
 
-# --- JWT handling ---
-PyJWT
-mongoengine
+# --- Image / Certificate ---
+Pillow
