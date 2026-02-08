@@ -5,6 +5,7 @@ from app.ai.router import router as ai_router
 from app.chat.router import router as chat_router
 from app.stream.router import router as stream_router
 from app.api.auth_proxy import router as auth_router
+from app.courses.ai_doubt_solver import router as ai_doubt_router
 from app.lum_cloud.sync_server import commit_to_github, setup_repo 
 from nacl.signing import VerifyKey
 from app.ai.payment_router import router as payment_router, create_indexes
@@ -31,6 +32,7 @@ from app.courses.practice_router import router as practice_router
 from app.courses.course_router import router as course_router
 from app.courses.enrollment_router import router as enrollment_router
 from app.courses.submission_router import router as submission_router
+from app.courses.community_router import router as community_router
 from app.courses.leaderboard_router import router as leaderboard_router
 from app.courses.certificate_router import router as certificate_router
 from app.editor_security.app_db_config import get_mongo_config_from_env
@@ -148,6 +150,8 @@ async def verify_signature(
 
 # ==================== ROUTER REGISTRATION ====================
 app.include_router(ai_router, prefix="/ai")
+app.include_router(ai_doubt_router,prefix="/api/ai/doubt")
+app.include_router(community_router,prefix="/community")
 app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(admin_router,prefix="/admin")

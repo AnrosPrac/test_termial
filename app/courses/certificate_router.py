@@ -507,3 +507,424 @@ async def claim_certificate_pdf(
         "certificates": certificates,
         "count": len(certificates)
     }
+from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi.responses import FileResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from typing import Optional
+from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
+import io
+import os
+
+from app.courses.dependencies import get_db, get_current_user_id
+
+router = APIRouter(tags=["Certificates"])
+
+# ==================== CERTIFICATE GENERATION ====================
+
+def serialize_mongo(doc: dict) -> dict:
+    if "_id" in doc:
+        doc["_id"] = str(doc["_id"])
+    return doc
+
+
+async def generate_certificate_image(
+    username: str,
+    sidhi_id: str,
+    course_title: str,
+    league: str,
+    points: int,
+    solved_count: int,
+    completion_date: datetime,
+    certificate_id: str
+) -> bytes:
+    """
+    Generate a certificate image using PIL
+    Returns bytes of the PNG image
+    """
+    
+    # Certificate dimensions
+    width, height = 1920, 1080
+    
+    # Create image with white background
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
+    
+    # Colors
+    primary_color = (41, 128, 185)  # Blue
+    secondary_color = (52, 73, 94)  # Dark gray
+    gold_color = (241, 196, 15)     # Gold for accents
+    
+    # Draw border
+    border_margin = 50
+    draw.rectangle(
+        [border_margin, border_margin, width - border_margin, height - border_margin],
+        outline=primary_color,
+        width=10
+    )
+    
+    # Draw inner border
+    inner_margin = 70
+    draw.rectangle(
+        [inner_margin, inner_margin, width - inner_margin, height - inner_margin],
+        outline=gold_color,
+        width=3
+    )
+    
+    # Try to load fonts (fallback to default if not available)
+    try:
+        title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", 80)
+        subtitle_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf", 40)
+        text_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+        small_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
+    except:
+        title_font = ImageFont.load_default()
+        subtitle_font = ImageFont.load_default()
+        text_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+    
+    # Title
+    title_text = "CERTIFICATE OF ACHIEVEMENT"
+    title_bbox = draw.textbbox((0, 0), title_text, font=title_font)
+    title_width = title_bbox[2] - title_bbox[0]
+    draw.text(
+        ((width - title_width) / 2, 120),
+        title_text,
+        fill=primary_color,
+        font=title_font
+    )
+    
+    # Subtitle
+    subtitle_text = "This is to certify that"
+    subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
+    subtitle_width = subtitle_bbox[2] - subtitle_bbox[0]
+    draw.text(
+        ((width - subtitle_width) / 2, 240),
+        subtitle_text,
+        fill=secondary_color,
+        font=subtitle_font
+    )
+    
+    # Student name
+    name_bbox = draw.textbbox((0, 0), username, font=title_font)
+    name_width = name_bbox[2] - name_bbox[0]
+    draw.text(
+        ((width - name_width) / 2, 320),
+        username,
+        fill=gold_color,
+        font=title_font
+    )
+    
+    # Sidhi ID
+    sidhi_text = f"Sidhi ID: {sidhi_id}"
+    sidhi_bbox = draw.textbbox((0, 0), sidhi_text, font=small_font)
+    sidhi_width = sidhi_bbox[2] - sidhi_bbox[0]
+    draw.text(
+        ((width - sidhi_width) / 2, 420),
+        sidhi_text,
+        fill=secondary_color,
+        font=small_font
+    )
+    
+    # Achievement text
+    achievement_text = f"has successfully completed the course"
+    achievement_bbox = draw.textbbox((0, 0), achievement_text, font=text_font)
+    achievement_width = achievement_bbox[2] - achievement_bbox[0]
+    draw.text(
+        ((width - achievement_width) / 2, 500),
+        achievement_text,
+        fill=secondary_color,
+        font=text_font
+    )
+    
+    # Course title
+    course_bbox = draw.textbbox((0, 0), course_title, font=title_font)
+    course_width = course_bbox[2] - course_bbox[0]
+    draw.text(
+        ((width - course_width) / 2, 560),
+        course_title,
+        fill=primary_color,
+        font=title_font
+    )
+    
+    # League and stats
+    league_colors = {
+        "BRONZE": (205, 127, 50),
+        "SILVER": (192, 192, 192),
+        "GOLD": (255, 215, 0),
+        "PLATINUM": (229, 228, 226),
+        "DIAMOND": (185, 242, 255),
+        "MYTHIC": (138, 43, 226),
+        "LEGEND": (255, 0, 0)
+    }
+    
+    league_color = league_colors.get(league, gold_color)
+    
+    stats_y = 680
+    stats_text = f"League: {league} | Points: {points:,} | Problems Solved: {solved_count}"
+    stats_bbox = draw.textbbox((0, 0), stats_text, font=text_font)
+    stats_width = stats_bbox[2] - stats_bbox[0]
+    draw.text(
+        ((width - stats_width) / 2, stats_y),
+        stats_text,
+        fill=league_color,
+        font=text_font
+    )
+    
+    # Date
+    date_text = f"Issued on: {completion_date.strftime('%B %d, %Y')}"
+    date_bbox = draw.textbbox((0, 0), date_text, font=small_font)
+    date_width = date_bbox[2] - date_bbox[0]
+    draw.text(
+        ((width - date_width) / 2, 780),
+        date_text,
+        fill=secondary_color,
+        font=small_font
+    )
+    
+    # Certificate ID
+    cert_id_text = f"Certificate ID: {certificate_id}"
+    cert_id_bbox = draw.textbbox((0, 0), cert_id_text, font=small_font)
+    cert_id_width = cert_id_bbox[2] - cert_id_bbox[0]
+    draw.text(
+        ((width - cert_id_width) / 2, 870),
+        cert_id_text,
+        fill=secondary_color,
+        font=small_font
+    )
+    
+    # Signature line
+    draw.line([(width/2 - 200, 950), (width/2 + 200, 950)], fill=secondary_color, width=2)
+    signature_text = "Authorized Signature"
+    sig_bbox = draw.textbbox((0, 0), signature_text, font=small_font)
+    sig_width = sig_bbox[2] - sig_bbox[0]
+    draw.text(
+        ((width - sig_width) / 2, 960),
+        signature_text,
+        fill=secondary_color,
+        font=small_font
+    )
+    
+    # Convert to bytes
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG', quality=95)
+    img_byte_arr.seek(0)
+    
+    return img_byte_arr.getvalue()
+
+
+# ==================== CERTIFICATE ENDPOINTS ====================
+
+@router.get("/course/{course_id}/certificate/check-eligibility")
+async def check_certificate_eligibility(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Check if user is eligible for certificate
+    Requirements: Must be Silver league or higher
+    """
+    
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id
+    })
+    
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this course")
+    
+    current_league = enrollment.get("current_league", "BRONZE")
+    eligible_leagues = ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+    
+    is_eligible = current_league in eligible_leagues
+    
+    # Get course info
+    course = await db.courses.find_one({"course_id": course_id})
+    
+    return {
+        "eligible": is_eligible,
+        "current_league": current_league,
+        "required_league": "SILVER",
+        "league_points": enrollment.get("league_points", 0),
+        "points_needed": max(0, 2500 - enrollment.get("league_points", 0)),
+        "certificate_id": enrollment.get("certificate_id") if is_eligible else None,
+        "course_title": course.get("title") if course else "Unknown",
+        "message": "Certificate available!" if is_eligible else "Reach Silver league to unlock certificate"
+    }
+
+
+@router.get("/course/{course_id}/certificate/download")
+async def download_certificate(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Download certificate as PNG image
+    Only available for Silver+ league users
+    """
+    
+    # Get enrollment
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id
+    })
+    
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this course")
+    
+    # Check eligibility
+    current_league = enrollment.get("current_league", "BRONZE")
+    eligible_leagues = ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+    
+    if current_league not in eligible_leagues:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Certificate not available. Current league: {current_league}. Required: SILVER or higher."
+        )
+    
+    # Get course
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Get user profile
+    user_profile = await db.users_profile.find_one({"user_id": user_id})
+    username = user_profile.get("username", "Student") if user_profile else "Student"
+    
+    # Generate certificate
+    certificate_bytes = await generate_certificate_image(
+        username=username,
+        sidhi_id=enrollment.get("sidhi_id", "N/A"),
+        course_title=course.get("title", "Course"),
+        league=current_league,
+        points=enrollment.get("league_points", 0),
+        solved_count=len(enrollment.get("solved_questions", [])),
+        completion_date=datetime.utcnow(),
+        certificate_id=enrollment.get("certificate_id", "N/A")
+    )
+    
+    # Save certificate record
+    await db.certificate_downloads.update_one(
+        {
+            "certificate_id": enrollment.get("certificate_id"),
+            "user_id": user_id,
+            "course_id": course_id
+        },
+        {
+            "$set": {
+                "downloaded_at": datetime.utcnow(),
+                "league_at_download": current_league,
+                "points_at_download": enrollment.get("league_points", 0)
+            },
+            "$inc": {"download_count": 1}
+        },
+        upsert=True
+    )
+    
+    # Return image
+    return Response(
+        content=certificate_bytes,
+        media_type="image/png",
+        headers={
+            "Content-Disposition": f"attachment; filename=certificate_{course_id}_{user_id}.png"
+        }
+    )
+
+
+@router.get("/course/{course_id}/certificate/preview")
+async def preview_certificate(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Preview certificate without downloading (works for all users)
+    Shows what certificate will look like
+    """
+    
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id
+    })
+    
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this course")
+    
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    user_profile = await db.users_profile.find_one({"user_id": user_id})
+    username = user_profile.get("username", "Student") if user_profile else "Student"
+    
+    current_league = enrollment.get("current_league", "BRONZE")
+    
+    # Generate preview (even for non-eligible users)
+    certificate_bytes = await generate_certificate_image(
+        username=username,
+        sidhi_id=enrollment.get("sidhi_id", "N/A"),
+        course_title=course.get("title", "Course"),
+        league=current_league,
+        points=enrollment.get("league_points", 0),
+        solved_count=len(enrollment.get("solved_questions", [])),
+        completion_date=datetime.utcnow(),
+        certificate_id=enrollment.get("certificate_id", "PREVIEW")
+    )
+    
+    return Response(
+        content=certificate_bytes,
+        media_type="image/png"
+    )
+
+
+@router.get("/my-certificates")
+async def get_my_certificates(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get all certificates earned by user
+    """
+    
+    # Get all enrollments with Silver+ league
+    eligible_leagues = ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+    
+    cursor = db.course_enrollments.find({
+        "user_id": user_id,
+        "current_league": {"$in": eligible_leagues}
+    })
+    
+    enrollments = await cursor.to_list(length=None)
+    
+    certificates = []
+    for enr in enrollments:
+        course = await db.courses.find_one({"course_id": enr["course_id"]})
+        if not course:
+            continue
+        
+        # Get download info
+        download_info = await db.certificate_downloads.find_one({
+            "certificate_id": enr.get("certificate_id"),
+            "user_id": user_id
+        })
+        
+        certificates.append({
+            "certificate_id": enr.get("certificate_id"),
+            "course_id": enr["course_id"],
+            "course_title": course.get("title"),
+            "league": enr.get("current_league"),
+            "points": enr.get("league_points", 0),
+            "problems_solved": len(enr.get("solved_questions", [])),
+            "enrolled_at": enr.get("enrolled_at"),
+            "download_count": download_info.get("download_count", 0) if download_info else 0,
+            "last_downloaded": download_info.get("downloaded_at") if download_info else None
+        })
+    
+    return {
+        "certificates": certificates,
+        "total": len(certificates)
+    }
+
+
