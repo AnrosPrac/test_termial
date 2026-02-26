@@ -435,21 +435,35 @@ def calculate_league(points: int) -> LeagueTier:
         return LeagueTier.SILVER
     return LeagueTier.BRONZE
 
-async def update_league_points(db: AsyncIOMotorDatabase, user_id: str, points_delta: int) -> LeagueTier:
-    """Update user league points and tier"""
-    enrollment = await db.course_enrollments.find_one({"user_id": user_id})
+async def update_league_points(db: AsyncIOMotorDatabase, user_id: str, points_delta: int, course_id: str = None, efficiency_multiplier: float = 1.0) -> LeagueTier:
+    """
+    Update user league points and tier for a specific course.
+    course_id is required to avoid updating the wrong enrollment.
+    Also persists avg_efficiency so certificate page can show it.
+    """
+    query = {"user_id": user_id}
+    if course_id:
+        query["course_id"] = course_id
+
+    enrollment = await db.course_enrollments.find_one(query)
     if not enrollment:
         return LeagueTier.BRONZE
-    
+
     new_points = enrollment.get("league_points", 0) + points_delta
     new_league = calculate_league(new_points)
-    
+
+    # Rolling average of efficiency multiplier
+    prev_eff   = enrollment.get("avg_efficiency", 0.0)
+    solved_cnt = len(enrollment.get("solved_questions", [])) or 1
+    new_eff    = round(((prev_eff * (solved_cnt - 1)) + efficiency_multiplier) / solved_cnt, 4)
+
     await db.course_enrollments.update_one(
-        {"user_id": user_id},
+        query,
         {"$set": {
-            "league_points": new_points,
-            "current_league": new_league
+            "league_points":    new_points,
+            "current_league":   new_league,
+            "avg_efficiency":   new_eff,
         }}
     )
-    
+
     return new_league

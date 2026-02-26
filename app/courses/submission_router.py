@@ -210,8 +210,9 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
         await update_league_points(
             db,
             submission["user_id"],
-            submission["course_id"],
-            int(scoring["final_score"])
+            int(scoring["final_score"]),
+            course_id=submission["course_id"],
+            efficiency_multiplier=scoring["efficiency_multiplier"]
         )
 
 # ==================== JUDGE ROUTER ====================
