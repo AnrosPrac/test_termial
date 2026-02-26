@@ -409,37 +409,116 @@ async def mark_question_solved(db: AsyncIOMotorDatabase, course_id: str, user_id
 
 # ==================== LEAGUE OPERATIONS ====================
 
+# ── Points per difficulty ─────────────────────────────────────────────────────
+# ~300 questions assumed: 150 easy / 100 medium / 50 hard
+# Max possible = 150×100 + 100×250 + 50×500 = 65,000 pts
+#
+# League thresholds are set so:
+#   SILVER  ≈ solving ~4-5 easy problems   → very achievable, feels great
+#   GOLD    ≈ ~15 easy OR ~8 medium
+#   PLATINUM≈ solid easy+medium mix
+#   DIAMOND ≈ needs hard problems
+#   MYTHIC  ≈ serious grinder
+#   LEGEND  ≈ ~92% of max — true mastery
+
+DIFFICULTY_BASE_POINTS = {
+    "easy":   100,
+    "medium": 250,
+    "hard":   500,
+}
+DEFAULT_BASE_POINTS = 100  # fallback if difficulty unknown
+
 LEAGUE_THRESHOLDS = {
-    LeagueTier.BRONZE: 0,
-    LeagueTier.SILVER: 2500,
-    LeagueTier.GOLD: 5000,
-    LeagueTier.PLATINUM: 10000,
-    LeagueTier.DIAMOND: 20000,
-    LeagueTier.MYTHIC: 35000,
-    LeagueTier.LEGEND: 55000
+    LeagueTier.BRONZE:   0,
+    LeagueTier.SILVER:   2_000,
+    LeagueTier.GOLD:     6_000,
+    LeagueTier.PLATINUM: 14_000,
+    LeagueTier.DIAMOND:  26_000,
+    LeagueTier.MYTHIC:   42_000,
+    LeagueTier.LEGEND:   60_000,
 }
 
+# Expose as plain dict for routers that need it (certificate page, frontend)
+LEAGUE_THRESHOLDS_PLAIN = {k.value: v for k, v in LEAGUE_THRESHOLDS.items()}
+LEAGUE_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+
+
+def get_base_points_for_question(question: dict) -> int:
+    """
+    Return base points for a question.
+    Uses the question's stored 'points' field if set by instructor,
+    otherwise derives from difficulty.
+    """
+    stored = question.get("points")
+    if stored and stored != 100:
+        # Instructor explicitly set a custom value — respect it
+        return stored
+    # Derive from difficulty
+    difficulty = (question.get("difficulty") or "easy").lower()
+    return DIFFICULTY_BASE_POINTS.get(difficulty, DEFAULT_BASE_POINTS)
+
+
 def calculate_league(points: int) -> LeagueTier:
-    """Calculate league tier from points"""
-    if points >= LEAGUE_THRESHOLDS[LeagueTier.LEGEND]:
-        return LeagueTier.LEGEND
-    elif points >= LEAGUE_THRESHOLDS[LeagueTier.MYTHIC]:
-        return LeagueTier.MYTHIC
-    elif points >= LEAGUE_THRESHOLDS[LeagueTier.DIAMOND]:
-        return LeagueTier.DIAMOND
-    elif points >= LEAGUE_THRESHOLDS[LeagueTier.PLATINUM]:
-        return LeagueTier.PLATINUM
-    elif points >= LEAGUE_THRESHOLDS[LeagueTier.GOLD]:
-        return LeagueTier.GOLD
-    elif points >= LEAGUE_THRESHOLDS[LeagueTier.SILVER]:
-        return LeagueTier.SILVER
+    """Calculate league tier from total points."""
+    for tier in reversed(LEAGUE_ORDER):
+        if points >= LEAGUE_THRESHOLDS[LeagueTier(tier)]:
+            return LeagueTier(tier)
     return LeagueTier.BRONZE
 
-async def update_league_points(db: AsyncIOMotorDatabase, user_id: str, points_delta: int, course_id: str = None, efficiency_multiplier: float = 1.0) -> LeagueTier:
+
+async def promote_to_alumni(db: AsyncIOMotorDatabase, user_id: str, course_id: str, enrollment: dict) -> None:
     """
-    Update user league points and tier for a specific course.
-    course_id is required to avoid updating the wrong enrollment.
-    Also persists avg_efficiency so certificate page can show it.
+    When a student hits LEGEND, snapshot their stats into alumni_board.
+    Their enrollment remains active (they keep course access).
+    Their rank is retired from live leaderboard into hall of fame.
+    Called automatically inside update_league_points when LEGEND is reached.
+    """
+    existing = await db.alumni_board.find_one({"user_id": user_id, "course_id": course_id})
+    if existing:
+        # Already alumni for this course — just update final stats
+        await db.alumni_board.update_one(
+            {"user_id": user_id, "course_id": course_id},
+            {"$set": {
+                "final_points":          enrollment.get("league_points", 0),
+                "final_league":          LeagueTier.LEGEND,
+                "total_problems_solved": len(enrollment.get("solved_questions", [])),
+                "avg_efficiency":        enrollment.get("avg_efficiency", 0.0),
+                "updated_at":            datetime.utcnow(),
+            }}
+        )
+        return
+
+    await db.alumni_board.insert_one({
+        "user_id":               user_id,
+        "course_id":             course_id,
+        "enrollment_id":         enrollment.get("enrollment_id"),
+        "sidhi_id":              enrollment.get("sidhi_id"),
+        "final_points":          enrollment.get("league_points", 0),
+        "final_league":          LeagueTier.LEGEND,
+        "total_problems_solved": len(enrollment.get("solved_questions", [])),
+        "avg_efficiency":        enrollment.get("avg_efficiency", 0.0),
+        "is_alumni":             True,
+        "graduation_date":       datetime.utcnow(),
+    })
+
+
+async def update_league_points(
+    db:                   AsyncIOMotorDatabase,
+    user_id:              str,
+    points_delta:         int,
+    course_id:            str  = None,
+    efficiency_multiplier: float = 1.0,
+) -> dict:
+    """
+    Award points to a student for a specific course enrollment.
+
+    Returns:
+        {
+            "new_points":   int,
+            "new_league":   LeagueTier,
+            "league_up":    bool,   ← True if they crossed a new tier
+            "is_legend":    bool,   ← True if they just hit LEGEND
+        }
     """
     query = {"user_id": user_id}
     if course_id:
@@ -447,23 +526,36 @@ async def update_league_points(db: AsyncIOMotorDatabase, user_id: str, points_de
 
     enrollment = await db.course_enrollments.find_one(query)
     if not enrollment:
-        return LeagueTier.BRONZE
+        return {"new_points": 0, "new_league": LeagueTier.BRONZE, "league_up": False, "is_legend": False}
 
+    old_league = LeagueTier(enrollment.get("current_league", LeagueTier.BRONZE))
     new_points = enrollment.get("league_points", 0) + points_delta
     new_league = calculate_league(new_points)
+    league_up  = new_league != old_league
 
-    # Rolling average of efficiency multiplier
+    # Rolling average efficiency — weighted by solved count
     prev_eff   = enrollment.get("avg_efficiency", 0.0)
-    solved_cnt = len(enrollment.get("solved_questions", [])) or 1
+    solved_cnt = max(len(enrollment.get("solved_questions", [])), 1)
     new_eff    = round(((prev_eff * (solved_cnt - 1)) + efficiency_multiplier) / solved_cnt, 4)
 
     await db.course_enrollments.update_one(
         query,
         {"$set": {
-            "league_points":    new_points,
-            "current_league":   new_league,
-            "avg_efficiency":   new_eff,
+            "league_points":  new_points,
+            "current_league": new_league,
+            "avg_efficiency": new_eff,
         }}
     )
 
-    return new_league
+    # Alumni promotion when LEGEND is reached
+    is_legend = new_league == LeagueTier.LEGEND
+    if is_legend and old_league != LeagueTier.LEGEND:
+        updated_enrollment = {**enrollment, "league_points": new_points, "avg_efficiency": new_eff}
+        await promote_to_alumni(db, user_id, course_id or enrollment.get("course_id"), updated_enrollment)
+
+    return {
+        "new_points": new_points,
+        "new_league": new_league,
+        "league_up":  league_up,
+        "is_legend":  is_legend,
+    }
