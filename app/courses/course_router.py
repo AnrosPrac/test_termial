@@ -1067,24 +1067,37 @@ async def get_all_courses_summary(
         "user_id": user_id,
         "is_active": True
     }).to_list(length=None)
-    
+
+    if not enrollments:
+        return {"courses": [], "total_enrolled": 0, "total_league_points": 0}
+
+    # Batch fetch all courses in one query to avoid N+1
+    course_ids = [e["course_id"] for e in enrollments]
+    courses_list = await db.courses.find(
+        {"course_id": {"$in": course_ids}}
+    ).to_list(length=None)
+    course_map = {c["course_id"]: c for c in courses_list}
+
+    # Batch fetch question counts per course via aggregation
+    q_counts_raw = await db.course_questions.aggregate([
+        {"$match": {"course_id": {"$in": course_ids}, "is_active": True}},
+        {"$group": {"_id": "$course_id", "count": {"$sum": 1}}}
+    ]).to_list(length=None)
+    q_counts = {item["_id"]: item["count"] for item in q_counts_raw}
+
     courses_summary = []
-    
     for enr in enrollments:
-        course = await db.courses.find_one({"course_id": enr["course_id"]})
+        cid = enr["course_id"]
+        course = course_map.get(cid)
         if not course:
             continue
-        
-        total_questions = await db.course_questions.count_documents({
-            "course_id": enr["course_id"],
-            "is_active": True
-        })
-        
+
+        total_questions = q_counts.get(cid, 0)
         solved_count = len(enr.get("solved_questions", []))
         progress = (solved_count / total_questions * 100) if total_questions > 0 else 0
-        
+
         courses_summary.append({
-            "course_id": course["course_id"],
+            "course_id": cid,
             "title": course["title"],
             "domain": course["domain"],
             "thumbnail_url": course.get("thumbnail_url"),
@@ -1096,12 +1109,71 @@ async def get_all_courses_summary(
             "total_questions": total_questions,
             "enrolled_at": enr["enrolled_at"]
         })
-    
+
     return {
         "courses": courses_summary,
         "total_enrolled": len(courses_summary),
         "total_league_points": sum(c["league_points"] for c in courses_summary)
     }
+
+
+# League thresholds so the frontend can show "X pts to next league"
+LEAGUE_THRESHOLDS = {
+    "BRONZE":   0,
+    "SILVER":   2500,
+    "GOLD":     6000,
+    "PLATINUM": 12000,
+    "DIAMOND":  20000,
+    "MYTHIC":   30000,
+    "LEGEND":   50000,
+}
+LEAGUE_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+
+@router.get("/league/thresholds")
+async def get_league_thresholds():
+    """Return league point thresholds — used by frontend progress bars"""
+    return {"thresholds": LEAGUE_THRESHOLDS, "order": LEAGUE_ORDER}
+
+
+@router.get("/course/{course_id}/resume")
+async def get_resume_lesson(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Return the next incomplete lesson so the student can resume where they left off.
+    Returns the first lesson with completed=False, or None if all done.
+    """
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id,
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this course")
+
+    modules = await db.modules.find({"course_id": course_id}).sort("order", 1).to_list(None)
+    for module in modules:
+        lessons = await db.lessons.find({"module_id": module["module_id"]}).sort("order", 1).to_list(None)
+        for lesson in lessons:
+            progress = await db.lesson_progress.find_one({
+                "user_id": user_id,
+                "lesson_id": lesson["lesson_id"]
+            })
+            if not progress or not progress.get("completed", False):
+                return {
+                    "resume_lesson": {
+                        "lesson_id": lesson["lesson_id"],
+                        "title": lesson["title"],
+                        "module_id": module["module_id"],
+                        "module_title": module["title"],
+                        "video_url": lesson.get("video_url"),
+                        "watched_seconds": progress.get("watched_seconds", 0) if progress else 0
+                    }
+                }
+
+    return {"resume_lesson": None, "message": "All lessons completed!"}
 
 @router.post("/questions/create")
 async def create_question_endpoint(
@@ -1155,17 +1227,30 @@ async def get_health_report(db: AsyncIOMotorDatabase = Depends(get_db)):
 @router.get("/questions/{question_id}")
 async def get_question_endpoint(
     question_id: str,
-    db: AsyncIOMotorDatabase = Depends(get_db)
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
 ):
-    """Get question details (sample only for students)"""
+    """Get question details — verifies enrollment before returning"""
     question = await get_question(db, question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
+
+    # ✅ SECURITY: Verify the requesting user is enrolled in this question's course
+    enrollment = await db.course_enrollments.find_one({
+        "user_id": user_id,
+        "course_id": question["course_id"],
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You must be enrolled in this course to view questions")
     
-    # Hide test case outputs
+    # Hide non-sample test case outputs
     if "test_cases" in question:
         for tc in question["test_cases"]:
             if not tc.get("is_sample", False):
                 tc.pop("output", None)
-    
-    return serialize_mongo(question)
+
+    # Attach solved status for this student
+    q = serialize_mongo(question)
+    q["is_solved"] = question_id in enrollment.get("solved_questions", [])
+    return q

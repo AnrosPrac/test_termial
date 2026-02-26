@@ -66,6 +66,15 @@ async def add_comment_to_question(
     question = await db.course_questions.find_one({"question_id": question_id})
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
+
+    # ✅ SECURITY: Verify enrollment before posting comments
+    enrollment = await db.course_enrollments.find_one({
+        "user_id": user_id,
+        "course_id": question["course_id"],
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You must be enrolled in this course to post comments")
     
     comment_id = f"CMT_{uuid.uuid4().hex[:12].upper()}"
     

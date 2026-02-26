@@ -51,6 +51,15 @@ async def get_practice_samples(
     course = await db.courses.find_one({"course_id": course_id})
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+
+    # ✅ SECURITY: Verify student is enrolled before showing practice material
+    enrollment = await db.course_enrollments.find_one({
+        "user_id": user_id,
+        "course_id": course_id,
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You must be enrolled in this course to access practice samples")
     
     # Build query - ALWAYS filter by course_id
     query = {"course_id": course_id}  # ⭐ COURSE-SPECIFIC
@@ -160,7 +169,15 @@ async def get_sample_detail(
     
     course_id = sample.get("course_id")  # ⭐ GET COURSE
     
-    # Check if read FOR THIS COURSE
+    # ✅ SECURITY: Verify enrollment before showing sample detail
+    if course_id:
+        enrollment = await db.course_enrollments.find_one({
+            "user_id": user_id,
+            "course_id": course_id,
+            "is_active": True
+        })
+        if not enrollment:
+            raise HTTPException(status_code=403, detail="You must be enrolled in this course to access practice samples")
     user_progress = await db.user_sample_progress.find_one({
         "user_id": user_id,
         "course_id": course_id  # ⭐ PER-COURSE PROGRESS
@@ -187,6 +204,15 @@ async def get_practice_stats(
     course = await db.courses.find_one({"course_id": course_id})
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+
+    # ✅ SECURITY: Verify enrollment
+    enrollment = await db.course_enrollments.find_one({
+        "user_id": user_id,
+        "course_id": course_id,
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You must be enrolled in this course to view practice stats")
     
     # Get user progress FOR THIS COURSE
     user_progress = await db.user_sample_progress.find_one({

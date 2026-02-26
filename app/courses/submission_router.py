@@ -210,6 +210,7 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
         await update_league_points(
             db,
             submission["user_id"],
+            submission["course_id"],
             int(scoring["final_score"])
         )
 
@@ -332,6 +333,43 @@ async def get_submission_history(
     submissions = await cursor.to_list(length=limit)
     
     return {
-        "submissions": submissions,
+        "submissions": [
+            {k: str(v) if hasattr(v, '__class__') and v.__class__.__name__ == 'ObjectId' else v
+             for k, v in {**s, "_id": str(s["_id"])}.items()}
+            for s in submissions
+        ],
+        "count": len(submissions)
+    }
+
+@router.get("/course/{course_id}/question/{question_id}/my-submissions")
+async def get_question_submission_history(
+    course_id: str,
+    question_id: str,
+    limit: int = 10,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """Get a student's submission history for a specific question"""
+    cursor = db.course_submissions.find({
+        "course_id": course_id,
+        "question_id": question_id,
+        "user_id": user_id
+    }).sort("submitted_at", -1).limit(limit)
+
+    submissions = await cursor.to_list(length=limit)
+
+    return {
+        "question_id": question_id,
+        "submissions": [
+            {
+                "submission_id": s["submission_id"],
+                "status": s.get("status"),
+                "verdict": s.get("verdict"),
+                "score": s.get("score"),
+                "language": s.get("language"),
+                "submitted_at": s["submitted_at"]
+            }
+            for s in submissions
+        ],
         "count": len(submissions)
     }
