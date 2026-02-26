@@ -1,372 +1,549 @@
-from fastapi import APIRouter, HTTPException, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import Optional
-from pydantic import BaseModel
-from datetime import datetime
-import uuid
-import httpx
+"""
+Lumetrix AI Doubt Solver — powered by Cerebras (gpt-oss-120b)
+Streaming responses via SSE for real-time feel.
+"""
+
 import os
+import uuid
+from datetime import datetime
+from typing import Optional, AsyncGenerator
+
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel
+from cerebras.cloud.sdk import Cerebras
 
 from app.courses.dependencies import get_db, get_current_user_id
 
 router = APIRouter(tags=["AI Doubt Solver"])
 
-# ==================== MODELS ====================
+# ── Cerebras client ───────────────────────────────────────────────────────────
+# Set CEREBRAS_API_KEY in your .env — client picks it up automatically
+_cerebras = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+
+MODEL         = "gpt-oss-120b"
+MAX_TOKENS    = 32768
+TEMPERATURE   = 1
+TOP_P         = 1
+REASONING     = "medium"
+
+
+# ══════════════════════════════════════════════════════════════════
+#  MODELS
+# ══════════════════════════════════════════════════════════════════
 
 class DoubtQuery(BaseModel):
-    question_id: Optional[str] = None  # If related to a specific question
-    doubt_text: str
-    code_snippet: Optional[str] = None  # If they want code help
-    language: Optional[str] = None
+    question_id:  Optional[str] = None   # optional — can ask general doubts
+    doubt_text:   str
+    code_snippet: Optional[str] = None
+    language:     Optional[str] = None
 
-class AIHintRequest(BaseModel):
-    question_id: str
+class HintRequest(BaseModel):
+    question_id:      str
     current_approach: Optional[str] = None
 
-# ==================== AI INTEGRATION ====================
+class ExplainRequest(BaseModel):
+    question_id: str
+    code:        str
+    language:    str
 
-# You would replace this with your actual AI service
-AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8001")
-AI_API_KEY = os.getenv("AI_API_KEY", "")
+class FeedbackRequest(BaseModel):
+    helpful: bool
 
 
-async def call_ai_service(prompt: str, context: dict = None) -> str:
+# ══════════════════════════════════════════════════════════════════
+#  CEREBRAS HELPERS
+# ══════════════════════════════════════════════════════════════════
+
+def _cerebras_stream(system: str, user: str) -> AsyncGenerator[str, None]:
     """
-    Call your existing AI generation service
-    Replace this with your actual implementation
+    Returns a generator that yields SSE-formatted chunks.
+    Uses Cerebras streaming so the frontend gets tokens in real time.
     """
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{AI_SERVICE_URL}/generate",
-                json={
-                    "prompt": prompt,
-                    "context": context,
-                    "max_tokens": 500,
-                    "temperature": 0.7
-                },
-                headers={"Authorization": f"Bearer {AI_API_KEY}"},
-                timeout=30.0
-            )
-            
-            if response.status_code == 200:
-                return response.json().get("response", "Sorry, I couldn't generate a response.")
-            else:
-                return "AI service temporarily unavailable. Please try again later."
-    
-    except Exception as e:
-        return f"Error communicating with AI service: {str(e)}"
+    stream = _cerebras.chat.completions.create(
+        model=MODEL,
+        stream=True,
+        max_completion_tokens=MAX_TOKENS,
+        temperature=TEMPERATURE,
+        top_p=TOP_P,
+        reasoning_effort=REASONING,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ],
+    )
+
+    def _gen():
+        full_text = []
+        for chunk in stream:
+            token = chunk.choices[0].delta.content or ""
+            if token:
+                full_text.append(token)
+                # SSE format: "data: <token>\n\n"
+                yield f"data: {token}\n\n"
+        # Final event so frontend knows stream ended
+        yield "data: [DONE]\n\n"
+
+    return _gen()
 
 
-def serialize_mongo(doc: dict) -> dict:
+async def _cerebras_full(system: str, user: str) -> str:
+    """
+    Non-streaming call — returns full response as string.
+    Used for endpoints that need to save the response to DB before returning.
+    """
+    response = _cerebras.chat.completions.create(
+        model=MODEL,
+        stream=False,
+        max_completion_tokens=MAX_TOKENS,
+        temperature=TEMPERATURE,
+        top_p=TOP_P,
+        reasoning_effort=REASONING,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ],
+    )
+    return response.choices[0].message.content or ""
+
+
+def _serialize(doc: dict) -> dict:
     if "_id" in doc:
         doc["_id"] = str(doc["_id"])
     return doc
 
 
-# ==================== DOUBT SOLVER ENDPOINTS ====================
+# ══════════════════════════════════════════════════════════════════
+#  SYSTEM PROMPTS
+# ══════════════════════════════════════════════════════════════════
+
+TUTOR_SYSTEM = """You are an expert programming tutor on the Lumetrix platform.
+Your job is to help students understand concepts and debug their thinking — NOT to give away solutions.
+Rules:
+- Never write the complete working solution
+- Ask Socratic questions when helpful
+- Be encouraging and clear
+- Keep responses concise and focused
+- Use code snippets only to illustrate concepts, never to solve the problem directly"""
+
+HINT_SYSTEM = """You are a programming tutor giving progressive hints.
+You must follow the hint level exactly — don't give more than requested.
+Never reveal the complete solution."""
+
+EXPLAIN_SYSTEM = """You are a code explanation expert.
+Break down code clearly: overall approach, step-by-step logic, time/space complexity, optimization suggestions.
+Be concise and educational."""
+
+
+# ══════════════════════════════════════════════════════════════════
+#  ENDPOINTS
+# ══════════════════════════════════════════════════════════════════
+
+@router.post("/ask-doubt/stream")
+async def ask_doubt_stream(
+    doubt: DoubtQuery,
+    db:      AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str                  = Depends(get_current_user_id)
+):
+    """
+    Ask AI a doubt — STREAMING version (recommended).
+    Returns Server-Sent Events stream.
+    Frontend reads chunks via EventSource or fetch with ReadableStream.
+
+    Send:
+        {
+          "question_id":  "Q_XXXXXXXX",   // optional
+          "doubt_text":   "Why is my loop infinite?",
+          "code_snippet": "while(1){...}", // optional
+          "language":     "c"              // optional
+        }
+
+    Receive: SSE stream
+        data: <token>
+        data: <token>
+        ...
+        data: [DONE]
+    """
+    # Build user message
+    parts = [f"Student doubt: {doubt.doubt_text}"]
+
+    if doubt.question_id:
+        question = await db.course_questions.find_one({"question_id": doubt.question_id})
+        if question:
+            parts.insert(0, (
+                f"Problem: {question.get('title')}\n"
+                f"Difficulty: {question.get('difficulty')}\n"
+                f"Description: {question.get('description')}\n"
+            ))
+
+    if doubt.code_snippet:
+        lang = doubt.language or "code"
+        parts.append(f"\nStudent's code ({lang}):\n```{lang}\n{doubt.code_snippet}\n```")
+
+    user_msg = "\n".join(parts)
+
+    # Save the doubt record (response saved later via /ask-doubt/save)
+    doubt_id = f"DOUBT_{uuid.uuid4().hex[:12].upper()}"
+    await db.ai_doubts.insert_one({
+        "doubt_id":    doubt_id,
+        "user_id":     user_id,
+        "question_id": doubt.question_id,
+        "doubt_text":  doubt.doubt_text,
+        "code_snippet":doubt.code_snippet,
+        "language":    doubt.language,
+        "ai_response": None,   # filled by /save endpoint after stream ends
+        "created_at":  datetime.utcnow(),
+        "helpful_votes":     0,
+        "not_helpful_votes": 0,
+        "type": "doubt"
+    })
+
+    # Stream header includes doubt_id so frontend can call /save after
+    headers = {
+        "X-Doubt-Id":    doubt_id,
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+    }
+
+    return StreamingResponse(
+        _cerebras_stream(TUTOR_SYSTEM, user_msg),
+        media_type="text/event-stream",
+        headers=headers
+    )
+
 
 @router.post("/ask-doubt")
 async def ask_doubt(
     doubt: DoubtQuery,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    db:      AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str                  = Depends(get_current_user_id)
 ):
     """
-    Ask AI a doubt about a problem or concept
-    AI will provide hints and guidance without giving away the solution
+    Ask AI a doubt — NON-STREAMING version.
+    Waits for full response then returns JSON.
+    Use this if your frontend doesn't support SSE.
+
+    Send:
+        {
+          "question_id":  "Q_XXXXXXXX",   // optional
+          "doubt_text":   "Why is my loop infinite?",
+          "code_snippet": "while(1){...}", // optional
+          "language":     "c"              // optional
+        }
+
+    Receive:
+        {
+          "doubt_id":   "DOUBT_XXXXXXXXXXXX",
+          "response":   "Here's what's happening...",
+          "question_id": "Q_XXXXXXXX",
+          "timestamp":  "2026-..."
+        }
     """
-    
-    doubt_id = f"DOUBT_{uuid.uuid4().hex[:12].upper()}"
-    
-    # Build context for AI
-    context = {
-        "user_id": user_id,
-        "doubt_text": doubt.doubt_text
-    }
-    
-    # If related to a specific question, fetch question details
-    question_context = None
+    parts = [f"Student doubt: {doubt.doubt_text}"]
+
     if doubt.question_id:
         question = await db.course_questions.find_one({"question_id": doubt.question_id})
         if question:
-            question_context = {
-                "title": question.get("title"),
-                "description": question.get("description"),
-                "difficulty": question.get("difficulty"),
-                "language": question.get("language")
-            }
-            context["question"] = question_context
-    
-    # Add code snippet if provided
+            parts.insert(0, (
+                f"Problem: {question.get('title')}\n"
+                f"Difficulty: {question.get('difficulty')}\n"
+                f"Description: {question.get('description')}\n"
+            ))
+
     if doubt.code_snippet:
-        context["code"] = doubt.code_snippet
-        context["language"] = doubt.language or "unknown"
-    
-    # Build AI prompt
-    if doubt.question_id and question_context:
-        prompt = f"""
-You are a helpful programming tutor. A student is working on this problem:
+        lang = doubt.language or "code"
+        parts.append(f"\nStudent's code ({lang}):\n```{lang}\n{doubt.code_snippet}\n```")
 
-Title: {question_context['title']}
-Difficulty: {question_context['difficulty']}
-Language: {question_context['language']}
+    user_msg    = "\n".join(parts)
+    ai_response = await _cerebras_full(TUTOR_SYSTEM, user_msg)
 
-Description: {question_context['description']}
+    doubt_id = f"DOUBT_{uuid.uuid4().hex[:12].upper()}"
+    await db.ai_doubts.insert_one({
+        "doubt_id":          doubt_id,
+        "user_id":           user_id,
+        "question_id":       doubt.question_id,
+        "doubt_text":        doubt.doubt_text,
+        "code_snippet":      doubt.code_snippet,
+        "language":          doubt.language,
+        "ai_response":       ai_response,
+        "created_at":        datetime.utcnow(),
+        "helpful_votes":     0,
+        "not_helpful_votes": 0,
+        "type": "doubt"
+    })
 
-Student's Doubt: {doubt.doubt_text}
-
-{'Student Code Snippet:' + doubt.code_snippet if doubt.code_snippet else ''}
-
-Provide helpful hints and guidance WITHOUT giving away the complete solution. 
-- Help them understand the concept
-- Point out potential issues in their approach
-- Suggest what to think about next
-- Do NOT provide the complete working code
-"""
-    else:
-        prompt = f"""
-You are a helpful programming tutor. A student has the following doubt:
-
-{doubt.doubt_text}
-
-{'They provided this code snippet:' + doubt.code_snippet if doubt.code_snippet else ''}
-
-Provide clear, educational guidance to help them understand the concept and solve the problem themselves.
-"""
-    
-    # Get AI response
-    ai_response = await call_ai_service(prompt, context)
-    
-    # Store doubt and response in database
-    doubt_record = {
-        "doubt_id": doubt_id,
-        "user_id": user_id,
-        "question_id": doubt.question_id,
-        "doubt_text": doubt.doubt_text,
-        "code_snippet": doubt.code_snippet,
-        "language": doubt.language,
-        "ai_response": ai_response,
-        "created_at": datetime.utcnow(),
-        "helpful_votes": 0,
-        "not_helpful_votes": 0
-    }
-    
-    await db.ai_doubts.insert_one(doubt_record)
-    
     return {
-        "doubt_id": doubt_id,
-        "response": ai_response,
-        "question_id": doubt.question_id,
-        "timestamp": datetime.utcnow()
+        "doubt_id":   doubt_id,
+        "response":   ai_response,
+        "question_id":doubt.question_id,
+        "timestamp":  datetime.utcnow().isoformat()
     }
+
+
+@router.post("/ask-doubt/{doubt_id}/save")
+async def save_doubt_response(
+    doubt_id: str,
+    body: dict,   # { "response": "full AI text" }
+    db:      AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str                  = Depends(get_current_user_id)
+):
+    """
+    After streaming completes, frontend calls this to persist the full response.
+    Only the owner of the doubt can save it.
+
+    Send:  { "response": "<full assembled AI text>" }
+    Receive: { "success": true }
+    """
+    doubt = await db.ai_doubts.find_one({"doubt_id": doubt_id, "user_id": user_id})
+    if not doubt:
+        raise HTTPException(status_code=404, detail="Doubt not found")
+
+    await db.ai_doubts.update_one(
+        {"doubt_id": doubt_id},
+        {"$set": {"ai_response": body.get("response", "")}}
+    )
+    return {"success": True}
 
 
 @router.post("/get-hint")
 async def get_hint(
-    hint_request: AIHintRequest,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    req:     HintRequest,
+    db:      AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str                  = Depends(get_current_user_id)
 ):
     """
-    Get a progressive hint for a specific question
-    Hints get progressively more detailed
+    Get a progressive hint for a question. Max 3 levels.
+    Each call automatically advances to the next hint level.
+
+    Send:
+        {
+          "question_id":      "Q_XXXXXXXX",
+          "current_approach": "I tried using a loop..."  // optional
+        }
+
+    Receive:
+        {
+          "doubt_id":        "HINT_XXXXXXXXXX",
+          "hint_level":      1,          // 1, 2, or 3
+          "max_hints":       3,
+          "hints_remaining": 2,
+          "hint":            "Think about...",
+          "is_final_hint":   false
+        }
     """
-    
-    # Check how many hints user has already requested
-    hint_count = await db.ai_doubts.count_documents({
-        "user_id": user_id,
-        "question_id": hint_request.question_id,
-        "doubt_text": {"$regex": "^HINT REQUEST"}
-    })
-    
-    # Get question
-    question = await db.course_questions.find_one({"question_id": hint_request.question_id})
+    question = await db.course_questions.find_one({"question_id": req.question_id})
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-    
-    # Build progressive hint prompt
-    hint_level = min(hint_count + 1, 3)  # Max 3 levels
-    
-    prompt = f"""
-You are a helpful programming tutor. Provide a HINT LEVEL {hint_level} for this problem:
 
-Title: {question['title']}
-Description: {question['description']}
-Difficulty: {question['difficulty']}
-
-{'Student mentioned: ' + hint_request.current_approach if hint_request.current_approach else ''}
-
-Hint Level Guidelines:
-- Level 1: Point to the general algorithm/approach category (e.g., "Think about using two pointers")
-- Level 2: Provide more specific direction (e.g., "Initialize two pointers at start and end, move them based on...")
-- Level 3: Detailed step-by-step approach WITHOUT complete code
-
-Provide Hint Level {hint_level} only.
-"""
-    
-    ai_response = await call_ai_service(prompt, {
-        "question_id": hint_request.question_id,
-        "hint_level": hint_level
+    # Count previous hints for this question by this user
+    prev_hints = await db.ai_doubts.count_documents({
+        "user_id":     user_id,
+        "question_id": req.question_id,
+        "type":        "hint"
     })
-    
-    # Store hint request
+
+    hint_level = min(prev_hints + 1, 3)
+
+    LEVEL_GUIDE = {
+        1: "Give a very gentle nudge — just the category of algorithm/technique to think about. One sentence max.",
+        2: "Give more specific direction — which data structure or approach, and why. 2-3 sentences.",
+        3: "Give a detailed step-by-step approach description WITHOUT any actual code. Be thorough."
+    }
+
+    user_msg = (
+        f"Problem: {question.get('title')}\n"
+        f"Description: {question.get('description')}\n"
+        f"Difficulty: {question.get('difficulty')}\n"
+        f"Language: {question.get('language')}\n"
+    )
+    if req.current_approach:
+        user_msg += f"\nStudent's current approach: {req.current_approach}\n"
+
+    user_msg += f"\nProvide HINT LEVEL {hint_level}. Instruction: {LEVEL_GUIDE[hint_level]}"
+
+    ai_hint = await _cerebras_full(HINT_SYSTEM, user_msg)
+
     doubt_id = f"HINT_{uuid.uuid4().hex[:10].upper()}"
     await db.ai_doubts.insert_one({
-        "doubt_id": doubt_id,
-        "user_id": user_id,
-        "question_id": hint_request.question_id,
-        "doubt_text": f"HINT REQUEST LEVEL {hint_level}",
-        "ai_response": ai_response,
-        "created_at": datetime.utcnow(),
-        "hint_level": hint_level
+        "doubt_id":    doubt_id,
+        "user_id":     user_id,
+        "question_id": req.question_id,
+        "doubt_text":  f"HINT_LEVEL_{hint_level}",
+        "ai_response": ai_hint,
+        "hint_level":  hint_level,
+        "created_at":  datetime.utcnow(),
+        "helpful_votes":     0,
+        "not_helpful_votes": 0,
+        "type": "hint"
     })
-    
+
     return {
-        "hint_level": hint_level,
-        "max_hints": 3,
-        "remaining_hints": 3 - hint_level,
-        "hint": ai_response,
-        "message": "This is a hint, not the complete solution. Try implementing it yourself!"
+        "doubt_id":       doubt_id,
+        "hint_level":     hint_level,
+        "max_hints":      3,
+        "hints_remaining":3 - hint_level,
+        "hint":           ai_hint,
+        "is_final_hint":  hint_level == 3
     }
 
 
 @router.post("/explain-code")
 async def explain_code(
-    question_id: str,
-    code: str,
-    language: str,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    req:     ExplainRequest,
+    db:      AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str                  = Depends(get_current_user_id)
 ):
     """
-    Ask AI to explain a piece of code
-    Useful for understanding solutions after solving or learning from others
+    Ask AI to explain a piece of code — useful after solving to understand better.
+
+    Send:
+        {
+          "question_id": "Q_XXXXXXXX",
+          "code":        "int main(){...}",
+          "language":    "c"
+        }
+
+    Receive:
+        {
+          "explanation": "This code does...",
+          "language":    "c",
+          "question_id": "Q_XXXXXXXX"
+        }
     """
-    
-    question = await db.course_questions.find_one({"question_id": question_id})
-    question_title = question.get("title") if question else "Code Explanation"
-    
-    prompt = f"""
-Explain this {language} code in simple terms. Break down what each part does.
+    question = await db.course_questions.find_one({"question_id": req.question_id})
+    title    = question.get("title", "Code Explanation") if question else "Code Explanation"
 
-Problem: {question_title}
+    user_msg = (
+        f"Problem: {title}\n\n"
+        f"Code ({req.language}):\n```{req.language}\n{req.code}\n```\n\n"
+        "Explain this code: overall approach, step-by-step breakdown, time and space complexity, any optimization suggestions."
+    )
 
-Code:
-```{language}
-{code}
-```
+    explanation = await _cerebras_full(EXPLAIN_SYSTEM, user_msg)
 
-Provide:
-1. Overall approach explanation
-2. Step-by-step breakdown
-3. Time and space complexity analysis
-4. Any optimization suggestions
-"""
-    
-    explanation = await call_ai_service(prompt, {
-        "language": language,
-        "question_id": question_id
-    })
-    
     return {
         "explanation": explanation,
-        "language": language,
-        "question_id": question_id
+        "language":    req.language,
+        "question_id": req.question_id
     }
 
 
 @router.get("/my-doubts")
 async def get_my_doubts(
-    skip: int = 0,
-    limit: int = 20,
+    skip:        int           = 0,
+    limit:       int           = 20,
     question_id: Optional[str] = None,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    db:          AsyncIOMotorDatabase = Depends(get_db),
+    user_id:     str           = Depends(get_current_user_id)
 ):
     """
-    Get user's doubt history
+    Get student's full AI interaction history.
+
+    Query params: ?question_id=Q_XXX (optional filter)
+
+    Receive:
+        {
+          "doubts": [
+            {
+              "doubt_id":    "DOUBT_XXX",
+              "type":        "doubt" | "hint",
+              "doubt_text":  "...",
+              "ai_response": "...",
+              "hint_level":  1,           // only for hints
+              "question_id": "Q_XXX",
+              "question_title": "...",
+              "created_at":  "2026-..."
+            }
+          ],
+          "count": 5
+        }
     """
-    
     query = {"user_id": user_id}
     if question_id:
         query["question_id"] = question_id
-    
+
     cursor = db.ai_doubts.find(query).sort("created_at", -1).skip(skip).limit(limit)
     doubts = await cursor.to_list(length=limit)
-    
-    # Enrich with question titles
-    for doubt in doubts:
-        if doubt.get("question_id"):
-            question = await db.course_questions.find_one({"question_id": doubt["question_id"]})
-            doubt["question_title"] = question.get("title") if question else "Unknown"
-    
+
+    for d in doubts:
+        if d.get("question_id"):
+            q = await db.course_questions.find_one({"question_id": d["question_id"]})
+            d["question_title"] = q.get("title") if q else "Unknown"
+
     return {
-        "doubts": [serialize_mongo(d) for d in doubts],
-        "count": len(doubts),
-        "skip": skip,
-        "limit": limit
+        "doubts": [_serialize(d) for d in doubts],
+        "count":  len(doubts),
+        "skip":   skip,
+        "limit":  limit
     }
 
 
 @router.post("/doubt/{doubt_id}/feedback")
-async def rate_doubt_response(
+async def rate_doubt(
     doubt_id: str,
-    helpful: bool,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    feedback: FeedbackRequest,
+    db:       AsyncIOMotorDatabase = Depends(get_db),
+    user_id:  str                  = Depends(get_current_user_id)
 ):
     """
-    Rate if AI response was helpful
+    Rate if AI response was helpful.
+
+    Send:  { "helpful": true }
+    Receive: { "success": true }
     """
-    
     doubt = await db.ai_doubts.find_one({"doubt_id": doubt_id, "user_id": user_id})
     if not doubt:
         raise HTTPException(status_code=404, detail="Doubt not found")
-    
-    if helpful:
-        await db.ai_doubts.update_one(
-            {"doubt_id": doubt_id},
-            {"$inc": {"helpful_votes": 1}}
-        )
-    else:
-        await db.ai_doubts.update_one(
-            {"doubt_id": doubt_id},
-            {"$inc": {"not_helpful_votes": 1}}
-        )
-    
-    return {
-        "success": True,
-        "message": "Feedback recorded. This helps us improve!"
-    }
+
+    field = "helpful_votes" if feedback.helpful else "not_helpful_votes"
+    await db.ai_doubts.update_one({"doubt_id": doubt_id}, {"$inc": {field: 1}})
+
+    return {"success": True}
 
 
 @router.get("/question/{question_id}/common-doubts")
 async def get_common_doubts(
     question_id: str,
-    limit: int = 5,
-    db: AsyncIOMotorDatabase = Depends(get_db)
+    limit:       int = 5,
+    db:          AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
-    Get most helpful AI responses for a question
-    Helps other students learn from common doubts
+    Get the most helpful AI responses for a question.
+    Public endpoint — no auth needed.
+    Useful to show other students' common doubts.
+
+    Receive:
+        {
+          "question_id": "Q_XXX",
+          "common_doubts": [
+            {
+              "doubt_text":    "Why does my loop not terminate?",
+              "ai_response":   "...",
+              "helpful_votes": 12,
+              "type":          "doubt"
+            }
+          ]
+        }
     """
-    
     cursor = db.ai_doubts.find({
-        "question_id": question_id,
-        "helpful_votes": {"$gt": 0}
+        "question_id":   question_id,
+        "helpful_votes": {"$gt": 0},
+        "ai_response":   {"$ne": None}
     }).sort("helpful_votes", -1).limit(limit)
-    
+
     doubts = await cursor.to_list(length=limit)
-    
+
     return {
         "question_id": question_id,
         "common_doubts": [
             {
-                "doubt_text": d["doubt_text"],
-                "ai_response": d["ai_response"],
-                "helpful_votes": d.get("helpful_votes", 0)
+                "doubt_text":    d["doubt_text"],
+                "ai_response":   d["ai_response"],
+                "helpful_votes": d.get("helpful_votes", 0),
+                "type":          d.get("type", "doubt"),
             }
             for d in doubts
+            if not d["doubt_text"].startswith("HINT_LEVEL_")  # exclude raw hint records
         ]
     }

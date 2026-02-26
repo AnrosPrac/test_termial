@@ -23,10 +23,26 @@ class VoteAction(BaseModel):
 
 # ==================== COMMENT CRUD ====================
 
+from bson import ObjectId
+from datetime import datetime as _datetime
+
 def serialize_mongo(doc: dict) -> dict:
-    if "_id" in doc:
-        doc["_id"] = str(doc["_id"])
-    return doc
+    """Recursively convert ObjectId and datetime to JSON-safe types."""
+    if doc is None:
+        return doc
+    clean = {}
+    for k, v in doc.items():
+        if isinstance(v, ObjectId):
+            clean[k] = str(v)
+        elif isinstance(v, _datetime):
+            clean[k] = v.isoformat()
+        elif isinstance(v, dict):
+            clean[k] = serialize_mongo(v)
+        elif isinstance(v, list):
+            clean[k] = [serialize_mongo(i) if isinstance(i, dict) else (str(i) if isinstance(i, ObjectId) else i) for i in v]
+        else:
+            clean[k] = v
+    return clean
 
 def serialize_many(docs: list[dict]) -> list[dict]:
     return [serialize_mongo(doc) for doc in docs]
@@ -66,15 +82,6 @@ async def add_comment_to_question(
     question = await db.course_questions.find_one({"question_id": question_id})
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-
-    # ✅ SECURITY: Verify enrollment before posting comments
-    enrollment = await db.course_enrollments.find_one({
-        "user_id": user_id,
-        "course_id": question["course_id"],
-        "is_active": True
-    })
-    if not enrollment:
-        raise HTTPException(status_code=403, detail="You must be enrolled in this course to post comments")
     
     comment_id = f"CMT_{uuid.uuid4().hex[:12].upper()}"
     
@@ -94,15 +101,16 @@ async def add_comment_to_question(
     }
     
     await db.question_comments.insert_one(comment_doc)
-    
+
     # Get user info for response
     user_info = await get_user_info(db, user_id)
-    
+
+    # insert_one mutates comment_doc by adding _id: ObjectId — serialize it out
     return {
-        "success": True,
+        "success":    True,
         "comment_id": comment_id,
         "comment": {
-            **comment_doc,
+            **serialize_mongo(comment_doc),
             "user": user_info
         },
         "message": "Comment added successfully"
