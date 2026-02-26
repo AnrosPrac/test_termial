@@ -24,6 +24,7 @@ watchdog
 
 # --- AI & HTTP ---
 google-generativeai
+cerebras-cloud-sdk
 httpx
 graphviz
 
