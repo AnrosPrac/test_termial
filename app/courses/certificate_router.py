@@ -285,7 +285,7 @@ def get_skills_from_course(domain: str) -> list:
 
 # ==================== ENDPOINTS ====================
 
-@router.get("/{certificate_id}/data")
+@router.get("/data/{certificate_id}")
 async def get_certificate_analytics(
     certificate_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db)
@@ -926,5 +926,3 @@ async def get_my_certificates(
         "certificates": certificates,
         "total": len(certificates)
     }
-
-
