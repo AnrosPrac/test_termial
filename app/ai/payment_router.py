@@ -1229,22 +1229,7 @@ async def check_course_access(
                 "message": "This is a free course"
             }
         
-        # Check 2: Does user have active tier subscription?
-        quota = await db.quotas.find_one({"sidhi_id": user_id})
-        
-        if quota and not is_quota_expired(quota):
-            tier = quota.get("tier")
-            tier_access = pricing.get("tier_access", [])
-            
-            if tier in tier_access:
-                return {
-                    "has_access": True,
-                    "access_reason": "tier_subscription",
-                    "tier": tier,
-                    "message": f"Access granted via {tier.capitalize()} subscription"
-                }
-        
-        # Check 3: Has user purchased this course?
+        # Check 2: Has user purchased this course?
         purchase = await db.course_purchases.find_one({
             "user_id": user_id,
             "course_id": course_id,
@@ -1327,7 +1312,6 @@ async def set_course_pricing(
         is_free = body.get("is_free", False)
         price_rupees = body.get("price", 0)
         original_price_rupees = body.get("original_price", price_rupees)
-        tier_access = body.get("tier_access", [])
         
         # Validate
         if not is_free and price_rupees <= 0:
@@ -1351,9 +1335,8 @@ async def set_course_pricing(
             "price": price_paise,
             "original_price": original_price_paise,
             "currency": "INR",
-            "tier_access": tier_access,
             "discount_percentage": discount_percentage,
-            "pricing_set": True  # ✅ Mark as explicitly set
+            "pricing_set": True
         }
         
         # ATOMIC UPDATE: Only if still in DRAFT
@@ -1383,8 +1366,7 @@ async def set_course_pricing(
                 "is_free": is_free,
                 "price": price_rupees,
                 "original_price": original_price_rupees,
-                "discount_percentage": discount_percentage,
-                "tier_access": tier_access
+                "discount_percentage": discount_percentage
             }
         }
         

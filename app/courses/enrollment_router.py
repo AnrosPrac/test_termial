@@ -90,23 +90,7 @@ async def check_course_access(
             "message": "Free course - access granted"
         }
     
-    # ✅ CHECK 2: Does user have ACTIVE TIER subscription?
-    quota = await db.quotas.find_one({"sidhi_id": sidhi_id})
-    
-    if quota and not is_quota_expired(quota):
-        tier = quota.get("tier", "free")
-        tier_access = pricing.get("tier_access", [])
-        
-        # Check if tier grants access
-        if tier in tier_access:
-            return {
-                "has_access": True,
-                "access_reason": "tier_subscription",
-                "tier": tier,
-                "message": f"Access granted via {tier.capitalize()} subscription"
-            }
-    
-    # ✅ CHECK 3: Has user PURCHASED this course?
+    # ✅ CHECK 2: Has user PURCHASED this course?
     purchase = await db.course_purchases.find_one({
         "user_id": sidhi_id,  # Using sidhi_id for consistency
         "course_id": course_id,

@@ -419,19 +419,28 @@ async def get_submission_status(
         full_result = submission.get("result", {})
         raw_test_results = full_result.get("test_results", [])
 
-        # Map exact field names returned by judge.py
-        # judge uses: "output" = actual output, "expected" = expected output
+        # Build set of sample test_case_ids — only these get actual/expected output
+        question = await get_question(db, submission["question_id"])
+        sample_ids = set()
+        if question:
+            for idx, tc in enumerate(question.get("test_cases", [])):
+                if tc.get("is_sample", False):
+                    sample_ids.add(idx + 1)  # test_case_id is 1-indexed
+
         test_case_detail = []
         for tc in raw_test_results:
-            test_case_detail.append({
-                "test_case_id":      tc.get("test_case_id"),
+            tc_id = tc.get("test_case_id")
+            entry = {
+                "test_case_id":      tc_id,
                 "passed":            tc.get("passed", False),
                 "verdict":           tc.get("verdict", ""),
-                "actual_output":     tc.get("output"),       # judge.py field: "output"
-                "expected_output":   tc.get("expected"),     # judge.py field: "expected"
                 "execution_time_ms": tc.get("execution_time_ms"),
                 "memory_used_mb":    tc.get("memory_used_mb"),
-            })
+            }
+            if tc_id in sample_ids:
+                entry["actual_output"]   = tc.get("output")
+                entry["expected_output"] = tc.get("expected")
+            test_case_detail.append(entry)
 
         response.update({
             # Verdict & scoring

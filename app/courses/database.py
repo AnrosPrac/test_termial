@@ -42,9 +42,8 @@ async def create_course(db: AsyncIOMotorDatabase, course_data: dict, creator_id:
             "price": 0,
             "original_price": 0,
             "currency": "INR",
-            "tier_access": [],
             "discount_percentage": 0,
-            "pricing_set": False  # Track if instructor explicitly set pricing
+            "pricing_set": False
         },
         
         # 🆕 PURCHASE STATS
