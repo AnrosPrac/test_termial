@@ -317,6 +317,61 @@ async def get_timeline_events(db, user_id, course_id, enrolled_at, league_points
     return events
 
 
+async def get_solved_solutions(db, user_id: str, course_id: str, solved_question_ids: List[str]) -> List[Dict]:
+    """
+    For each solved question, fetch:
+    - question metadata (title, difficulty, language)
+    - the student's BEST accepted submission code (highest league_points_awarded)
+
+    Used in certificate to show a portfolio of the student's actual solutions.
+    """
+    if not solved_question_ids:
+        return []
+
+    solutions = []
+
+    for qid in solved_question_ids:
+        # Fetch question details
+        question = await db.course_questions.find_one(
+            {"question_id": qid},
+            {"question_id": 1, "title": 1, "difficulty": 1, "language": 1, "points": 1, "problem_type": 1}
+        )
+        if not question:
+            continue
+
+        # Fetch best accepted submission (highest points = most efficient solve)
+        best_sub = await db.course_submissions.find_one(
+            {
+                "user_id":     user_id,
+                "course_id":   course_id,
+                "question_id": qid,
+                "verdict":     "Accepted"
+            },
+            sort=[("league_points_awarded", -1)]
+        )
+
+        if not best_sub:
+            continue
+
+        solutions.append({
+            "question_id":         qid,
+            "title":               question.get("title", ""),
+            "difficulty":          question.get("difficulty", ""),
+            "language":            best_sub.get("language", question.get("language", "")),
+            "code":                best_sub.get("code", ""),
+            "league_points_earned": best_sub.get("league_points_awarded", 0),
+            "efficiency_multiplier": best_sub.get("efficiency_multiplier", 1.0),
+            "avg_execution_time_ms": best_sub.get("result", {}).get("avg_execution_time_ms"),
+            "solved_at":           _iso(best_sub.get("submitted_at")),
+        })
+
+    # Sort: hard first, then medium, then easy — most impressive on top
+    diff_order = {"hard": 0, "medium": 1, "easy": 2}
+    solutions.sort(key=lambda x: diff_order.get(x["difficulty"], 3))
+
+    return solutions
+
+
 async def get_consistency_score(daily_activity: List[Dict], enrolled_days: int) -> Dict:
     """
     Consistency score: what % of days since enrollment did they code?
@@ -447,6 +502,7 @@ async def get_certificate_data(certificate_id: str, db: AsyncIOMotorDatabase = D
     speed           = await get_speed_metrics(db, user_id, course_id, enrolled_at)
     rank_ctx        = await get_rank_context(db, user_id, course_id, league_points, college, department)
     timeline        = await get_timeline_events(db, user_id, course_id, enrolled_at, league_points, current_league)
+    solved_solutions = await get_solved_solutions(db, user_id, course_id, solved_questions)
 
     # ── 7. Consistency ───────────────────────────────────────────
     enrolled_days = (datetime.utcnow() - enrolled_at).days + 1
@@ -565,6 +621,11 @@ async def get_certificate_data(certificate_id: str, db: AsyncIOMotorDatabase = D
         # ── WHAT THEY KNOW ───────────────────────────────────────
         "skills":  skills,
         "badges":  badges,
+
+        # ── THEIR ACTUAL SOLUTIONS (portfolio) ───────────────────
+        # Best accepted code per solved question, sorted hard → easy
+        # Each entry: question title, difficulty, language, code, efficiency
+        "solved_solutions": solved_solutions,
     }
 
 

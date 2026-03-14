@@ -43,6 +43,10 @@ from app.editor_security.app_models_security import (
     SubmitCodeRequest, SubmitCodeResponse,
     SessionInfoResponse
 )
+from app.courses.claim_router import router as claim_router
+from app.courses.claim_db_indexes import create_claim_indexes
+
+
 from app.editor_security.app_services_session import SessionService
 from app.editor_security.app_services_integrity import IntegrityAnalyzerService
 from app.editor_security.app_routes_security import router as security_router
@@ -85,7 +89,7 @@ async def lifespan(app: FastAPI):
     await create_payment_indexes()
     await create_teacher_indexes()
     await create_student_indexes()
-    
+    await create_claim_indexes(db)
     # Course system must register before routes
     await startup_course_system()
     
@@ -148,6 +152,8 @@ async def verify_signature(
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 
+
+
 # ==================== ROUTER REGISTRATION ====================
 app.include_router(ai_router, prefix="/ai")
 app.include_router(ai_doubt_router,prefix="/api/ai/doubt")
@@ -169,7 +175,7 @@ app.include_router(leaderboard_router, prefix="/api/leaderboards")
 app.include_router(certificate_router, prefix="/api/certificates")
 app.include_router(practice_router,prefix="/api/samples")
 app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_security"])
-
+app.include_router(claim_router, prefix="/api/claims")
 # ============================================================
 
 

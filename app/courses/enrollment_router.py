@@ -66,7 +66,22 @@ async def check_course_access(
     
     # Get pricing
     pricing = course.get("pricing", {})
-    
+
+    # ✅ CHECK 0: Has user been approved via college claim or manual request?
+    claim_access_record = await db.course_claim_access.find_one({
+        "user_id": user_id,
+        "course_id": course_id,
+        "access_granted": True
+    })
+    if claim_access_record:
+        return {
+            "has_access": True,
+            "access_reason": "domain_claim",
+            "granted_via": claim_access_record.get("granted_via"),
+            "college": claim_access_record.get("student_college") or claim_access_record.get("college_name"),
+            "message": "Access granted via college claim"
+        }
+
     # ✅ CHECK 1: Is course FREE?
     if pricing.get("is_free", False):
         return {

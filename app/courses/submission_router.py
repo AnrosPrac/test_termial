@@ -416,18 +416,52 @@ async def get_submission_status(
     }
     
     if submission["status"] == "completed":
+        full_result = submission.get("result", {})
+        raw_test_results = full_result.get("test_results", [])
+
+        # Map exact field names returned by judge.py
+        # judge uses: "output" = actual output, "expected" = expected output
+        test_case_detail = []
+        for tc in raw_test_results:
+            test_case_detail.append({
+                "test_case_id":      tc.get("test_case_id"),
+                "passed":            tc.get("passed", False),
+                "verdict":           tc.get("verdict", ""),
+                "actual_output":     tc.get("output"),       # judge.py field: "output"
+                "expected_output":   tc.get("expected"),     # judge.py field: "expected"
+                "execution_time_ms": tc.get("execution_time_ms"),
+                "memory_used_mb":    tc.get("memory_used_mb"),
+            })
+
         response.update({
+            # Verdict & scoring
             "verdict":               submission.get("verdict"),
             "score":                 submission.get("score"),
             "league_points_awarded": submission.get("league_points_awarded", 0),
             "efficiency_multiplier": submission.get("efficiency_multiplier"),
             "base_points":           submission.get("base_points"),
+            "breakdown":             submission.get("breakdown"),
+
+            # League state after this submission
             "is_first_solve":        submission.get("is_first_solve"),
             "league_up":             submission.get("league_up", False),
             "new_league":            submission.get("new_league"),
             "is_legend":             submission.get("is_legend", False),
             "efficiency_delta":      submission.get("efficiency_delta"),
-            "breakdown":             submission.get("breakdown"),
+
+            # Per-test-case breakdown — actual vs expected output per case
+            "test_results":          test_case_detail,
+            "passed_test_cases":     sum(1 for tc in test_case_detail if tc["passed"]),
+            "total_test_cases":      len(test_case_detail),
+
+            # Aggregated perf metrics (judge top-level fields)
+            "avg_execution_time_ms": full_result.get("avg_execution_time_ms"),
+            "max_execution_time_ms": full_result.get("max_execution_time_ms"),
+            "avg_memory_mb":         full_result.get("avg_memory_mb"),
+            "max_memory_mb":         full_result.get("max_memory_mb"),
+
+            # Compilation error / system error message
+            "error":                 full_result.get("error"),
         })
 
     return response

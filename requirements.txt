@@ -38,3 +38,6 @@ firebase-admin
 
 # --- Image / Certificate ---
 Pillow
+
+#---AWS---
+boto3
