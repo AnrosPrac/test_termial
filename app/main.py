@@ -45,6 +45,7 @@ from app.editor_security.app_models_security import (
 )
 from app.courses.claim_router import router as claim_router
 from app.courses.claim_db_indexes import create_claim_indexes
+from app.courses.contact_router import router as contact_router
 
 
 from app.editor_security.app_services_session import SessionService
@@ -90,6 +91,11 @@ async def lifespan(app: FastAPI):
     await create_teacher_indexes()
     await create_student_indexes()
     await create_claim_indexes(db)
+    # Enquiries indexes
+    await db.enquiries.create_index([("enquiry_id", 1)], unique=True)
+    await db.enquiries.create_index([("type", 1), ("status", 1)])
+    await db.enquiries.create_index([("submitted_at", -1)])
+    await db.enquiries.create_index([("email", 1)])
     # Course system must register before routes
     await startup_course_system()
     
@@ -176,6 +182,7 @@ app.include_router(certificate_router, prefix="/api/certificates")
 app.include_router(practice_router,prefix="/api/samples")
 app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_security"])
 app.include_router(claim_router, prefix="/api/claims")
+app.include_router(contact_router)
 # ============================================================
 
 
