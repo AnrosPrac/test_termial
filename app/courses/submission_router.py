@@ -209,6 +209,47 @@ async def judge_hardware(submission_id: str, code: str, language: str, problem_i
             "error": str(e)
         })
 
+# ==================== TEST RESULT SANITIZER ====================
+
+def sanitize_test_results(test_results: list, question: dict) -> list:
+    """
+    Scrub private test case outputs before saving to DB or returning to frontend.
+
+    - is_sample: True  → full data (input, output, expected) visible
+    - is_sample: False → pass/fail + timing visible, output + expected set to None
+
+    Works for any number of public and private test cases.
+    The judge returns test_case_id as 1-based index matching the order
+    of test_cases in the question document.
+    """
+    # Build a set of 1-based indices that are public (is_sample=True)
+    sample_indices = {
+        idx + 1
+        for idx, tc in enumerate(question.get("test_cases", []))
+        if tc.get("is_sample", False)
+    }
+
+    sanitized = []
+    for tr in test_results:
+        tc_id = tr.get("test_case_id")
+        if tc_id in sample_indices:
+            # Public test case — keep everything as-is
+            sanitized.append(tr)
+        else:
+            # Private test case — strip output and expected
+            sanitized.append({
+                "test_case_id":      tc_id,
+                "passed":            tr.get("passed"),
+                "verdict":           tr.get("verdict"),
+                "execution_time_ms": tr.get("execution_time_ms"),
+                "memory_used_mb":    tr.get("memory_used_mb"),
+                "output":            None,   # hidden
+                "expected":          None,   # hidden
+            })
+
+    return sanitized
+
+
 # ==================== COMMON RESULT PROCESSING ====================
 
 async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: dict):
@@ -232,9 +273,13 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
 
     scoring = calculate_score_with_efficiency(result, question)
 
+    # Sanitize test_results — strip private outputs before saving to DB
+    sanitized = sanitize_test_results(result.get("test_results", []), question)
+
     # Persist scoring breakdown onto the submission record
     enriched_result = {
         **result,
+        "test_results":          sanitized,
         "league_points_awarded": scoring["league_points"],
         "efficiency_multiplier": scoring["efficiency_multiplier"],
         "base_points":           scoring["base_points"],
@@ -416,61 +461,26 @@ async def get_submission_status(
     }
     
     if submission["status"] == "completed":
-        full_result = submission.get("result", {})
-        raw_test_results = full_result.get("test_results", [])
-
-        # Build set of sample test_case_ids — only these get actual/expected output
-        question = await get_question(db, submission["question_id"])
-        sample_ids = set()
-        if question:
-            for idx, tc in enumerate(question.get("test_cases", [])):
-                if tc.get("is_sample", False):
-                    sample_ids.add(idx + 1)  # test_case_id is 1-indexed
-
-        test_case_detail = []
-        for tc in raw_test_results:
-            tc_id = tc.get("test_case_id")
-            entry = {
-                "test_case_id":      tc_id,
-                "passed":            tc.get("passed", False),
-                "verdict":           tc.get("verdict", ""),
-                "execution_time_ms": tc.get("execution_time_ms"),
-                "memory_used_mb":    tc.get("memory_used_mb"),
-            }
-            if tc_id in sample_ids:
-                entry["actual_output"]   = tc.get("output")
-                entry["expected_output"] = tc.get("expected")
-            test_case_detail.append(entry)
-
+        result = submission.get("result", {})
         response.update({
-            # Verdict & scoring
             "verdict":               submission.get("verdict"),
             "score":                 submission.get("score"),
             "league_points_awarded": submission.get("league_points_awarded", 0),
             "efficiency_multiplier": submission.get("efficiency_multiplier"),
             "base_points":           submission.get("base_points"),
-            "breakdown":             submission.get("breakdown"),
-
-            # League state after this submission
             "is_first_solve":        submission.get("is_first_solve"),
             "league_up":             submission.get("league_up", False),
             "new_league":            submission.get("new_league"),
             "is_legend":             submission.get("is_legend", False),
             "efficiency_delta":      submission.get("efficiency_delta"),
-
-            # Per-test-case breakdown — actual vs expected output per case
-            "test_results":          test_case_detail,
-            "passed_test_cases":     sum(1 for tc in test_case_detail if tc["passed"]),
-            "total_test_cases":      len(test_case_detail),
-
-            # Aggregated perf metrics (judge top-level fields)
-            "avg_execution_time_ms": full_result.get("avg_execution_time_ms"),
-            "max_execution_time_ms": full_result.get("max_execution_time_ms"),
-            "avg_memory_mb":         full_result.get("avg_memory_mb"),
-            "max_memory_mb":         full_result.get("max_memory_mb"),
-
-            # Compilation error / system error message
-            "error":                 full_result.get("error"),
+            "breakdown":             submission.get("breakdown"),
+            # ── test case results (private outputs already stripped at save time) ──
+            "test_results":          result.get("test_results", []),
+            "passed":                result.get("passed", 0),
+            "total":                 result.get("total", 0),
+            "avg_execution_time_ms": result.get("avg_execution_time_ms"),
+            "max_execution_time_ms": result.get("max_execution_time_ms"),
+            "avg_memory_mb":         result.get("avg_memory_mb"),
         })
 
     return response
