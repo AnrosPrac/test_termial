@@ -1244,11 +1244,12 @@ async def get_question_endpoint(
     if not enrollment:
         raise HTTPException(status_code=403, detail="You must be enrolled in this course to view questions")
     
-    # Hide non-sample test case outputs
+    # Completely hide private test cases — only return public (is_sample=True) ones
     if "test_cases" in question:
-        for tc in question["test_cases"]:
-            if not tc.get("is_sample", False):
-                tc.pop("output", None)
+        question["test_cases"] = [
+            tc for tc in question["test_cases"]
+            if tc.get("is_sample", False)
+        ]
 
     # Attach solved status for this student
     q = serialize_mongo(question)
