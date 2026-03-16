@@ -47,6 +47,7 @@ from app.courses.claim_router import router as claim_router
 from app.courses.claim_db_indexes import create_claim_indexes
 from app.courses.contact_router import router as contact_router
 
+from app.courses.dashbord_router import router as dashboard_router
 
 from app.editor_security.app_services_session import SessionService
 from app.editor_security.app_services_integrity import IntegrityAnalyzerService
@@ -183,6 +184,7 @@ app.include_router(practice_router,prefix="/api/samples")
 app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_security"])
 app.include_router(claim_router, prefix="/api/claims")
 app.include_router(contact_router)
+app.include_router(dashboard_router, prefix="/api/dashboard")
 # ============================================================
 
 
