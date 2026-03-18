@@ -43,6 +43,10 @@ from app.editor_security.app_models_security import (
     SubmitCodeRequest, SubmitCodeResponse,
     SessionInfoResponse
 )
+from app.courses.interview_models import *   # put this in your models folder
+from app.courses.interview_router import router as interview_router
+from app.courses.general_router import router as general_router
+
 from app.courses.claim_router import router as claim_router
 from app.courses.claim_db_indexes import create_claim_indexes
 from app.courses.contact_router import router as contact_router
@@ -185,6 +189,9 @@ app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_secur
 app.include_router(claim_router, prefix="/api/claims")
 app.include_router(contact_router)
 app.include_router(dashboard_router, prefix="/api/dashboard")
+
+app.include_router(interview_router, prefix="/api/interviews")
+app.include_router(general_router,   prefix="/api/general")
 # ============================================================
 
 

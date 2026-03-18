@@ -1,0 +1,4922 @@
+{
+  "meta": {
+    "title": "Lumetrix | Sidhilynx Python Programming Question Bank",
+    "edition": "1.0",
+    "academic_year": "2025-26",
+    "total_questions": 364,
+    "total_capstones": 10,
+    "total_items": 374,
+    "modules": 10,
+    "sections": [
+      "A",
+      "B"
+    ],
+    "difficulty_levels": [
+      "Easy",
+      "Moderate",
+      "Hard",
+      "Capstone"
+    ],
+    "test_case_structure": {
+      "public_count": 7,
+      "private_count": 8,
+      "note": "Test cases to be filled per question"
+    }
+  },
+  "modules_index": {
+    "1": "Computer Fundamentals & Problem Solving",
+    "2": "Python Basics & Data Representation",
+    "3": "Operators and Expressions",
+    "4": "Conditional Control Statements",
+    "5": "Repetitive Control Statements",
+    "6": "Functions and Recursion",
+    "7": "Strings and Tuples",
+    "8": "Lists and List Comprehensions",
+    "9": "Sets, Dictionaries & Functional Programming",
+    "10": "Object-Oriented Programming (OOP)"
+  },
+  "questions": [
+    {
+      "id": "M1-Q1",
+      "question_number": 1,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a Python program to find the largest of three numbers entered by a user.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q2",
+      "question_number": 2,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that checks whether a given number is even or odd and prints the result.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q3",
+      "question_number": 3,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that adds two numbers 15 and 27, then subtracts 10 from the result and displays the final output.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q4",
+      "question_number": 4,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that reads a number from the user and prints \"Positive\" if the number is greater than 0, otherwise prints \"Non-positive\".",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q5",
+      "question_number": 5,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "A student scores 78, 82, and 90 in three subjects. Write a program to calculate and display the average score. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q6",
+      "question_number": 6,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that reads a student's marks in 4 subjects, calculates the total, and assigns a grade: Total ≥ 300: Grade A | Total ≥ 240: Grade B | Total ≥ 180: Grade C | Total < 180: Grade D.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q7",
+      "question_number": 7,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program to find the factorial of a number N using a loop. Test with N=5 and N=7.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q8",
+      "question_number": 8,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that reads marks of 30 students and counts how many students scored above 75.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q9",
+      "question_number": 9,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program to calculate the area of a circle. The program should read the radius from the user and use π = 3.14159.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q10",
+      "question_number": 10,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program to check if a year entered by the user is a leap year. (Hint: divisible by 4 but not by 100, OR divisible by 400)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q11",
+      "question_number": 11,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that reads a student's attendance percentage and decides: ≥ 75%: LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 6 \"Eligible for exam\" | < 75%: \"Not eligible - Low attendance\" Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q12",
+      "question_number": 12,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program to find the GCD (Greatest Common Divisor) of two numbers using the Euclidean algorithm. Test with inputs 48 and 18.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q13",
+      "question_number": 13,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "A coffee vending machine charges ₹20 per cup. Write a program that takes the number of cups and calculates the total bill.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q14",
+      "question_number": 14,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create an ATM withdrawal program that checks if balance is sufficient. If balance ≥ withdrawal amount, allow withdrawal and show new balance, otherwise deny.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q15",
+      "question_number": 15,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "A parking lot charges ₹30 for the first hour and ₹20 for each additional hour. Write a program to calculate parking fees for H hours entered by user.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q16",
+      "question_number": 16,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a simple calculator program that takes two numbers and an operator (+, -, *, /) and performs the operation.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q17",
+      "question_number": 17,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "A shop offers 10% discount if purchase amount > ₹1000. Write a program to calculate final payable amount.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q18",
+      "question_number": 18,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that converts currency from INR to USD using exchange rate 1 USD = ₹83.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q19",
+      "question_number": 19,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "A fitness tracker counts steps. Write a program that reads daily steps for 7 days and calculates the weekly total and daily average. Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q20",
+      "question_number": 20,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create an e-commerce shipping calculator: Order < ₹500: ₹50 shipping | Order ₹500- ₹1000: ₹30 shipping | Order > ₹1000: Free shipping.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q21",
+      "question_number": 21,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a temperature monitoring program that reads 24 hourly temperature readings and counts how many times temperature exceeded 35°C. Also find the maximum temperature recorded.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q22",
+      "question_number": 22,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a movie ticket booking system: Weekday ₹150/ticket | Weekend ₹200/ticket | Senior citizens (age ≥ 60): 20% discount.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q23",
+      "question_number": 23,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that validates whether a mobile number is correct: Must be exactly 10 digits | First digit must be 6, 7, 8, or 9.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q24",
+      "question_number": 24,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program to calculate electricity bill: 0-100 units ₹5/unit | 101-300 units ₹7/unit | 301+ units ₹10/unit. Also add ₹50 as fixed meter charge. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q25",
+      "question_number": 25,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program to find the maximum profit from stock prices. Given a list of 7 daily prices, find the best day to buy and best day to sell to maximize profit. Example: [100, 95, 110, 90, 105, 115, 85] → Buy on day 4 (₹90), Sell on day 6 (₹115), Profit = ₹25.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M1-Q26",
+      "question_number": 26,
+      "module": 1,
+      "module_name": "Computer Fundamentals & Problem Solving",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a password strength checker that evaluates a password in ONE pass: Check for uppercase letter, lowercase letter, digit, special character | Length ≥ 8 | Print strength: Weak (0-2 criteria), Medium (3 criteria), Strong (4+ criteria). LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 7",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q27",
+      "question_number": 27,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that demonstrates the use of all basic data types in Python: int, float, str, bool. Create one variable of each type and print them with their types using type().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q28",
+      "question_number": 28,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes a student's name and roll number as input, then displays them in the format: \"Student Name: [name], Roll No: [number]\"",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q29",
+      "question_number": 29,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that declares variables for length and breadth of a rectangle, calculates area and perimeter, and displays the results with appropriate labels.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q30",
+      "question_number": 30,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes three subject marks as input (float values) and prints them rounded to 2 decimal places.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q31",
+      "question_number": 31,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that demonstrates the difference between print() statements with and without the sep and end parameters.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q32",
+      "question_number": 32,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a sentence as input and prints: the sentence in uppercase | the sentence in lowercase | the length of the sentence.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q33",
+      "question_number": 33,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that demonstrates variable reassignment. Start with x = 10, then x = 20, then x = \"Hello\". Print value and type after each assignment. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q34",
+      "question_number": 34,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes radius as input, calculates both area and circumference of a circle, and displays results formatted to 3 decimal places.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q35",
+      "question_number": 35,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that demonstrates type conversion: Take a float input (45.67), convert to int | Take an int input (100), convert to float and string.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q36",
+      "question_number": 36,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes marks in 5 subjects as input, calculates total and percentage, then prints a formatted marksheet with Subject-wise marks, Total, and Percentage.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q37",
+      "question_number": 37,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that reads a 4-digit number and separates it into individual digits using integer division and modulo operations.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q38",
+      "question_number": 38,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes base and height of a triangle as float inputs, calculates area, and handles the output formatting to show exactly 2 decimal places.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q39",
+      "question_number": 39,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that reads temperature in Celsius as float, converts to Fahrenheit and Kelvin, and displays all three temperatures in a formatted table structure. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 8",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q40",
+      "question_number": 40,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that takes a 6-digit student ID number as input and extracts: First 2 digits: Year of admission | Next 2 digits: Department code | Last 2 digits: Roll number. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q41",
+      "question_number": 41,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that validates user input for age: Keep asking for age until a valid integer is entered | Display \"Invalid input\" for non-numeric input | Check if age is between 1 and 120 | Use try- except for error handling.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q42",
+      "question_number": 42,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that demonstrates the limitations of float data type: Add 0.1 + 0.2 and print result | Check if result equals 0.3 | Show how to properly compare floats using round() or checking difference.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q43",
+      "question_number": 43,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that takes a large number (e.g., 1234567890) and formats it with commas as thousand separators, in scientific notation, and as a string with custom formatting using f-strings.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q44",
+      "question_number": 44,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a simple invoice generator that takes product name, quantity, and price per unit as input, then displays Product, Quantity, Price per unit, and Total.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q45",
+      "question_number": 45,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a digital weighing scale that takes weight in kilograms (float) and converts it to Grams and Pounds (1 kg = 2.20462 lbs).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q46",
+      "question_number": 46,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that takes customer name and phone number as input, then displays a confirmation message.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q47",
+      "question_number": 47,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a currency denomination counter: Take an amount in rupees (integer), then calculate how many ₹500, ₹100, ₹50, ₹20, ₹10 notes are needed.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q48",
+      "question_number": 48,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a simple time converter that takes time in minutes and converts it to hours and minutes format. Example: Input 135 → Output \"2 hours 15 minutes\"",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q49",
+      "question_number": 49,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a fuel efficiency calculator: Input distance traveled (km) and fuel consumed (liters) | Output: Mileage in km/l formatted to 2 decimal places.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q50",
+      "question_number": 50,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a simple tip calculator: Input bill amount | Calculate 10%, 15%, and 20% tip options | Display all three options.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q51",
+      "question_number": 51,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a juice shop that takes number of glasses sold and displays: Small (₹30), Medium (₹50), Large (₹70) totals and Total Revenue. Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q52",
+      "question_number": 52,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a BMI calculator with formatted output: Input name, weight (kg), height (m) | Calculate BMI | Display a personalized report with Name, Weight, Height, and BMI.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q53",
+      "question_number": 53,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for an online shopping cart: Input product name, original price, discount percentage | Calculate discount amount and final price | Display all details formatted with ₹ symbol.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q54",
+      "question_number": 54,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a gym membership calculator: Input member name, membership type (monthly/quarterly/yearly) | Rates: Monthly ₹1000, Quarterly ₹2700 (10% off), Yearly ₹9600 (20% off).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q55",
+      "question_number": 55,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that validates and formats phone numbers: Input 10-digit number | Check if exactly 10 digits | Format as +91-XXXXX-XXXXX. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 9",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q56",
+      "question_number": 56,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create an age calculator: Input birth year | Calculate current age (use 2024 as current year) | Calculate age in months and days (approximate).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q57",
+      "question_number": 57,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a comprehensive salary slip generator: Input employee name, employee ID, basic salary | Calculate HRA (40%), DA (20%), PF (12%) | Display formatted salary slip.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q58",
+      "question_number": 58,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a scientific calculator for quadratic equation: Input a, b, c in ax² + bx + c | Calculate discriminant | Show nature of roots | Handle a = 0 case.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M2-Q59",
+      "question_number": 59,
+      "module": 2,
+      "module_name": "Python Basics & Data Representation",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for a hotel booking system: Input guest name, room number, nights, room rate, is_member (bool) | Members get 15% discount | Add 18% GST | Display complete booking confirmation. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 10",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q60",
+      "question_number": 60,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes two numbers and demonstrates all arithmetic operators (+, -, *, /, //, %, **). Display each operation with its result.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q61",
+      "question_number": 61,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes a number and prints its square, cube, and square root using appropriate operators.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q62",
+      "question_number": 62,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes two integers and compares them using all relational operators (>, <, >=, <=, ==, !=). Print True/False for each comparison.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q63",
+      "question_number": 63,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that demonstrates the difference between / (division) and // (floor division) with the same pair of numbers. Test with 17 and 5.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q64",
+      "question_number": 64,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a number and checks if it's divisible by both 3 and 5 using the modulo operator.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q65",
+      "question_number": 65,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program using compound assignment operators (+=, -=, *=, /=). Start with x = 10, perform all operations.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q66",
+      "question_number": 66,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a number and checks if it's positive, negative, or zero using relational operators. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q67",
+      "question_number": 67,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes coefficients a, b, c of a quadratic equation and calculates the discriminant (b² - 4ac). Use this to determine if roots are real, equal, or imaginary.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q68",
+      "question_number": 68,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that takes a 4-digit number and reverses it using only arithmetic operators (no string conversion).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q69",
+      "question_number": 69,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes exam marks and attendance percentage, then checks eligibility: (marks >= 40) and (attendance >= 75). Print detailed reason if not eligible.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q70",
+      "question_number": 70,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program demonstrating operator chaining in comparisons: Check if 10 < x < 100 for a given x.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q71",
+      "question_number": 71,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes a student's score (0-100) and uses relational operators to check: Excellent (>=90), Good (>=75), Average (>=50), Fail (<50).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q72",
+      "question_number": 72,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that evaluates De Morgan's Laws: Verify not(A and B) == (not A) or (not B) and not(A or B) == (not A) and (not B). Take boolean inputs for A and B. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 11",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q73",
+      "question_number": 73,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes total seconds and converts to hours:minutes:seconds format using only //, % operators. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q74",
+      "question_number": 74,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that solves a quadratic equation ax² + bx + c = 0 completely: Calculate discriminant | Find both roots | Handle all cases (real distinct, real equal, complex).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q75",
+      "question_number": 75,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that evaluates operator precedence in complex expressions: 2 + 3 * 4 ** 2 / 8 - 5 % 3 | Show step-by-step evaluation.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q76",
+      "question_number": 76,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that checks multiple conditions for loan approval: Age between 21-60 | Income > 25000 OR co-applicant income > 15000 | Credit score >= 700 | Existing loans < 3 | Combine all using logical operators.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q77",
+      "question_number": 77,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a retail shop that calculates: Subtotal (price * quantity) | Tax (subtotal * 0.18) | Total (subtotal + tax).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q78",
+      "question_number": 78,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that checks if a customer is eligible for a discount: Purchase amount >= 1000. Use relational operators.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q79",
+      "question_number": 79,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a pizza delivery system that adds ₹40 delivery charge if order amount < 300, otherwise free delivery.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q80",
+      "question_number": 80,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that calculates electricity bill: Units consumed * ₹7 + ₹50 (fixed charge).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q81",
+      "question_number": 81,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that checks if a user's age is valid for driving license (age >= 18). Use relational operators.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q82",
+      "question_number": 82,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program for a taxi service: Base fare ₹50 + ₹12 * distance_km. Calculate total fare.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q83",
+      "question_number": 83,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that calculates discount amount: Original price * (discount_percentage / 100). Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q84",
+      "question_number": 84,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for an e-commerce site that calculates final price: Apply discount if amount > 1000 | Add shipping if amount < 500 | Add GST (18%).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q85",
+      "question_number": 85,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for credit card payment: Minimum payment = 5% of outstanding OR ₹500 (whichever is higher). Calculate both, use relational operators to select maximum.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q86",
+      "question_number": 86,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for insurance premium calculation: Base premium ₹10000 | Add 20% if age < 25 OR age > 60 | Add 15% if smoker | Subtract 10% if regular_exercise.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q87",
+      "question_number": 87,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for a telecom billing system: Free up to 100 minutes | ₹1 per minute for 101-300 minutes | ₹0.50 per minute beyond 300.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q88",
+      "question_number": 88,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for overtime pay calculation: Regular hours (<=40): rate * hours | Overtime hours (>40): rate * 1.5 * extra_hours | Weekend hours: rate * 2 * weekend_hours.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q89",
+      "question_number": 89,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for traffic fine calculation: Base fine ₹500 | Add ₹100 for every 10 km/h above limit | Double fine if school zone | Triple fine if repeat offender. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 12 Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q90",
+      "question_number": 90,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a comprehensive loan approval system: Credit score >= 750 OR (>= 650 AND income > 50000) | DTI ratio < 40% | Employment >= 2 years | No defaults in last 2 years.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q91",
+      "question_number": 91,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program for dynamic pricing algorithm: Base price | Demand factor (high/medium/low: +30%/0%/-20%) | Inventory factor (low stock: +15%, high stock: -10%) | Member: -10%, New customer: +5%.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M3-Q92",
+      "question_number": 92,
+      "module": 3,
+      "module_name": "Operators and Expressions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a program for a stock trading profit/loss calculator: Buy price, sell price, quantity, brokerage (0.5%) | Short term capital gains tax (15%) if held < 1 year | Long term (10%) on profit > ₹100000 if held >= 1 year. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 13",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q93",
+      "question_number": 93,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a number and checks if it's positive using a simple if statement. Print \"Positive number\" if true.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q94",
+      "question_number": 94,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes a number and prints whether it's even or odd using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q95",
+      "question_number": 95,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a student's marks and prints \"Pass\" if marks >= 40, otherwise prints \"Fail\" using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q96",
+      "question_number": 96,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes two numbers and prints which one is greater using if-elif-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q97",
+      "question_number": 97,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a character and checks if it's a vowel (a, e, i, o, u) using simple if statements.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q98",
+      "question_number": 98,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes age as input and prints \"Eligible to vote\" if age >= 18, otherwise \"Not eligible\".",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q99",
+      "question_number": 99,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a number and checks if it's divisible by 5 using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q100",
+      "question_number": 100,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that takes three numbers and finds the largest using if-elif-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q101",
+      "question_number": 101,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a percentage and assigns grade: A (>=90), B (>=80), C (>=70), D (>=60), F (<60). Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q102",
+      "question_number": 102,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes three angles and checks if they can form a valid triangle (sum = 180 and all > 0) using nested if statements.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q103",
+      "question_number": 103,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that classifies a triangle as Equilateral, Isosceles, or Scalene based on three side lengths.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q104",
+      "question_number": 104,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a simple calculator (+, -, *, /) using if-elif-else. Handle division by zero.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q105",
+      "question_number": 105,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that checks if a number is divisible by 2, 3, or 5, and prints all applicable divisibilities using multiple if statements (not elif).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q106",
+      "question_number": 106,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes a number from 1-12 and prints the month name and number of days in that month (assume non-leap year).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q107",
+      "question_number": 107,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that takes height and weight, calculates BMI, and categorizes as Underweight (<18.5), Normal (18.5-24.9), Overweight (25-29.9), Obese (>=30). LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 14",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q108",
+      "question_number": 108,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that takes exam marks and attendance percentage, then applies: If marks >= 40 AND attendance >= 75: Pass | If marks >= 40 BUT attendance < 75: Detained | If marks < 40: Fail.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q109",
+      "question_number": 109,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that validates a date (day, month, year) considering leap years for February using nested if-else. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q110",
+      "question_number": 110,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that solves a quadratic equation (ax² + bx + c = 0) with complete handling: Check if a = 0 | Calculate discriminant | Handle two real roots, one real root, complex roots.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q111",
+      "question_number": 111,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that validates a complex password with multiple criteria: Length >= 8 | At least one uppercase | At least one lowercase | At least one digit | At least one special character.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q112",
+      "question_number": 112,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program for admission eligibility with nested conditions: Age: 17-25 for general, 17-28 for reserved | Marks: >=60% for general, >=55% for reserved | Entrance score: >=50 for general, >=45 for reserved.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q113",
+      "question_number": 113,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that implements a game of \"Guess the Number\": 5 attempts | After each guess: \"Too high\", \"Too low\", or \"Correct\" | Use break when guessed correctly.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q114",
+      "question_number": 114,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a shop discount system: If purchase >= 1000, apply 10% discount. Otherwise, no discount. Print final amount using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q115",
+      "question_number": 115,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program for ATM withdrawal: Check if balance >= withdrawal_amount. If yes, process; if no, deny.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q116",
+      "question_number": 116,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a parking system: Cars pay ₹50, Bikes pay ₹20. Take vehicle type and print parking fee.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q117",
+      "question_number": 117,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program for a coffee shop: Small-₹30, Medium-₹50, Large-₹70. Take size input and print price.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q118",
+      "question_number": 118,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for age-based movie ticket pricing: Child (<12): ₹100, Adult: ₹200, Senior (>=60): ₹150.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q119",
+      "question_number": 119,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that checks if a customer qualifies for free shipping (order >= ₹500) using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q120",
+      "question_number": 120,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a restaurant that adds 10% service charge if bill > ₹500 using if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q121",
+      "question_number": 121,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program for a taxi service: Day fare (6AM-10PM): ₹15/km, Night fare: ₹20/km. Take time and distance, calculate fare.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q122",
+      "question_number": 122,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program for a library fine: If days late > 0, charge ₹5/day. Otherwise, no fine.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q123",
+      "question_number": 123,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that checks if a user is eligible for credit card (age >= 21 AND income >= 20000). Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q124",
+      "question_number": 124,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for a tiered discount system: < ₹500: No discount | ₹500-₹1000: 5% | ₹1001-₹2000: 10% | >₹2000: 15%. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 15",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q125",
+      "question_number": 125,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for movie ticket booking: Weekday ₹150 | Weekend ₹200 | Senior citizen (age >= 60): 20% discount on any day. Use nested if-else.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q126",
+      "question_number": 126,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for a progressive tax calculator: 0-250000: 0% | 250001-500000: 5% | 500001-1000000: 20% | >1000000: 30%.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q127",
+      "question_number": 127,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for insurance premium: Base ₹10000 | Age < 25 OR age > 60: add 20% | Smoker: add 15% | Regular exercise: subtract 10%.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q128",
+      "question_number": 128,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for a restaurant billing system: Calculate food bill | If bill > ₹1000: 10% discount | Add 5% GST | Add 10% service charge.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q129",
+      "question_number": 129,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for scholarship distribution: CGPA >= 9.0: ₹50000 | 8.0-9.0: ₹30000 | 7.0-8.0: ₹15000 | Family income must be < ₹500000.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q130",
+      "question_number": 130,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program for traffic violation fine system: Speeding ₹1000 + ₹100 per 10 km/h over limit | No helmet/seatbelt ₹500 | Signal jump ₹1000 | Drunk driving ₹10000.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q131",
+      "question_number": 131,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program for a hotel booking system: Standard ₹2000, Deluxe ₹3500, Suite ₹6000 | Weekend: add 30% | Peak season: add 40% | Member: 15% discount. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q132",
+      "question_number": 132,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive student result processing system: Take marks in 5 subjects | Check if any subject < 35 (fail) | If passed all, calculate percentage | Award: Distinction >= 75% with no subject < 60 | First class >= 60% with no subject < 50 | Second class >= 50% | Pass class >= 40%.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q133",
+      "question_number": 133,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a comprehensive loan eligibility system with nested conditions: Check multiple loan types (Home/Personal/Car) | Each with different eligibility criteria (age, income, credit score) | Calculate maximum loan amount | Determine interest rate based on credit score.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q134",
+      "question_number": 134,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program for an airline dynamic pricing system: Base price by class (Economy/Business/First) | Weekday vs Weekend pricing | Advance booking discount (>30 days: 20%, >15 days: 10%) | Festival season surge (40%) | Group booking (5+ passengers): 15% discount.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M4-Q135",
+      "question_number": 135,
+      "module": 4,
+      "module_name": "Conditional Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a comprehensive student result processing system using deeply nested conditionals handling all cases: marks, attendance, grace marks, improvement exam eligibility. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 16",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q136",
+      "question_number": 136,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to print numbers from 1 to 10.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q137",
+      "question_number": 137,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop to print numbers from 10 to 1 (reverse order).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q138",
+      "question_number": 138,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program to calculate the sum of first N natural numbers using a for loop.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q139",
+      "question_number": 139,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program to print the multiplication table of a given number using a for loop.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q140",
+      "question_number": 140,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program using a while loop to find the factorial of a number.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q141",
+      "question_number": 141,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program to print all even numbers from 1 to 50 using a for loop.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q142",
+      "question_number": 142,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program to count the number of digits in a given number using a while loop.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q143",
+      "question_number": 143,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program to print the first N Fibonacci numbers using a for loop.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q144",
+      "question_number": 144,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program using a while loop to reverse a given number.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q145",
+      "question_number": 145,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program to print all numbers from 1 to 20, but skip multiples of 3 using continue statement. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q146",
+      "question_number": 146,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested for loops to print the pattern: 1 / 1 2 / 1 2 3 / 1 2 3 4 / 1 2 3 4 5.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q147",
+      "question_number": 147,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program using a while loop to check if a number is prime.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q148",
+      "question_number": 148,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested for loops to print a multiplication table from 1 to 10 (10x10 grid).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q149",
+      "question_number": 149,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program using a for loop to find all prime numbers between 1 and 100.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q150",
+      "question_number": 150,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested for loops to print the pyramid pattern: * / *** / ***** / ******* / *********.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q151",
+      "question_number": 151,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program using a for loop to check if a number is an Armstrong number (e.g., 153 = 1³ + 5³ + 3³).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q152",
+      "question_number": 152,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested for loops to print Floyd's triangle: 1 / 2 3 / 4 5 6 / 7 8 9 10.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q153",
+      "question_number": 153,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program using nested loops to print a diamond pattern.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q154",
+      "question_number": 154,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using a for loop to calculate the sum of the series: 1 + 1/2 + 1/3 + ... + LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 17 1/N. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q155",
+      "question_number": 155,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program using a while loop to find the nth Fibonacci number using only two variables (space-optimized).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q156",
+      "question_number": 156,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program using nested loops to print all perfect numbers between 1 and 1000.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q157",
+      "question_number": 157,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program using a for loop to implement the Sieve of Eratosthenes algorithm to find all primes up to N.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q158",
+      "question_number": 158,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program using nested for loops to print the complex pattern: 1 / 212 / 32123 / 4321234 / 543212345.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q159",
+      "question_number": 159,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program using a for loop with multiple control variables to find all Pythagorean triplets (a² + b² = c²) where a, b, c < 50.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q160",
+      "question_number": 160,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to calculate the total bill for a restaurant where N items are ordered. Take price of each item as input.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q161",
+      "question_number": 161,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop for an ATM that keeps allowing withdrawals until balance becomes zero or user chooses to exit.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q162",
+      "question_number": 162,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to calculate the total marks of N students.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q163",
+      "question_number": 163,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop for a login system that gives 3 attempts to enter the correct password.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q164",
+      "question_number": 164,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to calculate total sales for a week (7 days).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q165",
+      "question_number": 165,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop to keep accepting product prices until user enters -1, then display the total.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q166",
+      "question_number": 166,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to calculate total electricity units consumed over 12 months.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q167",
+      "question_number": 167,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop to simulate rolling a dice until a 6 appears, count the number of rolls.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q168",
+      "question_number": 168,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a while loop to keep accepting ratings (1-5) until user enters 0, then calculate average rating.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q169",
+      "question_number": 169,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using a while loop for a game where player keeps guessing until they get the correct number.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q170",
+      "question_number": 170,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using a for loop to print all seat numbers in a theater (A1 to A20, B1 to B20 for 5 rows). Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q171",
+      "question_number": 171,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested for loops to generate a seating chart for a classroom with R rows and C columns.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q172",
+      "question_number": 172,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program using a while loop to calculate compound interest for N years, showing year-by-year breakdown. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 18",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q173",
+      "question_number": 173,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program using a for loop with break to find the first month where sales exceed a target amount.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q174",
+      "question_number": 174,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program using a while loop to simulate a bank account with deposits and withdrawals, continuing until balance < minimum balance.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q175",
+      "question_number": 175,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program using a for loop with continue to process orders, skipping cancelled orders and calculating total revenue.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q176",
+      "question_number": 176,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program using nested loops to generate a report card for N students with M subjects each.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q177",
+      "question_number": 177,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program using a for loop to calculate daily, weekly, and monthly sales targets and track progress.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q178",
+      "question_number": 178,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program using a while loop to simulate a stock trading session, buying/selling until target profit is reached.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q179",
+      "question_number": 179,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested loops to print a ticket booking layout for a cinema (rows and seats). Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q180",
+      "question_number": 180,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a program using nested loops to simulate a complete e-commerce order processing system: Multiple customers placing multiple orders | Calculate order total, apply discounts, add shipping | Track inventory and update stock | Generate daily sales report.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q181",
+      "question_number": 181,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program using loops to implement a complete student grading system: N students, M subjects each | Calculate individual totals, percentages, grades | Find class topper, subject toppers | Calculate class average for each subject | Generate rank list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q182",
+      "question_number": 182,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a program using nested for loops to generate a complete monthly calendar for any given month and year: Calculate starting day of the week | Print dates in proper grid format | Handle leap years | Mark weekends differently.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M5-Q183",
+      "question_number": 183,
+      "module": 5,
+      "module_name": "Repetitive Control Statements",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program using loops to implement a banking transaction system: Multiple account holders | Different transaction types (deposit, withdrawal, transfer) | Maintain transaction history | Calculate interest on savings | Generate monthly statement. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 19",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q184",
+      "question_number": 184,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a function greet() that takes a name as parameter and prints \"Hello, [name]!\". Call it with different names.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q185",
+      "question_number": 185,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a function add_two_numbers(a, b) that returns the sum of two numbers. Test it with multiple values.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q186",
+      "question_number": 186,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a function is_even(num) that returns True if a number is even, False otherwise.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q187",
+      "question_number": 187,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a function square(n) that returns the square of a number. Call it in a loop for numbers 1 to 10.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q188",
+      "question_number": 188,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a function max_of_two(a, b) that returns the maximum of two numbers without using the built-in max().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q189",
+      "question_number": 189,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a function print_table(n) that prints the multiplication table of n.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q190",
+      "question_number": 190,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a function celsius_to_fahrenheit(c) that converts and returns temperature in Fahrenheit.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q191",
+      "question_number": 191,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a function greet_default(name=\"Guest\") that uses a default parameter value.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q192",
+      "question_number": 192,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a function swap(a, b) that returns two values in swapped order. Use tuple unpacking when calling.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q193",
+      "question_number": 193,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a function count_vowels(text) that counts and returns the number of vowels in a string. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q194",
+      "question_number": 194,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a recursive function factorial_recursive(n) that calculates factorial. Compare its output with the iterative version.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q195",
+      "question_number": 195,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a function fibonacci(n) that returns the nth Fibonacci number using recursion.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q196",
+      "question_number": 196,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a function gcd(a, b) that finds the GCD of two numbers using recursion (Euclidean algorithm).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q197",
+      "question_number": 197,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a function using **kwargs to print all keyword arguments: print_details(**kwargs).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q198",
+      "question_number": 198,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a function with both *args and **kwargs: flexible_function(*args, **kwargs).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q199",
+      "question_number": 199,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a function demonstrating variable scope: define a global variable, modify it LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 20 using global keyword inside a function.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q200",
+      "question_number": 200,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a recursive function binary_search(arr, target, low, high) that implements binary search.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q201",
+      "question_number": 201,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a higher-order function apply_operation(func, num) that takes a function and a number, applies the function. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q202",
+      "question_number": 202,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a recursive function tower_of_hanoi(n, source, destination, auxiliary) that solves the Tower of Hanoi puzzle and prints moves.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q203",
+      "question_number": 203,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a function implementing the Sieve of Eratosthenes algorithm to find all primes up to n efficiently.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q204",
+      "question_number": 204,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a recursive function quicksort(arr) that implements the quicksort algorithm.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q205",
+      "question_number": 205,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a function demonstrating closure: a function that returns another function with access to outer function's variables.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q206",
+      "question_number": 206,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a function implementing memoization for Fibonacci: fibonacci_memo(n, memo={}) to optimize recursive calls.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q207",
+      "question_number": 207,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a function calculate_bill(items, prices) that takes lists of items and prices, returns total bill.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q208",
+      "question_number": 208,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a function apply_discount(price, discount_percent) that returns the discounted price.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q209",
+      "question_number": 209,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a function calculate_tax(amount, tax_rate=0.18) with default tax rate that returns amount after tax.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q210",
+      "question_number": 210,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a function bmi_calculator(weight, height) that calculates and returns BMI.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q211",
+      "question_number": 211,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a function simple_interest(principal, rate, time) that calculates and returns simple interest.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q212",
+      "question_number": 212,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a function convert_currency(amount, exchange_rate) that converts currency.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q213",
+      "question_number": 213,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a function calculate_age(birth_year, current_year=2024) that returns age.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q214",
+      "question_number": 214,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a function tip_calculator(bill, tip_percent=15) that calculates tip amount.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q215",
+      "question_number": 215,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a function parking_fee(hours) that calculates parking charges (₹50 first hour, ₹30 additional). Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q216",
+      "question_number": 216,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a function calculate_salary(basic, *allowances, **deductions) that uses both *args and **kwargs.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q217",
+      "question_number": 217,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a recursive function calculate_compound_interest_recursive(principal, rate, time) for compound interest.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q218",
+      "question_number": 218,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a function progressive_tax(income) that calculates tax based on multiple income slabs. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 21",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q219",
+      "question_number": 219,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a function with nested helper functions: process_transaction(amount, transaction_type) with internal validation.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q220",
+      "question_number": 220,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a function bulk_pricing(quantity, unit_price, discounts) where discounts is a dict of quantity tiers.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q221",
+      "question_number": 221,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a function demonstrating closure: create_discount_calculator(default_discount) that returns a specialized calculator.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q222",
+      "question_number": 222,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a function payroll_processor(employees) where employees is a list of dicts, calculates total payroll.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q223",
+      "question_number": 223,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a function dynamic_pricing(base_price, demand_factor, time_factor, **modifiers) for dynamic pricing.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q224",
+      "question_number": 224,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a recursive function calculate_depreciation_recursive(value, rate, years) for asset depreciation. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q225",
+      "question_number": 225,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive function e_commerce_checkout(cart, user_profile, coupon_codes, payment_method) that calculates item totals, applies discounts, validates coupons, adds shipping, calculates tax, and returns detailed breakdown. Use nested functions for each step.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q226",
+      "question_number": 226,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a recursive function organizational_salary_calculator(employee_tree) that calculates total salary for a hierarchy where employees can have subordinates.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q227",
+      "question_number": 227,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a function loan_amortization_schedule(principal, rate, tenure) that generates complete amortization schedule using recursion and returns list of payment details.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M6-Q228",
+      "question_number": 228,
+      "module": 6,
+      "module_name": "Functions and Recursion",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a function dynamic_inventory_pricing(inventory, demand_data, competitor_prices) that uses closures to create pricing strategies and returns optimized pricing dict. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 22",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q229",
+      "question_number": 229,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a string and prints its length using len().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q230",
+      "question_number": 230,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that converts a string to uppercase and lowercase using string methods.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q231",
+      "question_number": 231,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that takes a string and checks if it starts with a specific character using startswith().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q232",
+      "question_number": 232,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that concatenates two strings using the + operator and prints the result.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q233",
+      "question_number": 233,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that reverses a string using slicing [::-1].",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q234",
+      "question_number": 234,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that checks if a substring exists in a string using the in operator.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q235",
+      "question_number": 235,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that replaces all occurrences of 'a' with 'o' in a string using replace().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q236",
+      "question_number": 236,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that splits a sentence into words using split().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q237",
+      "question_number": 237,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that removes leading and trailing whitespaces from a string using strip(). Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q238",
+      "question_number": 238,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that counts vowels and consonants in a string separately.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q239",
+      "question_number": 239,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that checks if a string is a palindrome (case-insensitive).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q240",
+      "question_number": 240,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that removes all vowels from a string.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q241",
+      "question_number": 241,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that finds the most frequent character in a string.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q242",
+      "question_number": 242,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that checks if two strings are anagrams of each other.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q243",
+      "question_number": 243,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that performs string slicing with negative indices to extract the last 3 characters.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q244",
+      "question_number": 244,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements Caesar cipher encryption (shift each letter by N positions).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q245",
+      "question_number": 245,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that creates a nested tuple structure: ((1, 2), (3, 4), (5, 6)) and accesses inner elements. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q246",
+      "question_number": 246,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that finds the longest palindromic substring in a given string.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q247",
+      "question_number": 247,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that implements the KMP pattern matching algorithm to find all LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 23 occurrences of a pattern in text.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q248",
+      "question_number": 248,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that implements a string similarity checker using Levenshtein distance algorithm.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q249",
+      "question_number": 249,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that validates a phone number format: must be 10 digits, starts with 6/7/8/9.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q250",
+      "question_number": 250,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that extracts the domain name from an email address using string methods.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q251",
+      "question_number": 251,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that formats a product price with currency symbol: \"Price: ₹1,234.56\"",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q252",
+      "question_number": 252,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that generates a username from a full name (first letter of first name + last name, lowercase).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q253",
+      "question_number": 253,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that validates a password: minimum 8 characters, contains uppercase and lowercase.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q254",
+      "question_number": 254,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that extracts hashtags from a social media post.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q255",
+      "question_number": 255,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that formats a date string from \"YYYY-MM-DD\" to \"DD/MM/YYYY\".",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q256",
+      "question_number": 256,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that generates an acronym from a phrase: \"Central Processing Unit\" → \"CPU\". Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q257",
+      "question_number": 257,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that validates and formats an Aadhaar number: 12 digits, formatted as XXXX-XXXX-XXXX.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q258",
+      "question_number": 258,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that parses a CSV line (comma-separated values) into a tuple, handling quoted fields.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q259",
+      "question_number": 259,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a simple search engine: finds documents containing all search terms (case-insensitive).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q260",
+      "question_number": 260,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that generates a receipt format with items, prices, and total (aligned properly).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q261",
+      "question_number": 261,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that validates credit card numbers using the Luhn algorithm.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q262",
+      "question_number": 262,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that parses log entries: extracts timestamp, level (INFO/ERROR), and message.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q263",
+      "question_number": 263,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements name matching with fuzzy logic (handles typos, abbreviations). Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q264",
+      "question_number": 264,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive program that validates and formats multiple types of Indian documents: PAN Card | Aadhaar | Driving License | Passport. Uses proper error messages and formatting.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q265",
+      "question_number": 265,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a program that implements a spell checker: Loads dictionary (tuple of words) | Finds misspelled words | Suggests corrections using edit distance. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 24",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M7-Q266",
+      "question_number": 266,
+      "module": 7,
+      "module_name": "Strings and Tuples",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a program that implements a templating system for email/SMS: Handles nested placeholders | Conditional sections | Loops for lists | Escaping special characters. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 25",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q267",
+      "question_number": 267,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that creates a list of 5 integers and prints it.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q268",
+      "question_number": 268,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that appends an element to a list using append() and inserts at a specific position using insert().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q269",
+      "question_number": 269,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that removes an element by value using remove() and by index using pop().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q270",
+      "question_number": 270,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that sorts a list in ascending and descending order.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q271",
+      "question_number": 271,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that implements a stack using list (push using append, pop using pop).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q272",
+      "question_number": 272,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that implements a queue using list (enqueue using append, dequeue using pop(0)).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q273",
+      "question_number": 273,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a list comprehension to create a list of even numbers from 1 to 20.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q274",
+      "question_number": 274,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a list comprehension to convert a list of strings to uppercase.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q275",
+      "question_number": 275,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that creates a 2D list (3x3) and prints it.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q276",
+      "question_number": 276,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that removes duplicates from a list while maintaining order. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q277",
+      "question_number": 277,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements bubble sort algorithm on a list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q278",
+      "question_number": 278,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that implements binary search on a sorted list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q279",
+      "question_number": 279,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that creates a frequency dictionary from a list (element: count).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q280",
+      "question_number": 280,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that rotates a 2D matrix 90 degrees clockwise.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q281",
+      "question_number": 281,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that transposes a matrix (swap rows and columns).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q282",
+      "question_number": 282,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that multiplies two matrices.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q283",
+      "question_number": 283,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using nested list comprehension to create a multiplication table (N x N).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q284",
+      "question_number": 284,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that finds all pairs in a list that sum to a target value.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q285",
+      "question_number": 285,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a nested list comprehension to generate Pascal's triangle up to N rows. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 26 Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q286",
+      "question_number": 286,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that implements quicksort algorithm recursively on a list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q287",
+      "question_number": 287,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that implements merge sort algorithm recursively.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q288",
+      "question_number": 288,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that solves the N-Queens problem and returns all solutions as nested lists.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q289",
+      "question_number": 289,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that finds the maximum sum subarray (Kadane's algorithm).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q290",
+      "question_number": 290,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that implements the longest increasing subsequence algorithm.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q291",
+      "question_number": 291,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that stores shopping cart items in a list and calculates total price.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q292",
+      "question_number": 292,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that maintains a to-do list with add, remove, and display functions.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q293",
+      "question_number": 293,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that stores student names in a list and sorts them alphabetically.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q294",
+      "question_number": 294,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that stores daily temperatures for a week in a list and finds the average.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q295",
+      "question_number": 295,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that stores exam scores and calculates pass/fail count.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q296",
+      "question_number": 296,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that stores phone contacts as a list of lists: [name, number].",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q297",
+      "question_number": 297,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using list comprehension to filter products above a certain price.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q298",
+      "question_number": 298,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that stores monthly expenses in a list and calculates yearly total.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q299",
+      "question_number": 299,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that manages a simple inventory: [item_name, quantity, price]. Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q300",
+      "question_number": 300,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a shopping cart with quantity updates and discount calculations using lists.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q301",
+      "question_number": 301,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that manages student grades: nested lists for multiple subjects, calculates GPA.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q302",
+      "question_number": 302,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements inventory management with low-stock alerts.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q303",
+      "question_number": 303,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that analyzes sales data: finds best-selling products, monthly trends.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q304",
+      "question_number": 304,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that manages flight bookings: seats as 2D list, booking/cancellation.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q305",
+      "question_number": 305,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that analyzes stock prices: moving averages, trend detection.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q306",
+      "question_number": 306,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that manages library book lending with due dates and fines.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q307",
+      "question_number": 307,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that tracks fitness goals with progress monitoring. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q308",
+      "question_number": 308,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive inventory management system that: Tracks stock levels across multiple warehouses (nested lists) | Implements automatic reordering | Handles stock transfers between locations | Generates low-stock alerts | Produces inventory valuation reports.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q309",
+      "question_number": 309,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a complete student management system that: Stores student data in nested lists | Manages courses, enrollments, grades | Calculates GPAs with credit hours | Generates transcripts | Implements scholarship eligibility | Produces class rankings. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 27",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M8-Q310",
+      "question_number": 310,
+      "module": 8,
+      "module_name": "Lists and List Comprehensions",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive e-commerce order fulfillment system that: Manages orders, inventory, shipping | Implements order batching | Optimizes warehouse picking routes | Handles partial shipments | Calculates shipping costs with zones. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 28",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q311",
+      "question_number": 311,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that creates a set with 5 elements and demonstrates add(), remove(), and discard().",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q312",
+      "question_number": 312,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that finds the union, intersection, and difference between two sets.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q313",
+      "question_number": 313,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that converts a list to a set to remove duplicates.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q314",
+      "question_number": 314,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create an empty dictionary, add key-value pairs, update, and delete using pop() and del.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q315",
+      "question_number": 315,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program using map() to square all numbers in a list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q316",
+      "question_number": 316,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program using filter() to get even numbers from a list. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q317",
+      "question_number": 317,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that counts the frequency of each element in a list using a dictionary.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q318",
+      "question_number": 318,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that groups elements by a property using dictionaries (e.g., group numbers by odd/even).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q319",
+      "question_number": 319,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that inverts a dictionary (swap keys and values).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q320",
+      "question_number": 320,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a dictionary comprehension to create a dictionary of squares: {1: 1, 2: 4, 3: 9, ...}.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q321",
+      "question_number": 321,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program using reduce() to find the sum and product of a list (import from functools).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q322",
+      "question_number": 322,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program using filter() and map() together in a pipeline. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q323",
+      "question_number": 323,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a program that implements a complete LRU (Least Recently Used) cache using dictionaries and sets.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q324",
+      "question_number": 324,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that implements a trie data structure using nested dictionaries. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 29",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q325",
+      "question_number": 325,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that stores unique customer IDs in a set and product inventory in a dictionary.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q326",
+      "question_number": 326,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that uses a set to track visited pages on a website.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q327",
+      "question_number": 327,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that stores employee IDs and salaries in a dictionary and finds the highest paid.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q328",
+      "question_number": 328,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using sets to find common skills among job candidates.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q329",
+      "question_number": 329,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program using map() to apply discount to all prices in a list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q330",
+      "question_number": 330,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program using filter() to get customers with purchases above a threshold. Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q331",
+      "question_number": 331,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a shopping cart using dictionaries: {product_id: {name, price, quantity}}.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q332",
+      "question_number": 332,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that analyzes customer purchase patterns using sets and dictionaries.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q333",
+      "question_number": 333,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements user preferences management with nested dictionaries.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q334",
+      "question_number": 334,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program using map() and reduce() for batch data processing of sales records.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q335",
+      "question_number": 335,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a voting system with candidate tracking using dictionaries. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q336",
+      "question_number": 336,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive e-commerce platform using sets and dictionaries that: Manages product catalog with categories | Implements shopping cart with pricing rules | Tracks inventory across warehouses | Implements recommendation engine | Uses functional programming for order processing pipeline.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M9-Q337",
+      "question_number": 337,
+      "module": 9,
+      "module_name": "Sets, Dictionaries & Functional Programming",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a complete social media analytics system that: Tracks user connections and followers (sets) | Analyzes engagement metrics (dictionaries) | Implements trending hashtags detection | Uses map(), filter(), reduce() for data aggregation. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 30",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q338",
+      "question_number": 338,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that imports the math module and uses sqrt(), ceil(), floor() functions.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q339",
+      "question_number": 339,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that imports random module and generates a random number between 1 and 100, and selects a random element from a list.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q340",
+      "question_number": 340,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that handles division by zero using try-except.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q341",
+      "question_number": 341,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Create a program that uses try-except-else-finally block demonstrating all four clauses.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q342",
+      "question_number": 342,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Easy",
+      "question": "Write a program that opens a file in write mode, writes content, then reads it back. Moderate (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q343",
+      "question_number": 343,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that creates a package structure with __init__.py and imports modules from it.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q344",
+      "question_number": 344,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that implements a custom exception class inheriting from Exception.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q345",
+      "question_number": 345,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that reads a CSV file with headers using csv.DictReader and writes using csv.DictWriter.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q346",
+      "question_number": 346,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Create a program that uses json module to read and write JSON data, handling malformed JSON errors.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q347",
+      "question_number": 347,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Moderate",
+      "question": "Write a program that merges multiple text files into one and splits a large file into smaller files. Hard (Section A)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q348",
+      "question_number": 348,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive package with multiple modules demonstrating: Package hierarchy with subpackages | __init__.py with package-level imports | Relative imports | __all__ for controlling exports.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q349",
+      "question_number": 349,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "A",
+      "difficulty": "Hard",
+      "question": "Create a program that implements a robust file parser with: Multiple format support (JSON, CSV, XML) | Comprehensive error handling | Validation and sanitization | Progress reporting. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 31",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q350",
+      "question_number": 350,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that reads customer data from a CSV file and prints it.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q351",
+      "question_number": 351,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that saves user preferences to a JSON file and loads them back.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q352",
+      "question_number": 352,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that logs error messages to a file with timestamps.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q353",
+      "question_number": 353,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that reads product inventory from a file and handles FileNotFoundError.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q354",
+      "question_number": 354,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Write a program that exports data to CSV format and backs up files to another directory.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q355",
+      "question_number": 355,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Easy",
+      "question": "Create a program that saves shopping cart data to a file and loads it on program start. Moderate (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q356",
+      "question_number": 356,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a customer database using CSV files with CRUD operations.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q357",
+      "question_number": 357,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that processes uploaded files with validation (size, type, content).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q358",
+      "question_number": 358,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a file-based cache for API responses.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q359",
+      "question_number": 359,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that validates and processes financial transaction files.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q360",
+      "question_number": 360,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Write a program that implements a document versioning system.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q361",
+      "question_number": 361,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Moderate",
+      "question": "Create a program that generates invoices from template files with data merge. Hard (Section B)",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q362",
+      "question_number": 362,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive e-commerce order processing system that: Imports orders from multiple file formats (CSV, JSON, XML) | Validates order data with custom exceptions | Processes payments with error handling | Generates invoices and packing slips | Maintains audit logs.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q363",
+      "question_number": 363,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Create a complete HR and payroll system that: Imports employee data from various sources | Processes attendance and leaves | Calculates salaries with complex rules | Generates payslips and tax documents | Handles exceptions and corrections.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "M10-Q364",
+      "question_number": 364,
+      "module": 10,
+      "module_name": "Modules, Packages, Exceptions & File Handling",
+      "section": "B",
+      "difficulty": "Hard",
+      "question": "Write a comprehensive enterprise integration platform that: Implements modular architecture with packages | Handles multiple file formats | Custom exception hierarchy | Robust error handling with retry and fallback | Comprehensive logging with rotation | Data validation framework. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 32 CAPSTONE CHALLENGES The following capstone projects are designed for extended sessions (60-120 minutes). They integrate multiple modules and require architectural thinking, not just coding. Capstone 1: Complete Banking System Modules: Modules 2, 5, 6, 8, 9 Build a complete banking system that manages multiple account types (savings, current, fixed deposit). Implement: customer registration with validation, deposit/withdrawal with daily limits, fund transfers between accounts, interest calculation (simple and compound), loan eligibility checker, EMI calculator, fraud detection (flag suspicious transactions), generate monthly statement. Use functions, loops, lists for account storage, dictionaries for transactions, file handling for persistence, and custom exceptions for error management. Capstone 2: Student Management & Examination System Modules: Modules 2, 4, 5, 6, 7, 8 Build a complete student management system: Student registration with ID generation, course enrollment with prerequisite checking, attendance tracking (flag < 75%), marks entry for multiple subjects with validation (0-100), automated grade calculation (A+/A/B+/B/C/F), grace marks policy (failed by <=5 marks AND overall > 45%), result processing (Distinction/First Class/Second Class/Pass/Fail), generate formatted report cards, rank list generation, scholarship eligibility checker. Use nested lists for data storage, functions for each module, file handling for data persistence. Capstone 3: E-Commerce Platform Modules: Modules 4, 5, 6, 7, 8, 9 Build a mini e-commerce platform: Product catalog management (add/remove/update products using dictionaries), shopping cart (add items, update quantity, remove), dynamic pricing engine (base price + demand factor + inventory factor + member discount), coupon code validation, checkout process (apply discounts → calculate tax → add shipping → final bill), inventory management with auto-reorder alerts, order history tracking, product recommendations based on purchase history using sets, generate itemized invoice. Handle all edge cases with proper exception handling. Capstone 4: Hospital Management System Modules: Modules 4, 5, 6, 8, 9, 10 Build a hospital management system: Patient registration with unique ID, appointment booking (check doctor availability, avoid conflicts using sets), queue management for different departments (emergency priority), doctor schedule management, prescription tracking with drug interaction checking (using tuple database), bed allocation system (2D list for floor/room), billing system (room charges + doctor fees + medicines + tests, insurance coverage), generate patient bill and discharge summary. Store data in files, use custom exceptions for medical errors. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 33 Capstone 5: Inventory & Supply Chain System Modules: Modules 5, 6, 8, 9, 10 Build an inventory and supply chain management system: Multi-warehouse stock tracking (nested dictionaries with location: {product: quantity}), supplier management, automatic purchase order generation when stock < reorder level, goods receipt processing, stock transfer between warehouses, FIFO inventory valuation, ABC analysis (A: top 20% value, B: next 30%, C: remaining 50%), demand forecasting using moving averages, generate inventory valuation report and stock movement log. Import/export data from CSV files, handle all file and data exceptions. Capstone 6: Real Estate Management Platform Modules: Modules 4, 6, 7, 8, 9, 10 Build a real estate platform: Property listing management (residential/commercial/land) with nested dictionaries, property search with multiple filters (location, type, price range, area), EMI calculator for home loans with complete amortization schedule, rental management (rent tracking, lease agreements, maintenance requests), agent commission calculator (tiered: 2% first 50L, 1.5% next 50L, 1% above 1Cr + GST 18% + agent/broker split), property valuation using multiple models, generate property report and transaction history. Store all data in JSON files. Capstone 7: HR & Payroll Processing System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete HR and payroll system: Employee database management (personal info, department, designation, salary grade), attendance tracking with leave management (casual/sick/earned leave with carry-forward rules), salary calculation engine (basic + HRA 40% + DA 20% + TA + special allowances - PF 12% - ESI - professional tax - TDS based on income slab), performance review system with rating- based increment calculation, bonus calculation (festival bonus + performance bonus), generate payslip and Form 16 equivalent. Multi-file data management with proper exception handling. Capstone 8: Tournament Management System Modules: Modules 4, 5, 6, 7, 8 Build a complete sports tournament manager: Support multiple formats (round-robin, knockout, group stage + knockout), team registration with player roster management, fixture generation avoiding scheduling conflicts, match result entry and validation, points table calculation (wins: 3pts, draw: 1pt, loss: 0pts) with tiebreaker rules (goal difference, head-to-head), progression to knockout rounds based on standing, player statistics tracking (goals, assists, yellow/red cards), generate match schedule and standings table. Handle all edge cases (walkovers, abandoned matches, etc.). Capstone 9: Financial Portfolio Analyzer Modules: Modules 3, 5, 6, 8, 9, 10 Build a financial portfolio analyzer: Multi-asset portfolio management (stocks, bonds, gold, FD, mutual funds), historical price tracking with moving averages (10-day, 50-day, 200-day), portfolio performance metrics (absolute return, CAGR, Sharpe ratio concept), risk assessment (volatility, beta), tax calculation on gains (STCG 15% if < 1 year for equity, LTCG 10% on profit > ₹1L if >= 1 year), dividend tracking, rebalancing recommendations when allocation deviates from target, generate comprehensive portfolio report. Load/save portfolio data from JSON files. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 34 Capstone 10: Smart Restaurant System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete smart restaurant management system: Menu management with categories and dynamic pricing (happy hours -30%, peak hours +20%, weekend +15%, festival +25%), table booking system with time slot management (avoid conflicts using sets), order management per table (add items, modify, cancel), kitchen queue optimization (priority by order time and table priority), bill generation (food + GST 5% + service charge 10% + applicable discounts - loyalty points), split bill option, daily sales analytics (revenue, popular items, peak hours, table turnover), inventory depletion tracking per order. Full file-based data persistence. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 35 Total Questions: 374 Empowering Learners. Shaping Futures. Platform: Lumetrix — lumetrix.sidhi.xyz Parent Organisation: Sidhilynx — www.sidhi. xyz Contact: ceo@sidhi.xyz Edition: 1.0 | Academic Year 2025–26 Document Classification: Academic Internal — Confidential Total Questions: 374 | 10 Modules | 10 Capstones © 2026 Sidhilynx. All Rights Reserved. Unauthorized reproduction or distribution of this document is strictly prohibited.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-1",
+      "capstone_number": 1,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Complete Banking System Modules: Modules 2, 5, 6, 8, 9 Build a complete banking system that manages multiple account types (savings, current, fixed deposit)",
+      "modules_integrated": [],
+      "question": "Complete Banking System Modules: Modules 2, 5, 6, 8, 9 Build a complete banking system that manages multiple account types (savings, current, fixed deposit). Implement: customer registration with validation, deposit/withdrawal with daily limits, fund transfers between accounts, interest calculation (simple and compound), loan eligibility checker, EMI calculator, fraud detection (flag suspicious transactions), generate monthly statement. Use functions, loops, lists for account storage, dictionaries for transactions, file handling for persistence, and custom exceptions for error management.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-2",
+      "capstone_number": 2,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Student Management & Examination System Modules: Modules 2, 4, 5, 6, 7, 8 Build a complete student management system: Student registration with ID generation, course enrollment with prerequisite checking, attendance tracking (flag < 75%), marks entry for multiple subjects with validation (0-100), automated grade calculation (A+/A/B+/B/C/F), grace marks policy (failed by <=5 marks AND overall > 45%), result processing (Distinction/First Class/Second Class/Pass/Fail), generate formatted report cards, rank list generation, scholarship eligibility checker",
+      "modules_integrated": [],
+      "question": "Student Management & Examination System Modules: Modules 2, 4, 5, 6, 7, 8 Build a complete student management system: Student registration with ID generation, course enrollment with prerequisite checking, attendance tracking (flag < 75%), marks entry for multiple subjects with validation (0-100), automated grade calculation (A+/A/B+/B/C/F), grace marks policy (failed by <=5 marks AND overall > 45%), result processing (Distinction/First Class/Second Class/Pass/Fail), generate formatted report cards, rank list generation, scholarship eligibility checker. Use nested lists for data storage, functions for each module, file handling for data persistence.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-3",
+      "capstone_number": 3,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "E-Commerce Platform Modules: Modules 4, 5, 6, 7, 8, 9 Build a mini e-commerce platform: Product catalog management (add/remove/update products using dictionaries), shopping cart (add items, update quantity, remove), dynamic pricing engine (base price + demand factor + inventory factor + member discount), coupon code validation, checkout process (apply discounts → calculate tax → add shipping → final bill), inventory management with auto-reorder alerts, order history tracking, product recommendations based on purchase history using sets, generate itemized invoice",
+      "modules_integrated": [],
+      "question": "E-Commerce Platform Modules: Modules 4, 5, 6, 7, 8, 9 Build a mini e-commerce platform: Product catalog management (add/remove/update products using dictionaries), shopping cart (add items, update quantity, remove), dynamic pricing engine (base price + demand factor + inventory factor + member discount), coupon code validation, checkout process (apply discounts → calculate tax → add shipping → final bill), inventory management with auto-reorder alerts, order history tracking, product recommendations based on purchase history using sets, generate itemized invoice. Handle all edge cases with proper exception handling.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-4",
+      "capstone_number": 4,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Hospital Management System Modules: Modules 4, 5, 6, 8, 9, 10 Build a hospital management system: Patient registration with unique ID, appointment booking (check doctor availability, avoid conflicts using sets), queue management for different departments (emergency priority), doctor schedule management, prescription tracking with drug interaction checking (using tuple database), bed allocation system (2D list for floor/room), billing system (room charges + doctor fees + medicines + tests, insurance coverage), generate patient bill and discharge summary",
+      "modules_integrated": [],
+      "question": "Hospital Management System Modules: Modules 4, 5, 6, 8, 9, 10 Build a hospital management system: Patient registration with unique ID, appointment booking (check doctor availability, avoid conflicts using sets), queue management for different departments (emergency priority), doctor schedule management, prescription tracking with drug interaction checking (using tuple database), bed allocation system (2D list for floor/room), billing system (room charges + doctor fees + medicines + tests, insurance coverage), generate patient bill and discharge summary. Store data in files, use custom exceptions for medical errors. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 33",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-5",
+      "capstone_number": 5,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Inventory & Supply Chain System Modules: Modules 5, 6, 8, 9, 10 Build an inventory and supply chain management system: Multi-warehouse stock tracking (nested dictionaries with location: {product: quantity}), supplier management, automatic purchase order generation when stock < reorder level, goods receipt processing, stock transfer between warehouses, FIFO inventory valuation, ABC analysis (A: top 20% value, B: next 30%, C: remaining 50%), demand forecasting using moving averages, generate inventory valuation report and stock movement log",
+      "modules_integrated": [],
+      "question": "Inventory & Supply Chain System Modules: Modules 5, 6, 8, 9, 10 Build an inventory and supply chain management system: Multi-warehouse stock tracking (nested dictionaries with location: {product: quantity}), supplier management, automatic purchase order generation when stock < reorder level, goods receipt processing, stock transfer between warehouses, FIFO inventory valuation, ABC analysis (A: top 20% value, B: next 30%, C: remaining 50%), demand forecasting using moving averages, generate inventory valuation report and stock movement log. Import/export data from CSV files, handle all file and data exceptions.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-6",
+      "capstone_number": 6,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Real Estate Management Platform Modules: Modules 4, 6, 7, 8, 9, 10 Build a real estate platform: Property listing management (residential/commercial/land) with nested dictionaries, property search with multiple filters (location, type, price range, area), EMI calculator for home loans with complete amortization schedule, rental management (rent tracking, lease agreements, maintenance requests), agent commission calculator (tiered: 2% first 50L, 1",
+      "modules_integrated": [],
+      "question": "Real Estate Management Platform Modules: Modules 4, 6, 7, 8, 9, 10 Build a real estate platform: Property listing management (residential/commercial/land) with nested dictionaries, property search with multiple filters (location, type, price range, area), EMI calculator for home loans with complete amortization schedule, rental management (rent tracking, lease agreements, maintenance requests), agent commission calculator (tiered: 2% first 50L, 1.5% next 50L, 1% above 1Cr + GST 18% + agent/broker split), property valuation using multiple models, generate property report and transaction history. Store all data in JSON files.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-7",
+      "capstone_number": 7,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "HR & Payroll Processing System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete HR and payroll system: Employee database management (personal info, department, designation, salary grade), attendance tracking with leave management (casual/sick/earned leave with carry-forward rules), salary calculation engine (basic + HRA 40% + DA 20% + TA + special allowances - PF 12% - ESI - professional tax - TDS based on income slab), performance review system with rating- based increment calculation, bonus calculation (festival bonus + performance bonus), generate payslip and Form 16 equivalent",
+      "modules_integrated": [],
+      "question": "HR & Payroll Processing System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete HR and payroll system: Employee database management (personal info, department, designation, salary grade), attendance tracking with leave management (casual/sick/earned leave with carry-forward rules), salary calculation engine (basic + HRA 40% + DA 20% + TA + special allowances - PF 12% - ESI - professional tax - TDS based on income slab), performance review system with rating- based increment calculation, bonus calculation (festival bonus + performance bonus), generate payslip and Form 16 equivalent. Multi-file data management with proper exception handling.",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-8",
+      "capstone_number": 8,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Tournament Management System Modules: Modules 4, 5, 6, 7, 8 Build a complete sports tournament manager: Support multiple formats (round-robin, knockout, group stage + knockout), team registration with player roster management, fixture generation avoiding scheduling conflicts, match result entry and validation, points table calculation (wins: 3pts, draw: 1pt, loss: 0pts) with tiebreaker rules (goal difference, head-to-head), progression to knockout rounds based on standing, player statistics tracking (goals, assists, yellow/red cards), generate match schedule and standings table",
+      "modules_integrated": [],
+      "question": "Tournament Management System Modules: Modules 4, 5, 6, 7, 8 Build a complete sports tournament manager: Support multiple formats (round-robin, knockout, group stage + knockout), team registration with player roster management, fixture generation avoiding scheduling conflicts, match result entry and validation, points table calculation (wins: 3pts, draw: 1pt, loss: 0pts) with tiebreaker rules (goal difference, head-to-head), progression to knockout rounds based on standing, player statistics tracking (goals, assists, yellow/red cards), generate match schedule and standings table. Handle all edge cases (walkovers, abandoned matches, etc.).",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-9",
+      "capstone_number": 9,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Financial Portfolio Analyzer Modules: Modules 3, 5, 6, 8, 9, 10 Build a financial portfolio analyzer: Multi-asset portfolio management (stocks, bonds, gold, FD, mutual funds), historical price tracking with moving averages (10-day, 50-day, 200-day), portfolio performance metrics (absolute return, CAGR, Sharpe ratio concept), risk assessment (volatility, beta), tax calculation on gains (STCG 15% if < 1 year for equity, LTCG 10% on profit > ₹1L if >= 1 year), dividend tracking, rebalancing recommendations when allocation deviates from target, generate comprehensive portfolio report",
+      "modules_integrated": [],
+      "question": "Financial Portfolio Analyzer Modules: Modules 3, 5, 6, 8, 9, 10 Build a financial portfolio analyzer: Multi-asset portfolio management (stocks, bonds, gold, FD, mutual funds), historical price tracking with moving averages (10-day, 50-day, 200-day), portfolio performance metrics (absolute return, CAGR, Sharpe ratio concept), risk assessment (volatility, beta), tax calculation on gains (STCG 15% if < 1 year for equity, LTCG 10% on profit > ₹1L if >= 1 year), dividend tracking, rebalancing recommendations when allocation deviates from target, generate comprehensive portfolio report. Load/save portfolio data from JSON files. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 34",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    },
+    {
+      "id": "CAPSTONE-10",
+      "capstone_number": 10,
+      "module": 0,
+      "module_name": "Capstone Challenges",
+      "section": "Capstone",
+      "difficulty": "Capstone",
+      "title": "Smart Restaurant System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete smart restaurant management system: Menu management with categories and dynamic pricing (happy hours -30%, peak hours +20%, weekend +15%, festival +25%), table booking system with time slot management (avoid conflicts using sets), order management per table (add items, modify, cancel), kitchen queue optimization (priority by order time and table priority), bill generation (food + GST 5% + service charge 10% + applicable discounts - loyalty points), split bill option, daily sales analytics (revenue, popular items, peak hours, table turnover), inventory depletion tracking per order",
+      "modules_integrated": [],
+      "question": "Smart Restaurant System Modules: Modules 4, 5, 6, 8, 9, 10 Build a complete smart restaurant management system: Menu management with categories and dynamic pricing (happy hours -30%, peak hours +20%, weekend +15%, festival +25%), table booking system with time slot management (avoid conflicts using sets), order management per table (add items, modify, cancel), kitchen queue optimization (priority by order time and table priority), bill generation (food + GST 5% + service charge 10% + applicable discounts - loyalty points), split bill option, daily sales analytics (revenue, popular items, peak hours, table turnover), inventory depletion tracking per order. Full file-based data persistence. LUMETRIX | SIDHILYNX Python Programming — Question Bank © 2026 Sidhilynx | Lumetrix Platform | Confidential | Page 35",
+      "test_cases": {
+        "public": [],
+        "private": []
+      }
+    }
+  ]
+}
