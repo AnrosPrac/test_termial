@@ -840,3 +840,68 @@ async def get_session_status(
         "tab_switch_limit": session.get("tab_switch_limit"),
         "questions_accepted": session.get("questions_accepted", 0),
     }
+
+# ══════════════════════════════════════════════════════════════
+#  GENERAL INTERVIEWS — not tied to any course
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/general")
+async def list_general_interviews(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    List all general interviews (course_id: null).
+    Returns each interview with the student's attempt history
+    and whether they can attempt it.
+    """
+    interviews = await db.interviews.find(
+        {"course_id": None, "status": InterviewStatus.ACTIVE}
+    ).sort("created_at", -1).to_list(length=None)
+
+    result = []
+    for intv in interviews:
+        # Fetch student's past sessions for this interview
+        sessions = await db.interview_sessions.find(
+            {"interview_id": intv["interview_id"], "user_id": user_id}
+        ).sort("started_at", -1).to_list(length=10)
+
+        completed_sessions = [
+            s for s in sessions
+            if s["status"] in [
+                SessionStatus.COMPLETED,
+                SessionStatus.TERMINATED,
+                SessionStatus.TIMED_OUT
+            ]
+        ]
+
+        can_attempt = intv["retakeable"] or len(completed_sessions) == 0
+
+        result.append({
+            "interview_id":           intv["interview_id"],
+            "title":                  intv["title"],
+            "interview_type":         intv["interview_type"],
+            "question_count":         intv["question_count"],
+            "time_per_question_mins": intv["time_per_question"] // 60,
+            "is_pass_fail":           intv["is_pass_fail"],
+            "retakeable":             intv["retakeable"],
+            "tab_switch_limit":       intv["tab_switch_limit"],
+            "can_attempt":            can_attempt,
+            "total_attempts":         len(completed_sessions),
+            "attempts": [
+                {
+                    "session_id": s["session_id"],
+                    "status":     s["status"],
+                    "started_at": _iso(s.get("started_at")),
+                    "ended_at":   _iso(s.get("ended_at")),
+                    "passed":     s.get("passed"),
+                    "questions_accepted": s.get("questions_accepted", 0),
+                }
+                for s in sessions
+            ],
+        })
+
+    return {
+        "interviews": result,
+        "total":      len(result),
+    }
