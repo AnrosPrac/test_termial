@@ -106,7 +106,14 @@ async def judge_software(submission_id: str, code: str, language: str, test_case
                 json={
                     "language": language,
                     "sourceCode": code,
-                    "testcases": [{"input": tc["input"], "output": tc["output"]} for tc in test_cases]
+                    "testcases": [
+    {
+        "input": tc.get("input", ""),
+        "output": tc.get("output") or tc.get("expected_output", "")
+    }
+    for tc in test_cases
+    if tc.get("input") is not None
+]
                 },
                 headers={"X-API-Key": SOFTWARE_JUDGE_KEY},
                 timeout=30.0
