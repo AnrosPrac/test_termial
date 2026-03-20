@@ -207,7 +207,7 @@ class AssignmentScorecard(BaseModel):
     avg_attempts: float
     on_time_submissions: int
     late_submissions: int
-# Modify ClassroomCreate - ADD password and max_students
+# ClassroomCreate — password is MANDATORY (min 6 chars)
 class ClassroomCreate(BaseModel):
     name: str = Field(..., min_length=3, max_length=100)
     year: Optional[int] = None
@@ -215,21 +215,23 @@ class ClassroomCreate(BaseModel):
     join_mode: JoinMode = JoinMode.OPEN
     visibility: ClassroomVisibility = ClassroomVisibility.ACTIVE
     late_submission_policy: Optional[str] = None
-    join_password: Optional[str] = None  # ADDED
-    max_students: Optional[int] = None  # ADDED
+    join_password: str = Field(..., min_length=6, description="Password students must enter to join (mandatory)")
+    max_students: Optional[int] = None
 
     @validator('year')
     def validate_year(cls, v):
         if v and (v < 1 or v > 5):
             raise ValueError('Year must be between 1 and 5')
         return v
-    
+
     @validator('join_password')
     def validate_password(cls, v):
-        if v and len(v) < 6:
+        if not v or not v.strip():
+            raise ValueError('Password is required to create a classroom')
+        if len(v) < 6:
             raise ValueError('Password must be at least 6 characters')
         return v
-    
+
     @validator('max_students')
     def validate_max_students(cls, v):
         if v and v < 1:

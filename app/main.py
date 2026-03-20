@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from app.ai.quota_manager import get_user_quotas, get_user_history, log_cloud_push, get_cloud_history, create_order, get_user_orders
 from app.ai.bot_services import generate_bot_response
 from app.admin.router import router as admin_router
+from app.admin.superadmin_router import router as superadmin_router
 from app.admin.hardened_firebase_auth import init_auth
 from app.ai.training_router import router as training_router
 from app.ai.coding_practice import router as coding_router
@@ -172,6 +173,7 @@ app.include_router(community_router,prefix="/community")
 app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(admin_router,prefix="/admin")
+app.include_router(superadmin_router, prefix="/superadmin")
 app.include_router(stream_router)
 app.include_router(plag_router, prefix="/plagiarism")
 app.include_router(coding_router, prefix="/coding")

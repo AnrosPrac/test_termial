@@ -32,6 +32,7 @@ class SampleBulkCreate(BaseModel):
 class CourseType(str, Enum):
     OFFICIAL = "OFFICIAL"
     CREATOR = "CREATOR"
+    LAB = "LAB"  # Classroom-scoped lab course
 class SampleCreate(BaseModel):
     course_id: str
     chapter: int
@@ -75,6 +76,22 @@ class CourseCreate(BaseModel):
     thumbnail_url: Optional[str] = None
     tags: List[str] = []
     external_resources: List[Dict[str, str]] = []  # [{"title": "...", "url": "..."}]
+
+
+class LabCourseCreate(BaseModel):
+    """
+    Classroom-scoped Lab course.
+    - No certificates
+    - No sample questions
+    - Leaderboard scoped to the classroom only
+    - Enrollment restricted to classroom members
+    """
+    title: str
+    description: str
+    domain: CourseDomain
+    classroom_id: str          # which classroom this lab belongs to
+    thumbnail_url: Optional[str] = None
+    tags: List[str] = []
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None

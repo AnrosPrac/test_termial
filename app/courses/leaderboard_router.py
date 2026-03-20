@@ -258,7 +258,15 @@ async def course_leaderboard(
     limit: int = 50,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Get leaderboard for specific course"""
+    """Get leaderboard for specific course. Labs must use /lab/{course_id} instead."""
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if course.get("is_lab") or course.get("course_type") == "LAB":
+        raise HTTPException(
+            status_code=400,
+            detail="Lab courses have a classroom-scoped leaderboard. Use GET /leaderboard/lab/{course_id}"
+        )
     entries = await get_course_leaderboard(db, course_id, skip, limit)
     total = await db.course_enrollments.count_documents({"course_id": course_id, "is_active": True})
     
@@ -435,4 +443,105 @@ async def get_my_rank(
         "league": enrollment.get("current_league", "BRONZE"),
         "points": enrollment.get("league_points", 0),
         "solved": len(enrollment.get("solved_questions", []))
+    }
+
+
+@router.get("/lab/{course_id}")
+async def get_lab_leaderboard(
+    course_id: str,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Leaderboard for a LAB course — scoped strictly to the classroom.
+    Only students who are members of the classroom this lab belongs to appear here.
+    Student must be enrolled in the lab to view it.
+    """
+    # Verify the course is actually a lab
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if course.get("course_type") != "LAB":
+        raise HTTPException(status_code=400, detail="Use /course/{course_id} for non-lab leaderboards")
+
+    classroom_id = course.get("classroom_id")
+    if not classroom_id:
+        raise HTTPException(status_code=500, detail="Lab course has no associated classroom")
+
+    # Requester must be enrolled in this lab
+    enrollment = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id,
+        "is_active": True
+    })
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="You must be enrolled in this lab to view the leaderboard")
+
+    # Fetch all active classroom members
+    memberships = await db.classroom_memberships.find({
+        "classroom_id": classroom_id,
+        "is_active": True
+    }).to_list(length=None)
+    classroom_member_ids = {m["student_user_id"] for m in memberships}
+
+    # Pull enrollments for this lab, filtered to classroom members only
+    pipeline = [
+        {
+            "$match": {
+                "course_id": course_id,
+                "is_active": True,
+                "user_id": {"$in": list(classroom_member_ids)}
+            }
+        },
+        {
+            "$lookup": {
+                "from": "users_profile",
+                "localField": "user_id",
+                "foreignField": "user_id",
+                "as": "user"
+            }
+        },
+        {"$unwind": "$user"},
+        {
+            "$project": {
+                "_id": 0,
+                "user_id": 1,
+                "sidhi_id": {"$ifNull": ["$sidhi_id", ""]},
+                "username": {"$ifNull": ["$user.username", "Anonymous"]},
+                "college": "$user.college",
+                "league": "$current_league",
+                "total_points": {"$ifNull": ["$league_points", 0]},
+                "problems_solved": {
+                    "$size": {"$ifNull": ["$solved_questions", []]}
+                },
+                "avg_efficiency": {"$ifNull": ["$avg_efficiency", 0.0]}
+            }
+        },
+        {"$sort": {"total_points": -1, "problems_solved": -1}},
+        {"$skip": skip},
+        {"$limit": limit}
+    ]
+
+    entries = await db.course_enrollments.aggregate(pipeline).to_list(length=limit)
+
+    # Inject rank
+    for i, entry in enumerate(entries):
+        entry["rank"] = skip + i + 1
+
+    total = await db.course_enrollments.count_documents({
+        "course_id": course_id,
+        "is_active": True,
+        "user_id": {"$in": list(classroom_member_ids)}
+    })
+
+    return {
+        "scope": "classroom",
+        "classroom_id": classroom_id,
+        "course_id": course_id,
+        "entries": entries,
+        "total_users": total,
+        "page": skip // limit + 1,
+        "page_size": limit
     }

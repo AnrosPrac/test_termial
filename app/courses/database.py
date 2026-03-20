@@ -65,6 +65,46 @@ async def create_course(db: AsyncIOMotorDatabase, course_data: dict, creator_id:
     await db.courses.insert_one(course)
     return course_id
 
+async def create_lab_course(db: AsyncIOMotorDatabase, lab_data: dict, creator_id: str) -> str:
+    """
+    Create a LAB course scoped to a specific classroom.
+    Labs:
+      - No pricing / certificates
+      - No sample questions
+      - Leaderboard scoped to classroom members only
+      - Enrollment restricted to classroom members
+    """
+    course_id = f"LAB_{uuid.uuid4().hex[:12].upper()}"
+
+    lab = {
+        "course_id": course_id,
+        "title": lab_data["title"],
+        "description": lab_data["description"],
+        "course_type": CourseType.LAB,
+        "domain": lab_data["domain"],
+        "creator_id": creator_id,
+        "classroom_id": lab_data["classroom_id"],   # classroom scope
+        "status": CourseStatus.PUBLISHED,            # labs go live immediately
+        "thumbnail_url": lab_data.get("thumbnail_url"),
+        "tags": lab_data.get("tags", []),
+        "external_resources": [],
+        # LAB-specific flags
+        "is_lab": True,
+        "has_certificate": False,
+        "has_sample_questions": False,
+        "leaderboard_scope": "classroom",
+        "pricing": {"is_free": True, "pricing_set": True},
+        "purchase_stats": {"total_purchases": 0, "revenue_generated": 0},
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+        "published_at": datetime.utcnow(),
+        "stats": {"enrollments": 0, "completions": 0, "avg_rating": 0.0},
+    }
+
+    await db.courses.insert_one(lab)
+    return course_id
+
+
 async def get_course(db: AsyncIOMotorDatabase, course_id: str) -> Optional[dict]:
     """Get course by ID"""
     return await db.courses.find_one({"course_id": course_id})
@@ -201,6 +241,44 @@ async def enroll_user(db: AsyncIOMotorDatabase, course_id: str, user_id: str, si
     )
     
     return enrollment_id
+
+async def enroll_in_lab(db: AsyncIOMotorDatabase, course_id: str, user_id: str, sidhi_id: str) -> str:
+    """
+    Enroll a student in a LAB course.
+    Caller must already have verified classroom membership.
+    No certificate is generated.
+    """
+    existing = await db.course_enrollments.find_one({
+        "course_id": course_id,
+        "user_id": user_id
+    })
+    if existing:
+        return existing["enrollment_id"]
+
+    enrollment_id = f"ENR_{uuid.uuid4().hex[:12].upper()}"
+
+    enrollment = {
+        "enrollment_id": enrollment_id,
+        "course_id": course_id,
+        "user_id": user_id,
+        "sidhi_id": sidhi_id,
+        "certificate_id": None,          # no certificate for labs
+        "enrolled_at": datetime.utcnow(),
+        "progress": 0.0,
+        "current_league": LeagueTier.BRONZE,
+        "league_points": 0,
+        "solved_questions": [],
+        "is_active": True,
+        "is_lab_enrollment": True,
+    }
+
+    await db.course_enrollments.insert_one(enrollment)
+    await db.courses.update_one(
+        {"course_id": course_id},
+        {"$inc": {"stats.enrollments": 1}}
+    )
+    return enrollment_id
+
 
 async def get_enrollment(db: AsyncIOMotorDatabase, course_id: str, user_id: str) -> Optional[dict]:
     """Get user enrollment"""

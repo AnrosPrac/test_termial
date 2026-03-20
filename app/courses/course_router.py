@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
-from app.courses.models import CourseCreate, CourseUpdate, CoursePublish, ModuleCreate, QuestionCreate
+from app.courses.models import CourseCreate, CourseUpdate, CoursePublish, ModuleCreate, QuestionCreate, LabCourseCreate
 from app.courses.database import (
     create_course, get_course, update_course, publish_course, list_courses,
-    create_question, get_question
+    create_question, get_question, create_lab_course
 )
 import uuid
 from pydantic import BaseModel
@@ -196,6 +196,35 @@ async def create_course_endpoint(
             "success": True,
             "course_id": course_id,
             "message": "Course created successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/labs/create")
+async def create_lab_course_endpoint(
+    lab: LabCourseCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Create a LAB course scoped to a classroom.
+    Only the classroom's teacher can do this.
+    Labs are published immediately — no pricing/certificate setup needed.
+    """
+    # Verify the calling user is the teacher who owns this classroom
+    classroom = await db.classrooms.find_one({"classroom_id": lab.classroom_id})
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    if classroom["teacher_user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Only the classroom teacher can create labs for this classroom")
+
+    try:
+        course_id = await create_lab_course(db, lab.dict(), user_id)
+        return {
+            "success": True,
+            "course_id": course_id,
+            "message": "Lab course created and published successfully"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -551,6 +580,10 @@ async def bulk_upload_samples(
     if not course:
         raise HTTPException(404, "Course not found")
 
+    # LAB courses cannot have sample questions
+    if course.get("course_type") == "LAB" or course.get("is_lab"):
+        raise HTTPException(400, "Lab courses do not support sample questions")
+
     if course["creator_id"] != user_id:
         raise HTTPException(403, "Not authorized")
 
@@ -571,6 +604,10 @@ async def create_sample_endpoint(
     course = await db.courses.find_one({"course_id": sample.course_id})
     if not course:
         raise HTTPException(404, "Course not found")
+
+    # LAB courses cannot have sample questions
+    if course.get("course_type") == "LAB" or course.get("is_lab"):
+        raise HTTPException(400, "Lab courses do not support sample questions — only practice questions are allowed")
 
     # only creator can add samples
     if course["creator_id"] != user_id:
@@ -989,9 +1026,13 @@ async def get_student_course_dashboard(
     read_samples_count = len(sample_progress.get("read_samples", [])) if sample_progress else 0
     total_samples = await db.training_samples.count_documents({"course_id": course_id})
     
-    # 🔟 Check certificate eligibility
+    # 🔟 Check certificate eligibility — labs never get certificates
     current_league = enrollment.get("current_league", "BRONZE")
-    certificate_eligible = current_league in ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
+    is_lab = course.get("is_lab", False) or course.get("course_type") == "LAB"
+    if is_lab:
+        certificate_eligible = False
+    else:
+        certificate_eligible = current_league in ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
     
     # 📊 Build response
     return {

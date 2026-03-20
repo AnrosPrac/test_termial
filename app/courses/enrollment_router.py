@@ -17,7 +17,7 @@ from datetime import datetime
 from app.courses.models import EnrollmentCreate, EnrollmentResponse
 from app.courses.database import (
     enroll_user, get_enrollment, get_user_enrollments,
-    get_course, get_course_questions
+    get_course, get_course_questions, enroll_in_lab
 )
 from app.courses.dependencies import get_db, get_current_user_id, get_sidhi_id
 
@@ -179,6 +179,61 @@ async def enroll_endpoint(
         "certificate_id": f"CERT_{enrollment_id.split('_')[1]}",
         "message": "Enrolled successfully",
         "access_reason": access_check["access_reason"]
+    }
+
+
+@router.post("/enroll-lab")
+async def enroll_lab_endpoint(
+    enrollment: EnrollmentCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+    sidhi_id: str = Depends(get_sidhi_id)
+):
+    """
+    Enroll in a LAB course.
+    Student must already be a member of the classroom the lab belongs to.
+    No payment or certificate — classroom membership is the only gate.
+    """
+    course_id = enrollment.course_id
+
+    course = await get_course(db, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if course.get("course_type") != "LAB":
+        raise HTTPException(status_code=400, detail="Use /enroll for non-lab courses")
+
+    classroom_id = course.get("classroom_id")
+    if not classroom_id:
+        raise HTTPException(status_code=500, detail="Lab course has no associated classroom")
+
+    # SECURITY: Student must be an active member of this classroom
+    membership = await db.classroom_memberships.find_one({
+        "classroom_id": classroom_id,
+        "student_user_id": user_id,
+        "is_active": True
+    })
+    if not membership:
+        raise HTTPException(
+            status_code=403,
+            detail="You must be a member of this classroom to enroll in its lab"
+        )
+
+    existing = await get_enrollment(db, course_id, user_id)
+    if existing:
+        return {
+            "success": True,
+            "enrollment_id": existing["enrollment_id"],
+            "message": "Already enrolled in this lab",
+            "already_enrolled": True
+        }
+
+    enrollment_id = await enroll_in_lab(db, course_id, user_id, sidhi_id)
+    return {
+        "success": True,
+        "enrollment_id": enrollment_id,
+        "message": "Enrolled in lab successfully",
+        "note": "No certificate is issued for lab courses"
     }
 
 

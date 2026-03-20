@@ -450,6 +450,11 @@ async def get_certificate_data(certificate_id: str, db: AsyncIOMotorDatabase = D
 
     user_id     = enrollment["user_id"]
     course_id   = enrollment["course_id"]
+
+    # LAB courses never issue certificates
+    _cert_course = await db.courses.find_one({"course_id": course_id})
+    if _cert_course and (_cert_course.get("is_lab") or _cert_course.get("course_type") == "LAB"):
+        raise HTTPException(status_code=403, detail="Lab courses do not issue certificates")
     enrolled_at = enrollment["enrolled_at"]
     if not isinstance(enrolled_at, datetime):
         enrolled_at = datetime.fromisoformat(str(enrolled_at))
@@ -662,6 +667,16 @@ async def check_eligibility(course_id: str, db: AsyncIOMotorDatabase = Depends(g
     enrollment = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
     if not enrollment:
         raise HTTPException(status_code=404, detail="Not enrolled")
+    course          = await db.courses.find_one({"course_id": course_id})
+    # LAB courses never issue certificates
+    if course and (course.get("is_lab") or course.get("course_type") == "LAB"):
+        return {
+            "eligible": False,
+            "current_league": enrollment.get("current_league", "BRONZE"),
+            "certificate_id": None,
+            "course_title": course.get("title", "Unknown"),
+            "message": "Lab courses do not issue certificates"
+        }
     current_league  = enrollment.get("current_league", "BRONZE")
     ELIGIBLE        = ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
     is_eligible     = current_league in ELIGIBLE
@@ -684,6 +699,10 @@ async def download_certificate(course_id: str, db: AsyncIOMotorDatabase = Depend
     enrollment = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
     if not enrollment:
         raise HTTPException(status_code=404, detail="Not enrolled")
+    course   = await db.courses.find_one({"course_id": course_id})
+    # LAB courses never issue certificates
+    if course and (course.get("is_lab") or course.get("course_type") == "LAB"):
+        raise HTTPException(status_code=403, detail="Lab courses do not issue certificates")
     league = enrollment.get("current_league", "BRONZE")
     if league not in ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]:
         raise HTTPException(status_code=403, detail=f"Reach Silver league to download certificate. Current: {league}")
