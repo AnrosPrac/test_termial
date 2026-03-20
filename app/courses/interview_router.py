@@ -617,10 +617,23 @@ async def _finalize_session(db, session_id: str, reason: str) -> dict:
              SessionStatus.TIMED_OUT  if reason == "timeout"    else \
              SessionStatus.COMPLETED
 
-    # Build full report
+
+    # Build full report — field names must match frontend Report interface exactly
+    # Frontend expects: question_slots[], tab_switch_count, paste_count,
+    # integrity_events[], terminated_reason, status, interview_title, is_pass_fail
+
+    # Fetch interview title and is_pass_fail to embed in the report
+    interview_doc = await db.interviews.find_one({"interview_id": session.get("interview_id")})
+    interview_title = interview_doc.get("title", "") if interview_doc else ""
+    is_pass_fail = interview_doc.get("is_pass_fail", False) if interview_doc else False
+
     report = {
         "session_id":          session_id,
         "interview_type":      session["interview_type"],
+        "interview_title":     interview_title,
+        "is_pass_fail":        is_pass_fail,
+        "status":              status,
+        "course_id":           session.get("course_id"),
         "attempt_number":      session.get("attempt_number", 1),
         "started_at":          _iso(session.get("started_at")),
         "ended_at":            _iso(now),
@@ -630,9 +643,10 @@ async def _finalize_session(db, session_id: str, reason: str) -> dict:
         "total_questions":     total,
         "passed":              passed,
 
-        "per_question": [
+        # Frontend reads report.question_slots[].verdict / .index / .language etc
+        "question_slots": [
             {
-                "index":          s["index"] + 1,
+                "index":          s["index"],
                 "question_id":    s["question_id"],
                 "verdict":        s.get("verdict", QuestionVerdict.NOT_ATTEMPTED),
                 "time_taken_sec": s.get("time_taken_sec"),
@@ -647,6 +661,18 @@ async def _finalize_session(db, session_id: str, reason: str) -> dict:
             for s in slots
         ],
 
+        # Flat integrity fields — frontend reads these directly off the report object
+        "tab_switch_count":   tab_count,
+        "paste_count":        paste_count,
+        "terminated_reason":  session.get("terminated_reason") if reason != "completed" else None,
+
+        # Full events array so frontend can iterate
+        "integrity_events": [
+            {"event_type": e.get("event_type"), "timestamp": e.get("timestamp")}
+            for e in events
+        ],
+
+        # Nested integrity block kept for admin/superadmin views
         "integrity": {
             "tab_switch_count":  tab_count,
             "paste_count":       paste_count,
@@ -655,8 +681,6 @@ async def _finalize_session(db, session_id: str, reason: str) -> dict:
             "terminated_reason": session.get("terminated_reason"),
             "events_count":      len(events),
         },
-
-        "termination_reason": reason if reason != "completed" else None,
     }
 
     await db.interview_sessions.update_one(
