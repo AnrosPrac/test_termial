@@ -324,10 +324,11 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
         await db.course_submissions.update_one(
             {"submission_id": submission_id},
             {"$set": {
-                "is_first_solve": True,
-                "league_up":      league_result["league_up"],
-                "new_league":     league_result["new_league"],
-                "is_legend":      league_result["is_legend"],
+                "is_first_solve":   True,
+                "league_up":        league_result["league_up"],
+                "new_league":       league_result["new_league"],
+                "completion_ratio": league_result["completion_ratio"],
+                "is_legend":        league_result["is_legend"],
             }}
         )
 
@@ -368,8 +369,9 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
                 {"submission_id": submission_id},
                 {"$set": {
                     "league_points_awarded": delta,
-                    "league_up":  league_result["league_up"],
-                    "new_league": league_result["new_league"],
+                    "completion_ratio":      league_result["completion_ratio"],
+                    "league_up":             league_result["league_up"],
+                    "new_league":            league_result["new_league"],
                 }}
             )
         # If delta <= 0 (same or worse efficiency) — no points, no penalty
@@ -402,6 +404,103 @@ async def judge_code(submission_id: str, code: str, language: str, question: dic
         })
 
 # ==================== ENDPOINTS ====================
+
+@router.post("/run")
+async def run_code(
+    payload: dict,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Stateless code run — no submission record created.
+    Used by the practice editor and interview session editor.
+
+    Body:
+        code         str   — source code
+        language     str   — e.g. "python", "cpp"
+        custom_input str   — stdin to feed to the program (can be empty)
+        question_id  str?  — optional; if provided, runs against that question's
+                             sample test cases instead of custom_input
+
+    Returns judge result immediately (synchronous polling, 30s timeout).
+    """
+    code         = payload.get("code", "")
+    language     = payload.get("language", "python")
+    custom_input = payload.get("custom_input", "")
+    question_id  = payload.get("question_id")
+
+    if not code.strip():
+        return {"verdict": "No code provided", "stdout": "", "stderr": ""}
+
+    software_languages = ["c", "cpp", "python", "java", "javascript"]
+    hardware_languages = ["verilog", "vhdl", "systemverilog"]
+
+    if language in hardware_languages:
+        # Hardware run needs a full submission context — not supported as stateless
+        return {"verdict": "Run not supported for HDL. Use Submit.", "stdout": "", "stderr": ""}
+
+    if language not in software_languages:
+        return {"verdict": f"Unsupported language: {language}", "stdout": "", "stderr": ""}
+
+    # Build test cases list
+    test_cases = []
+    if question_id:
+        q = await db.course_questions.find_one({"question_id": question_id})
+        if q:
+            # Only run against sample (public) test cases
+            test_cases = [
+                {"input": tc.get("input", ""), "output": tc.get("output") or tc.get("expected_output", "")}
+                for tc in q.get("test_cases", [])
+                if tc.get("is_sample", False) and tc.get("input") is not None
+            ]
+
+    # Fall back to custom input if no sample test cases or no question_id
+    if not test_cases:
+        test_cases = [{"input": custom_input, "output": ""}]
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{SOFTWARE_JUDGE_URL}/judge",
+                json={
+                    "language":   language,
+                    "sourceCode": code,
+                    "testcases":  test_cases,
+                },
+                headers={"X-API-Key": SOFTWARE_JUDGE_KEY},
+                timeout=30.0,
+            )
+            if resp.status_code != 200:
+                return {"verdict": "Judge service unavailable", "stdout": "", "stderr": ""}
+
+            task_id = resp.json().get("task_id")
+
+            for _ in range(30):
+                await asyncio.sleep(1)
+                status_resp = await client.get(
+                    f"{SOFTWARE_JUDGE_URL}/status/{task_id}",
+                    headers={"X-API-Key": SOFTWARE_JUDGE_KEY},
+                    timeout=5.0,
+                )
+                if status_resp.status_code == 200:
+                    data = status_resp.json()
+                    if data.get("status") == "completed":
+                        result = data.get("result", {})
+                        return {
+                            "verdict":              result.get("verdict", "Unknown"),
+                            "passed":               result.get("passed", 0),
+                            "total":                result.get("total", len(test_cases)),
+                            "stdout":               result.get("stdout", ""),
+                            "stderr":               result.get("stderr", ""),
+                            "avg_execution_time_ms": result.get("avg_execution_time_ms"),
+                            "test_results":         result.get("test_results", []),
+                        }
+
+            return {"verdict": "Run timed out", "stdout": "", "stderr": ""}
+
+    except Exception as e:
+        return {"verdict": "System Error", "stdout": "", "stderr": str(e)}
+
 
 @router.post("/submit")
 async def submit_solution(
@@ -478,6 +577,8 @@ async def get_submission_status(
             "is_first_solve":        submission.get("is_first_solve"),
             "league_up":             submission.get("league_up", False),
             "new_league":            submission.get("new_league"),
+            "completion_ratio":      submission.get("completion_ratio"),   # new — % of course mastered
+            "completion_pct":        round((submission.get("completion_ratio") or 0) * 100, 1),
             "is_legend":             submission.get("is_legend", False),
             "efficiency_delta":      submission.get("efficiency_delta"),
             "breakdown":             submission.get("breakdown"),
