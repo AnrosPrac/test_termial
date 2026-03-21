@@ -81,18 +81,55 @@ INTERVIEW_CONFIG = {
     },
 }
 
-# Solved count gates per interview slot in a course
-# TEST_1 needs 25 solved, TEST_2 needs 50 ... PRE needs 175, FINAL needs 200
-UNLOCK_GATES = {
-    "TEST_1": 25,
-    "TEST_2": 50,
-    "TEST_3": 75,
-    "TEST_4": 100,
-    "TEST_5": 125,
-    "TEST_6": 150,
-    "PRE":    175,
-    "FINAL":  200,
+# ══════════════════════════════════════════════════════════════
+#  INTERVIEW UNLOCK GATES — percentage-based
+#
+#  Instead of hardcoded counts (25, 50, 75...) which break on
+#  small courses, each slot unlocks at a % of the course's
+#  total question count.
+#
+#  A 5-question course:  TEST_1 = 1q, TEST_6 = 4q, FINAL = 5q
+#  A 200-question course: TEST_1 = 24q, TEST_6 = 150q, FINAL = 190q
+#
+#  Always fair regardless of course size.
+# ══════════════════════════════════════════════════════════════
+
+UNLOCK_GATE_RATIOS = {
+    "TEST_1": 0.12,   # 12% — just getting started
+    "TEST_2": 0.25,   # 25% — quarter done
+    "TEST_3": 0.38,   # 38% — getting serious
+    "TEST_4": 0.50,   # 50% — halfway
+    "TEST_5": 0.62,   # 62% — past halfway
+    "TEST_6": 0.75,   # 75% — three quarters
+    "PRE":    0.85,   # 85% — nearly complete
+    "FINAL":  0.95,   # 95% — almost mastered
 }
+
+# Keep for backward compat and general (non-course) interviews
+# where there's no total_questions to reference
+UNLOCK_GATES_FALLBACK = {
+    "TEST_1": 5,
+    "TEST_2": 10,
+    "TEST_3": 15,
+    "TEST_4": 20,
+    "TEST_5": 25,
+    "TEST_6": 30,
+    "PRE":    35,
+    "FINAL":  40,
+}
+
+
+def compute_unlock_gate(slot: str, total_questions: int) -> int:
+    """
+    Compute the solved-count threshold to unlock a given interview slot.
+
+    Uses percentage of total_questions. Always at least 1.
+    Falls back to UNLOCK_GATES_FALLBACK if total_questions is 0.
+    """
+    if total_questions <= 0:
+        return UNLOCK_GATES_FALLBACK.get(slot, 0)
+    ratio = UNLOCK_GATE_RATIOS.get(slot, 0.0)
+    return max(1, round(total_questions * ratio))
 
 
 # ==================== REQUEST MODELS ====================
@@ -123,8 +160,8 @@ class InterviewCreate(BaseModel):
         course_id = values.get("course_id")
         if course_id and not v:
             raise ValueError("slot is required when interview is tied to a course")
-        if v and v not in UNLOCK_GATES:
-            raise ValueError(f"slot must be one of {list(UNLOCK_GATES.keys())}")
+        if v and v not in UNLOCK_GATE_RATIOS:
+            raise ValueError(f"slot must be one of {list(UNLOCK_GATE_RATIOS.keys())}")
         return v
 
 

@@ -21,7 +21,7 @@ from app.courses.dependencies import get_db, get_current_user_id
 from app.courses.interview_models import (
     InterviewType, InterviewStatus, SessionStatus,
     IntegrityEventType, QuestionVerdict,
-    INTERVIEW_CONFIG, UNLOCK_GATES,
+    INTERVIEW_CONFIG, UNLOCK_GATE_RATIOS, compute_unlock_gate,
     InterviewCreate, StartSessionRequest,
     SubmitQuestionRequest, IntegrityEventRequest,
 )
@@ -221,6 +221,11 @@ async def list_course_interviews(
 
     solved_count = len(enrollment.get("solved_questions", []))
 
+    # Total questions in the course — needed for percentage-based gates
+    total_questions = await db.course_questions.count_documents({
+        "course_id": course_id, "is_active": True
+    })
+
     interviews = await db.interviews.find(
         {"course_id": course_id, "status": InterviewStatus.ACTIVE}
     ).sort("slot", 1).to_list(length=None)
@@ -228,7 +233,7 @@ async def list_course_interviews(
     result = []
     for intv in interviews:
         slot         = intv.get("slot")
-        required     = UNLOCK_GATES.get(slot, 0) if slot else 0
+        required     = compute_unlock_gate(slot, total_questions) if slot else 0
         unlocked     = solved_count >= required
 
         # Check prerequisite chain
@@ -328,9 +333,12 @@ async def start_session(
         if not enrollment:
             raise HTTPException(status_code=403, detail="Not enrolled in this course")
 
-        solved_count = len(enrollment.get("solved_questions", []))
-        slot         = interview.get("slot")
-        required     = UNLOCK_GATES.get(slot, 0)
+        solved_count    = len(enrollment.get("solved_questions", []))
+        slot            = interview.get("slot")
+        total_questions = await db.course_questions.count_documents({
+            "course_id": course_id, "is_active": True
+        })
+        required = compute_unlock_gate(slot, total_questions) if slot else 0
 
         if solved_count < required:
             raise HTTPException(
