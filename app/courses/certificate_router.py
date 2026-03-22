@@ -322,6 +322,7 @@ async def get_solved_solutions(db, user_id: str, course_id: str, solved_question
     For each solved question, fetch:
     - question metadata (title, difficulty, language)
     - the student's BEST accepted submission code (highest league_points_awarded)
+    - integrity status for that submission
 
     Used in certificate to show a portfolio of the student's actual solutions.
     """
@@ -353,16 +354,31 @@ async def get_solved_solutions(db, user_id: str, course_id: str, solved_question
         if not best_sub:
             continue
 
+        # Fetch integrity record for this specific submission
+        integrity = await db.practice_integrity.find_one(
+            {"submission_id": best_sub.get("submission_id")},
+            {"_id": 0, "status": 1, "suspicion_score": 1, "flagged": 1,
+             "paste_attempts": 1, "tab_switches": 1, "breakdown": 1}
+        )
+
         solutions.append({
-            "question_id":         qid,
-            "title":               question.get("title", ""),
-            "difficulty":          question.get("difficulty", ""),
-            "language":            best_sub.get("language", question.get("language", "")),
-            "code":                best_sub.get("code", ""),
-            "league_points_earned": best_sub.get("league_points_awarded", 0),
+            "question_id":           qid,
+            "title":                 question.get("title", ""),
+            "difficulty":            question.get("difficulty", ""),
+            "language":              best_sub.get("language", question.get("language", "")),
+            "code":                  best_sub.get("code", ""),
+            "league_points_earned":  best_sub.get("league_points_awarded", 0),
             "efficiency_multiplier": best_sub.get("efficiency_multiplier", 1.0),
             "avg_execution_time_ms": best_sub.get("result", {}).get("avg_execution_time_ms"),
-            "solved_at":           _iso(best_sub.get("submitted_at")),
+            "solved_at":             _iso(best_sub.get("submitted_at")),
+            # Integrity per question
+            "integrity": {
+                "status":          integrity.get("status", "UNVERIFIED") if integrity else "UNVERIFIED",
+                "suspicion_score": integrity.get("suspicion_score", 0) if integrity else 0,
+                "flagged":         integrity.get("flagged", False) if integrity else False,
+                "paste_attempts":  integrity.get("paste_attempts", 0) if integrity else 0,
+                "tab_switches":    integrity.get("tab_switches", 0) if integrity else 0,
+            }
         })
 
     # Sort: hard first, then medium, then easy — most impressive on top
@@ -370,6 +386,69 @@ async def get_solved_solutions(db, user_id: str, course_id: str, solved_question
     solutions.sort(key=lambda x: diff_order.get(x["difficulty"], 3))
 
     return solutions
+
+
+async def get_integrity_summary(db, user_id: str, course_id: str) -> Dict:
+    """
+    Overall integrity summary for the certificate.
+    Gives recruiter a trust score across all submissions in the course.
+    """
+    records = await db.practice_integrity.find(
+        {"user_id": user_id, "course_id": course_id},
+        {"_id": 0, "status": 1, "suspicion_score": 1, "flagged": 1}
+    ).to_list(length=None)
+
+    if not records:
+        return {
+            "verified":        False,
+            "message":         "Integrity data not yet available",
+            "total_checked":   0,
+            "clean":           0,
+            "suspicious":      0,
+            "compromised":     0,
+            "clean_pct":       0,
+            "trust_score":     0,
+            "trust_label":     "Unverified",
+            "trust_color":     "gray",
+        }
+
+    total       = len(records)
+    clean       = sum(1 for r in records if r.get("status") == "CLEAN")
+    suspicious  = sum(1 for r in records if r.get("status") == "SUSPICIOUS")
+    compromised = sum(1 for r in records if r.get("status") == "COMPROMISED")
+    clean_pct   = round((clean / total) * 100, 1) if total > 0 else 0
+
+    # Trust score: weighted — CLEAN=100, SUSPICIOUS=40, COMPROMISED=0
+    trust_score = round(
+        ((clean * 100) + (suspicious * 40) + (compromised * 0)) / total
+    ) if total > 0 else 0
+
+    if trust_score >= 90:
+        trust_label, trust_color = "Excellent", "green"
+    elif trust_score >= 70:
+        trust_label, trust_color = "Good", "blue"
+    elif trust_score >= 50:
+        trust_label, trust_color = "Fair", "yellow"
+    else:
+        trust_label, trust_color = "Poor", "red"
+
+    return {
+        "verified":      True,
+        "total_checked": total,
+        "clean":         clean,
+        "suspicious":    suspicious,
+        "compromised":   compromised,
+        "clean_pct":     clean_pct,
+        "trust_score":   trust_score,     # 0–100 — the headline number for recruiters
+        "trust_label":   trust_label,     # "Excellent", "Good", "Fair", "Poor"
+        "trust_color":   trust_color,     # for frontend badge coloring
+        "message": (
+            f"{clean_pct}% of submissions verified clean — "
+            f"{compromised} flagged for integrity concerns"
+            if compromised > 0
+            else f"All {total} submissions verified clean"
+        )
+    }
 
 
 async def get_consistency_score(daily_activity: List[Dict], enrolled_days: int) -> Dict:
@@ -508,6 +587,7 @@ async def get_certificate_data(certificate_id: str, db: AsyncIOMotorDatabase = D
     rank_ctx        = await get_rank_context(db, user_id, course_id, league_points, college, department)
     timeline        = await get_timeline_events(db, user_id, course_id, enrolled_at, league_points, current_league)
     solved_solutions = await get_solved_solutions(db, user_id, course_id, solved_questions)
+    integrity_summary = await get_integrity_summary(db, user_id, course_id)
 
     # ── 7. Consistency ───────────────────────────────────────────
     enrolled_days = (datetime.utcnow() - enrolled_at).days + 1
@@ -629,8 +709,13 @@ async def get_certificate_data(certificate_id: str, db: AsyncIOMotorDatabase = D
 
         # ── THEIR ACTUAL SOLUTIONS (portfolio) ───────────────────
         # Best accepted code per solved question, sorted hard → easy
-        # Each entry: question title, difficulty, language, code, efficiency
+        # Each entry: question title, difficulty, language, code, efficiency, integrity
         "solved_solutions": solved_solutions,
+
+        # ── INTEGRITY REPORT ─────────────────────────────────────
+        # Trust score for recruiters — verified clean % across all submissions
+        # Each solution also carries its own integrity.status field
+        "integrity": integrity_summary,
     }
 
 

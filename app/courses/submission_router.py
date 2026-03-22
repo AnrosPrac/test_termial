@@ -298,9 +298,40 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
         # No further action for wrong answers
         return
 
-    user_id   = submission["user_id"]
-    course_id = submission["course_id"]
+    user_id     = submission["user_id"]
+    course_id   = submission["course_id"]
     question_id = submission["question_id"]
+
+    # ── INTEGRITY CHECK — zero points if COMPROMISED ─────────────────────
+    # Non-blocking: if integrity collection is empty (report not yet saved), allow normally.
+    # The integrity report is saved async AFTER submit, so there may be a tiny race window.
+    # We use a 2-second grace lookup — if not found, we trust the submission.
+    integrity_record = await db.practice_integrity.find_one(
+        {"submission_id": submission_id}
+    )
+    integrity_compromised = (
+        integrity_record is not None and
+        integrity_record.get("status") == "COMPROMISED"
+    )
+
+    if integrity_compromised:
+        # Code is Accepted but integrity is COMPROMISED — zero points, mark why
+        await db.course_submissions.update_one(
+            {"submission_id": submission_id},
+            {"$set": {
+                "league_points_awarded": 0,
+                "integrity_status":      "COMPROMISED",
+                "integrity_zeroed":      True,
+                "integrity_reason":      "Suspicious activity detected — points withheld",
+            }}
+        )
+        # Still mark as solved (they solved it) but award 0 points
+        enrollment = await get_enrollment(db, course_id, user_id)
+        if enrollment:
+            already_solved = question_id in enrollment.get("solved_questions", [])
+            if not already_solved:
+                await mark_question_solved(db, course_id, user_id, question_id)
+        return  # ← exit here, no league points awarded
 
     enrollment = await get_enrollment(db, course_id, user_id)
     if not enrollment:
@@ -577,7 +608,7 @@ async def get_submission_status(
             "is_first_solve":        submission.get("is_first_solve"),
             "league_up":             submission.get("league_up", False),
             "new_league":            submission.get("new_league"),
-            "completion_ratio":      submission.get("completion_ratio"),   # new — % of course mastered
+            "completion_ratio":      submission.get("completion_ratio"),
             "completion_pct":        round((submission.get("completion_ratio") or 0) * 100, 1),
             "is_legend":             submission.get("is_legend", False),
             "efficiency_delta":      submission.get("efficiency_delta"),
@@ -589,6 +620,10 @@ async def get_submission_status(
             "avg_execution_time_ms": result.get("avg_execution_time_ms"),
             "max_execution_time_ms": result.get("max_execution_time_ms"),
             "avg_memory_mb":         result.get("avg_memory_mb"),
+            # ── error details — shown on Compilation Error / Runtime Error ──
+            "error":                 result.get("error") or result.get("stderr") or result.get("error_message"),
+            "stderr":                result.get("stderr", ""),
+            "stdout":                result.get("stdout", ""),
         })
 
     return response
