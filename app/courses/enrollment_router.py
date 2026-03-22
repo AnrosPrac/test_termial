@@ -333,12 +333,13 @@ async def get_available_questions(
             )
     
     questions = await get_course_questions(db, course_id, user_id)
-    
+    solved_ids = enrollment.get("solved_questions", [])
+
     return {
-        "course_id": course_id,
-        "questions": questions,
-        "count": len(questions),
-        "solved_count": len(enrollment.get("solved_questions", []))
+        "course_id":   course_id,
+        "questions":   questions,           # ALL 50 — each has is_solved: true/false
+        "count":       len(questions),      # always 50
+        "solved_count": len(solved_ids),    # how many solved
     }
 
 

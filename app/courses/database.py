@@ -362,24 +362,28 @@ async def get_question(db: AsyncIOMotorDatabase, question_id: str) -> Optional[d
     return await db.course_questions.find_one({"question_id": question_id})
 
 async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id: str) -> List[dict]:
-    """Get questions for course (excluding solved ones)"""
-    # Get solved questions
+    """Get ALL questions for course with is_solved flag per question"""
     enrollment = await get_enrollment(db, course_id, user_id)
-    solved_ids = enrollment.get("solved_questions", []) if enrollment else []
-    
-    # Get unsolved questions
-    cursor = db.course_questions.find({
-        "course_id": course_id,
-        "question_id": {"$nin": solved_ids},
-        "is_active": True
-    }).sort("difficulty", 1)
-    
+    solved_ids = set(enrollment.get("solved_questions", [])) if enrollment else set()
+
+    # Fetch ALL active questions — no filtering
+    cursor = db.course_questions.find(
+        {"course_id": course_id, "is_active": True}
+    ).sort("difficulty", 1)
+
     questions = await cursor.to_list(length=None)
 
-    # Remove test case outputs (only show inputs)
     for q in questions:
+        # Mark solved status per question
+        q["is_solved"] = q.get("question_id") in solved_ids
+
+        # Remove private test case outputs — only show sample inputs
         if "test_cases" in q:
             for tc in q["test_cases"]:
+                if not tc.get("is_sample", False):
+                    tc.pop("output", None)
+        if "testcases" in q:
+            for tc in q["testcases"]:
                 if not tc.get("is_sample", False):
                     tc.pop("output", None)
 
