@@ -141,7 +141,16 @@ async def judge_software(submission_id: str, code: str, language: str, test_case
                 
                 if status_response.status_code == 200:
                     status_data = status_response.json()
-                    
+
+                    # Handle failed status — don't keep polling after a crash
+                    if status_data.get("status") == "failed":
+                        result = status_data.get("result", {})
+                        await update_submission_result(db, submission_id, {
+                            "verdict": result.get("verdict", "System Error"),
+                            "error":   result.get("error", "Judge task failed unexpectedly"),
+                        })
+                        return
+
                     if status_data.get("status") == "completed":
                         result = status_data.get("result", {})
                         await process_result(db, submission_id, result)
@@ -356,10 +365,10 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
             {"submission_id": submission_id},
             {"$set": {
                 "is_first_solve":   True,
-                "league_up":        league_result["league_up"],
-                "new_league":       league_result["new_league"],
-                "completion_ratio": league_result["completion_ratio"],
-                "is_legend":        league_result["is_legend"],
+                "league_up":        league_result.get("league_up", False),
+                "new_league":       league_result.get("new_league", "BRONZE"),
+                "completion_ratio": league_result.get("completion_ratio", 0.0),
+                "is_legend":        league_result.get("is_legend", False),
             }}
         )
 
@@ -400,9 +409,9 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
                 {"submission_id": submission_id},
                 {"$set": {
                     "league_points_awarded": delta,
-                    "completion_ratio":      league_result["completion_ratio"],
-                    "league_up":             league_result["league_up"],
-                    "new_league":            league_result["new_league"],
+                    "completion_ratio":      league_result.get("completion_ratio", 0.0),
+                    "league_up":             league_result.get("league_up", False),
+                    "new_league":            league_result.get("new_league", "BRONZE"),
                 }}
             )
         # If delta <= 0 (same or worse efficiency) — no points, no penalty
@@ -463,25 +472,25 @@ async def run_code(
     if not code.strip():
         return {"verdict": "No code provided", "stdout": "", "stderr": ""}
 
-    software_languages = ["c", "cpp", "python", "java", "javascript"]
+    # Fix 4: judge only supports c, cpp, python — java/javascript not supported yet
+    judge_languages  = ["c", "cpp", "python"]
     hardware_languages = ["verilog", "vhdl", "systemverilog"]
 
     if language in hardware_languages:
-        # Hardware run needs a full submission context — not supported as stateless
         return {"verdict": "Run not supported for HDL. Use Submit.", "stdout": "", "stderr": ""}
 
-    if language not in software_languages:
-        return {"verdict": f"Unsupported language: {language}", "stdout": "", "stderr": ""}
+    if language not in judge_languages:
+        return {"verdict": f"Language '{language}' is not supported by the judge yet.", "stdout": "", "stderr": ""}
 
-    # Build test cases list
+    # Fix 5: correct field name — DB stores as "testcases" not "test_cases"
     test_cases = []
     if question_id:
         q = await db.course_questions.find_one({"question_id": question_id})
         if q:
-            # Only run against sample (public) test cases
+            raw_cases = q.get("testcases") or q.get("test_cases") or []
             test_cases = [
                 {"input": tc.get("input", ""), "output": tc.get("output") or tc.get("expected_output", "")}
-                for tc in q.get("test_cases", [])
+                for tc in raw_cases
                 if tc.get("is_sample", False) and tc.get("input") is not None
             ]
 
@@ -502,7 +511,13 @@ async def run_code(
                 timeout=30.0,
             )
             if resp.status_code != 200:
-                return {"verdict": "Judge service unavailable", "stdout": "", "stderr": ""}
+                # Try to extract detail from judge's error response
+                try:
+                    err_body = resp.json()
+                    err_detail = err_body.get("detail") or err_body.get("error") or str(err_body)
+                except Exception:
+                    err_detail = f"HTTP {resp.status_code}"
+                return {"verdict": "Judge service unavailable", "stdout": "", "stderr": err_detail}
 
             task_id = resp.json().get("task_id")
 
@@ -515,19 +530,51 @@ async def run_code(
                 )
                 if status_resp.status_code == 200:
                     data = status_resp.json()
-                    if data.get("status") == "completed":
+
+                    # Fix 3: handle "failed" status — don't keep polling forever
+                    if data.get("status") == "failed":
                         result = data.get("result", {})
                         return {
-                            "verdict":              result.get("verdict", "Unknown"),
-                            "passed":               result.get("passed", 0),
-                            "total":                result.get("total", len(test_cases)),
-                            "stdout":               result.get("stdout", ""),
-                            "stderr":               result.get("stderr", ""),
-                            "avg_execution_time_ms": result.get("avg_execution_time_ms"),
-                            "test_results":         result.get("test_results", []),
+                            "verdict": result.get("verdict", "System Error"),
+                            "passed":  0,
+                            "total":   len(test_cases),
+                            "stdout":  "",
+                            "stderr":  result.get("error", "Judge task failed"),
+                            "avg_execution_time_ms": None,
+                            "test_results": [],
                         }
 
-            return {"verdict": "Run timed out", "stdout": "", "stderr": ""}
+                    if data.get("status") == "completed":
+                        result = data.get("result", {})
+
+                        # Fix 1: judge returns "error" not "stdout"/"stderr"
+                        # - compilation error → result["error"]
+                        # - runtime error    → result["test_results"][n]["error"]
+                        # - output           → result["test_results"][n]["output"]
+
+                        # Get error message: compilation errors live at top level
+                        top_error = result.get("error") or ""
+
+                        # Get stdout from first test case that has output
+                        stdout_out = ""
+                        stderr_out = top_error
+                        for tr in result.get("test_results", []):
+                            if tr.get("output"):
+                                stdout_out = tr["output"]
+                            if tr.get("error") and not stderr_out:
+                                stderr_out = tr["error"]
+
+                        return {
+                            "verdict":               result.get("verdict", "Unknown"),
+                            "passed":                result.get("passed", 0),
+                            "total":                 result.get("total", len(test_cases)),
+                            "stdout":                stdout_out,
+                            "stderr":                stderr_out,
+                            "avg_execution_time_ms": result.get("avg_execution_time_ms"),
+                            "test_results":          result.get("test_results", []),
+                        }
+
+            return {"verdict": "Run timed out", "stdout": "", "stderr": "Judge did not respond in time."}
 
     except Exception as e:
         return {"verdict": "System Error", "stdout": "", "stderr": str(e)}

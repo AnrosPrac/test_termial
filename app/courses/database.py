@@ -206,41 +206,42 @@ async def list_courses(db: AsyncIOMotorDatabase, filters: dict, skip: int = 0, l
 # ==================== ENROLLMENT CRUD ====================
 
 async def enroll_user(db: AsyncIOMotorDatabase, course_id: str, user_id: str, sidhi_id: str) -> str:
-    """Enroll user in course"""
-    # Check if already enrolled
-    existing = await db.course_enrollments.find_one({
-        "course_id": course_id,
-        "user_id": user_id
-    })
+    """Enroll user in course — snapshots current max_possible_points for ratio-based league."""
+    existing = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
     if existing:
         return existing["enrollment_id"]
-    
-    enrollment_id = f"ENR_{uuid.uuid4().hex[:12].upper()}"
+
+    enrollment_id  = f"ENR_{uuid.uuid4().hex[:12].upper()}"
     certificate_id = f"CERT_{uuid.uuid4().hex[:12].upper()}"
-    
+
+    # Snapshot max_possible_points (compute and cache if not already on course doc)
+    course = await db.courses.find_one({"course_id": course_id})
+    max_possible = course.get("max_possible_points") if course else None
+    if not max_possible:
+        max_possible = await refresh_course_max_possible(db, course_id)
+
     enrollment = {
-        "enrollment_id": enrollment_id,
-        "course_id": course_id,
-        "user_id": user_id,
-        "sidhi_id": sidhi_id,
-        "certificate_id": certificate_id,
-        "enrolled_at": datetime.utcnow(),
-        "progress": 0.0,
-        "current_league": LeagueTier.BRONZE,
-        "league_points": 0,
-        "solved_questions": [],
-        "is_active": True
+        "enrollment_id":       enrollment_id,
+        "course_id":           course_id,
+        "user_id":             user_id,
+        "sidhi_id":            sidhi_id,
+        "certificate_id":      certificate_id,
+        "enrolled_at":         datetime.utcnow(),
+        "progress":            0.0,
+        "current_league":      LeagueTier.BRONZE,
+        "league_points":       0,           # earned pts (difficulty-weighted × efficiency)
+        "max_possible_points": max_possible, # snapshot — never changes for this student
+        "completion_ratio":    0.0,          # league_points / max_possible_points
+        "efficiency_score":    1.0,          # rolling avg efficiency (display, not league gate)
+        "avg_efficiency":      1.0,          # alias for backward compat
+        "solved_questions":    [],
+        "is_active":           True,
     }
-    
+
     await db.course_enrollments.insert_one(enrollment)
-    
-    # Increment course enrollment count
-    await db.courses.update_one(
-        {"course_id": course_id},
-        {"$inc": {"stats.enrollments": 1}}
-    )
-    
+    await db.courses.update_one({"course_id": course_id}, {"$inc": {"stats.enrollments": 1}})
     return enrollment_id
+
 
 async def enroll_in_lab(db: AsyncIOMotorDatabase, course_id: str, user_id: str, sidhi_id: str) -> str:
     """
@@ -248,35 +249,38 @@ async def enroll_in_lab(db: AsyncIOMotorDatabase, course_id: str, user_id: str, 
     Caller must already have verified classroom membership.
     No certificate is generated.
     """
-    existing = await db.course_enrollments.find_one({
-        "course_id": course_id,
-        "user_id": user_id
-    })
+    existing = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
     if existing:
         return existing["enrollment_id"]
 
     enrollment_id = f"ENR_{uuid.uuid4().hex[:12].upper()}"
 
+    course = await db.courses.find_one({"course_id": course_id})
+    max_possible = course.get("max_possible_points") if course else None
+    if not max_possible:
+        max_possible = await refresh_course_max_possible(db, course_id)
+
     enrollment = {
-        "enrollment_id": enrollment_id,
-        "course_id": course_id,
-        "user_id": user_id,
-        "sidhi_id": sidhi_id,
-        "certificate_id": None,          # no certificate for labs
-        "enrolled_at": datetime.utcnow(),
-        "progress": 0.0,
-        "current_league": LeagueTier.BRONZE,
-        "league_points": 0,
-        "solved_questions": [],
-        "is_active": True,
-        "is_lab_enrollment": True,
+        "enrollment_id":       enrollment_id,
+        "course_id":           course_id,
+        "user_id":             user_id,
+        "sidhi_id":            sidhi_id,
+        "certificate_id":      None,           # no certificate for labs
+        "enrolled_at":         datetime.utcnow(),
+        "progress":            0.0,
+        "current_league":      LeagueTier.BRONZE,
+        "league_points":       0,
+        "max_possible_points": max_possible,
+        "completion_ratio":    0.0,
+        "efficiency_score":    1.0,
+        "avg_efficiency":      1.0,
+        "solved_questions":    [],
+        "is_active":           True,
+        "is_lab_enrollment":   True,
     }
 
     await db.course_enrollments.insert_one(enrollment)
-    await db.courses.update_one(
-        {"course_id": course_id},
-        {"$inc": {"stats.enrollments": 1}}
-    )
+    await db.courses.update_one({"course_id": course_id}, {"$inc": {"stats.enrollments": 1}})
     return enrollment_id
 
 
@@ -486,59 +490,103 @@ async def mark_question_solved(db: AsyncIOMotorDatabase, course_id: str, user_id
 
 # ==================== LEAGUE OPERATIONS ====================
 
-# ── Points per difficulty ─────────────────────────────────────────────────────
-# ~300 questions assumed: 150 easy / 100 medium / 50 hard
-# Max possible = 150×100 + 100×250 + 50×500 = 65,000 pts
+# ══════════════════════════════════════════════════════════════════
+#  GRADING SYSTEM v2 — Percentage-based league
 #
-# League thresholds are set so:
-#   SILVER  ≈ solving ~4-5 easy problems   → very achievable, feels great
-#   GOLD    ≈ ~15 easy OR ~8 medium
-#   PLATINUM≈ solid easy+medium mix
-#   DIAMOND ≈ needs hard problems
-#   MYTHIC  ≈ serious grinder
-#   LEGEND  ≈ ~92% of max — true mastery
+#  Core idea: league reflects mastery depth, not raw points.
+#  Two courses of wildly different sizes produce the same fair league.
+#
+#  How it works:
+#    1. Each question has a weight: easy=100, medium=250, hard=500
+#    2. The course stores max_possible_points = sum of all question weights
+#    3. A student's completion_ratio = earned_points / max_possible_points
+#    4. League tier is determined by completion_ratio (a percentage)
+#    5. Efficiency multiplier affects earned_points (up to +20% bonus)
+#       but NEVER blocks league progression — it's a quality signal
+#
+#  League thresholds (completion %):
+#    BRONZE   0%  — just enrolled
+#    SILVER   8%  — getting started
+#    GOLD    20%  — solid foundation
+#    PLATINUM 40%  — halfway through the hard stuff
+#    DIAMOND  60%  — strong across all difficulties
+#    MYTHIC   78%  — near mastery
+#    LEGEND   90%  — true mastery (90% not 95% — some questions may be
+#                    optional, hardware-specific, or edge-case obscure)
+#
+#  Re-submission: earning more efficiency on an already-solved question
+#  awards only the DELTA. This keeps improvement meaningful.
+#
+#  max_possible_points is recalculated when questions are added/deleted
+#  so existing students are never demoted by course expansions.
+# ══════════════════════════════════════════════════════════════════
 
 DIFFICULTY_BASE_POINTS = {
     "easy":   100,
     "medium": 250,
     "hard":   500,
 }
-DEFAULT_BASE_POINTS = 100  # fallback if difficulty unknown
+DEFAULT_BASE_POINTS = 100
 
-LEAGUE_THRESHOLDS = {
-    LeagueTier.BRONZE:   0,
-    LeagueTier.SILVER:   2_000,
-    LeagueTier.GOLD:     6_000,
-    LeagueTier.PLATINUM: 14_000,
-    LeagueTier.DIAMOND:  26_000,
-    LeagueTier.MYTHIC:   42_000,
-    LeagueTier.LEGEND:   60_000,
+# Percentage thresholds (0.0 – 1.0) for each league tier
+LEAGUE_RATIO_THRESHOLDS = {
+    LeagueTier.BRONZE:   0.00,
+    LeagueTier.SILVER:   0.08,
+    LeagueTier.GOLD:     0.20,
+    LeagueTier.PLATINUM: 0.40,
+    LeagueTier.DIAMOND:  0.60,
+    LeagueTier.MYTHIC:   0.78,
+    LeagueTier.LEGEND:   0.90,
 }
 
-# Expose as plain dict for routers that need it (certificate page, frontend)
-LEAGUE_THRESHOLDS_PLAIN = {k.value: v for k, v in LEAGUE_THRESHOLDS.items()}
+# Expose for frontend (plain dicts, as % integers for readability)
+LEAGUE_THRESHOLDS_PLAIN = {k.value: round(v * 100) for k, v in LEAGUE_RATIO_THRESHOLDS.items()}
 LEAGUE_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
 
 
 def get_base_points_for_question(question: dict) -> int:
     """
-    Return base points for a question.
-    Uses the question's stored 'points' field if set by instructor,
-    otherwise derives from difficulty.
+    Weight of a question.
+    Instructor can override via the 'points' field; otherwise derived from difficulty.
     """
     stored = question.get("points")
     if stored and stored != 100:
-        # Instructor explicitly set a custom value — respect it
         return stored
-    # Derive from difficulty
     difficulty = (question.get("difficulty") or "easy").lower()
     return DIFFICULTY_BASE_POINTS.get(difficulty, DEFAULT_BASE_POINTS)
 
 
-def calculate_league(points: int) -> LeagueTier:
-    """Calculate league tier from total points."""
+async def compute_max_possible_points(db: AsyncIOMotorDatabase, course_id: str) -> int:
+    """
+    Sum of base points across all active questions in a course.
+    Called when questions are added/deleted and when a course is first enrolled in.
+    """
+    questions = await db.course_questions.find(
+        {"course_id": course_id, "is_active": True}
+    ).to_list(length=None)
+    return sum(get_base_points_for_question(q) for q in questions)
+
+
+async def refresh_course_max_possible(db: AsyncIOMotorDatabase, course_id: str) -> int:
+    """
+    Recompute and persist max_possible_points on the course document.
+    Returns the new value.
+    """
+    total = await compute_max_possible_points(db, course_id)
+    await db.courses.update_one(
+        {"course_id": course_id},
+        {"$set": {"max_possible_points": total, "updated_at": datetime.utcnow()}}
+    )
+    return total
+
+
+def calculate_league(completion_ratio: float) -> LeagueTier:
+    """
+    Determine league tier from completion_ratio (0.0 – 1.0+).
+    Iterate tiers from highest to lowest, return first one the ratio meets.
+    """
     for tier in reversed(LEAGUE_ORDER):
-        if points >= LEAGUE_THRESHOLDS[LeagueTier(tier)]:
+        if completion_ratio >= LEAGUE_RATIO_THRESHOLDS[LeagueTier(tier)]:
             return LeagueTier(tier)
     return LeagueTier.BRONZE
 
@@ -580,21 +628,29 @@ async def promote_to_alumni(db: AsyncIOMotorDatabase, user_id: str, course_id: s
 
 
 async def update_league_points(
-    db:                   AsyncIOMotorDatabase,
-    user_id:              str,
-    points_delta:         int,
-    course_id:            str  = None,
+    db:                    AsyncIOMotorDatabase,
+    user_id:               str,
+    points_delta:          int,
+    course_id:             str   = None,
     efficiency_multiplier: float = 1.0,
 ) -> dict:
     """
-    Award points to a student for a specific course enrollment.
+    Award points to a student and recalculate league tier via completion_ratio.
+
+    completion_ratio = new_earned_points / max_possible_points
+    League tier is determined by that ratio — not the raw points value.
+    This makes every course fair regardless of its size.
+
+    efficiency_multiplier is tracked separately as efficiency_score
+    for display on profiles/certificates. It does NOT gate league progression.
 
     Returns:
         {
-            "new_points":   int,
-            "new_league":   LeagueTier,
-            "league_up":    bool,   ← True if they crossed a new tier
-            "is_legend":    bool,   ← True if they just hit LEGEND
+            "new_points":       int,
+            "completion_ratio": float,
+            "new_league":       LeagueTier,
+            "league_up":        bool,
+            "is_legend":        bool,
         }
     """
     query = {"user_id": user_id}
@@ -603,36 +659,71 @@ async def update_league_points(
 
     enrollment = await db.course_enrollments.find_one(query)
     if not enrollment:
-        return {"new_points": 0, "new_league": LeagueTier.BRONZE, "league_up": False, "is_legend": False}
+        return {
+            "new_points": 0, "completion_ratio": 0.0,
+            "new_league": LeagueTier.BRONZE, "league_up": False, "is_legend": False
+        }
 
-    old_league = LeagueTier(enrollment.get("current_league", LeagueTier.BRONZE))
-    new_points = enrollment.get("league_points", 0) + points_delta
-    new_league = calculate_league(new_points)
-    league_up  = new_league != old_league
+    old_league_raw = enrollment.get("current_league", "BRONZE")
+    try:
+        old_league = LeagueTier(str(old_league_raw).upper())
+    except (ValueError, AttributeError):
+        old_league = LeagueTier.BRONZE
+    new_points   = enrollment.get("league_points", 0) + points_delta
 
-    # Rolling average efficiency — weighted by solved count
-    prev_eff   = enrollment.get("avg_efficiency", 0.0)
+    # Use the snapshotted max_possible_points from enrollment time
+    max_possible = enrollment.get("max_possible_points") or 0
+    if not max_possible:
+        # Fallback: compute it now (handles legacy enrollments)
+        resolved_course_id = course_id or enrollment.get("course_id")
+        max_possible = await refresh_course_max_possible(db, resolved_course_id)
+        await db.course_enrollments.update_one(
+            query, {"$set": {"max_possible_points": max_possible}}
+        )
+
+    # Ratio capped at 1.0 for league — efficiency bonuses can push points above max,
+    # but a 1.05 ratio should still be LEGEND, not beyond it
+    completion_ratio = round(min(new_points / max_possible, 1.0), 6) if max_possible > 0 else 0.0
+    new_league       = calculate_league(completion_ratio)
+    league_up        = new_league != old_league
+
+    # Rolling average efficiency — weighted by solved count (display only)
+    prev_eff   = enrollment.get("efficiency_score", enrollment.get("avg_efficiency", 1.0))
     solved_cnt = max(len(enrollment.get("solved_questions", [])), 1)
     new_eff    = round(((prev_eff * (solved_cnt - 1)) + efficiency_multiplier) / solved_cnt, 4)
 
     await db.course_enrollments.update_one(
         query,
         {"$set": {
-            "league_points":  new_points,
-            "current_league": new_league,
-            "avg_efficiency": new_eff,
+            "league_points":       new_points,
+            "max_possible_points": max_possible,
+            "completion_ratio":    completion_ratio,
+            "current_league":      new_league,
+            "efficiency_score":    new_eff,
+            "avg_efficiency":      new_eff,   # alias for backward compat
         }}
     )
 
     # Alumni promotion when LEGEND is reached
     is_legend = new_league == LeagueTier.LEGEND
     if is_legend and old_league != LeagueTier.LEGEND:
-        updated_enrollment = {**enrollment, "league_points": new_points, "avg_efficiency": new_eff}
-        await promote_to_alumni(db, user_id, course_id or enrollment.get("course_id"), updated_enrollment)
+        updated_enrollment = {
+            **enrollment,
+            "league_points":    new_points,
+            "completion_ratio": completion_ratio,
+            "efficiency_score": new_eff,
+            "avg_efficiency":   new_eff,
+        }
+        await promote_to_alumni(
+            db, user_id,
+            course_id or enrollment.get("course_id"),
+            updated_enrollment
+        )
 
     return {
-        "new_points": new_points,
-        "new_league": new_league,
-        "league_up":  league_up,
-        "is_legend":  is_legend,
+        "new_points":       new_points,
+        "completion_ratio": completion_ratio,
+        "new_league":       new_league,
+        "league_up":        league_up,
+        "is_legend":        is_legend,
     }
