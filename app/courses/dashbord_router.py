@@ -20,25 +20,37 @@ router = APIRouter(tags=["Dashboard"])
 
 LEAGUE_ORDER = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
 
-LEAGUE_THRESHOLDS = {
-    "BRONZE":   0,
-    "SILVER":   2000,
-    "GOLD":     6000,
-    "PLATINUM": 14000,
-    "DIAMOND":  26000,
-    "MYTHIC":   42000,
-    "LEGEND":   60000,
+# ── Percentage-based thresholds (completion_ratio × 100) ──────────────────────
+# Matches database.py LEAGUE_RATIO_THRESHOLDS exactly
+LEAGUE_RATIO_THRESHOLDS = {
+    "BRONZE":   0.00,
+    "SILVER":   0.08,
+    "GOLD":     0.20,
+    "PLATINUM": 0.40,
+    "DIAMOND":  0.60,
+    "MYTHIC":   0.78,
+    "LEGEND":   0.90,
 }
 
 
-def _next_league_info(current_league: str, current_points: int) -> dict:
-    """Return next league name and how many points away it is."""
+def _next_league_info(current_league: str, completion_ratio: float) -> dict:
+    """
+    Return next league name and how many % away it is.
+    Uses completion_ratio (0.0–1.0) against percentage thresholds.
+    """
     idx = LEAGUE_ORDER.index(current_league) if current_league in LEAGUE_ORDER else 0
     if idx + 1 < len(LEAGUE_ORDER):
-        next_league = LEAGUE_ORDER[idx + 1]
-        pts_needed  = max(0, LEAGUE_THRESHOLDS[next_league] - current_points)
-        return {"next_league": next_league, "points_needed": pts_needed}
-    return {"next_league": None, "points_needed": 0}
+        next_league    = LEAGUE_ORDER[idx + 1]
+        next_threshold = LEAGUE_RATIO_THRESHOLDS[next_league]  # e.g. 0.20
+        current_pct    = round(completion_ratio * 100, 1)
+        next_pct       = round(next_threshold * 100, 1)
+        pct_needed     = round(max(0.0, next_pct - current_pct), 1)
+        return {
+            "next_league": next_league,
+            "pct_needed":  pct_needed,       # e.g. 7.5 → "7.5% more to GOLD"
+            "next_pct":    next_pct,          # e.g. 20.0
+        }
+    return {"next_league": None, "pct_needed": 0.0, "next_pct": 100.0}
 
 
 def _iso(dt) -> str | None:
@@ -117,11 +129,15 @@ async def get_dashboard_home(
         if LEAGUE_ORDER.index(league) > LEAGUE_ORDER.index(best_league):
             best_league = league
 
-        # Rank in this course
+        # Completion ratio from enrollment (set by grading v2)
+        completion_ratio = enr.get("completion_ratio", 0.0) or 0.0
+        efficiency_score = enr.get("efficiency_score", enr.get("avg_efficiency", 1.0)) or 1.0
+
+        # Rank by completion_ratio (the fair metric)
         course_rank = await db.course_enrollments.count_documents({
             "course_id": cid,
             "is_active": True,
-            "league_points": {"$gt": pts}
+            "completion_ratio": {"$gt": completion_ratio}
         }) + 1
         total_enrolled = await db.course_enrollments.count_documents({
             "course_id": cid, "is_active": True
@@ -145,9 +161,11 @@ async def get_dashboard_home(
                 "percentage":  progress,
             },
             "league": {
-                "current":     league,
-                "points":      pts,
-                "next_league": _next_league_info(league, pts),
+                "current":          league,
+                "points":           pts,
+                "completion_ratio": round(completion_ratio * 100, 1),  # as % for frontend
+                "efficiency_score": round(efficiency_score, 3),
+                "next_league":      _next_league_info(league, completion_ratio),
             },
             "rank": {
                 "course_rank":    course_rank,
@@ -158,7 +176,8 @@ async def get_dashboard_home(
                 "eligible":       cert_eligible,
                 "certificate_id": enr.get("certificate_id") if cert_eligible else None,
             },
-            "avg_efficiency":  round(enr.get("avg_efficiency", 0.0), 3),
+            "efficiency_score":  round(efficiency_score, 3),
+            "avg_efficiency":    round(efficiency_score, 3),  # backward compat alias
         })
 
     # ── 4. AVAILABLE COURSES (not yet enrolled) ───────────────────────
@@ -253,10 +272,11 @@ async def get_dashboard_home(
         {"$unwind": "$course"},
         {"$match": {"course.course_type": "OFFICIAL"}},
         {"$group": {
-            "_id":          "$user_id",
-            "total_points": {"$sum": "$league_points"},
-            "total_solved": {"$sum": {"$size": {"$ifNull": ["$solved_questions", []]}}},
-            "best_league":  {"$max": "$current_league"},
+            "_id":             "$user_id",
+            "total_points":    {"$sum": "$league_points"},
+            "total_solved":    {"$sum": {"$size": {"$ifNull": ["$solved_questions", []]}}},
+            "best_league":     {"$max": "$current_league"},
+            "avg_completion":  {"$avg": {"$ifNull": ["$completion_ratio", 0.0]}},
         }},
         {"$lookup": {
             "from": "users_profile",
@@ -266,14 +286,15 @@ async def get_dashboard_home(
         }},
         {"$unwind": {"path": "$user", "preserveNullAndEmptyArrays": True}},
         {"$project": {
-            "user_id":      "$_id",
-            "username":     {"$ifNull": ["$user.username", "Anonymous"]},
-            "college":      "$user.college",
-            "total_points": 1,
-            "total_solved": 1,
-            "best_league":  1,
+            "user_id":        "$_id",
+            "username":       {"$ifNull": ["$user.username", "Anonymous"]},
+            "college":        "$user.college",
+            "total_points":   1,
+            "total_solved":   1,
+            "best_league":    1,
+            "completion_pct": {"$round": [{"$multiply": ["$avg_completion", 100]}, 1]},
         }},
-        {"$sort": {"total_points": -1, "total_solved": -1}},
+        {"$sort": {"avg_completion": -1, "total_solved": -1}},
         {"$limit": 5}
     ]
     top5 = await db.course_enrollments.aggregate(lb_pipeline).to_list(length=5)
