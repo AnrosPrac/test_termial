@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
-from app.courses.models import CourseCreate, CourseUpdate, CoursePublish, ModuleCreate, QuestionCreate, LabCourseCreate
+from app.courses.models import CourseCreate, CourseUpdate, CoursePublish, ModuleCreate, QuestionCreate, LabCourseCreate, LabModuleCreate, LabModuleUpdate
 from app.courses.database import (
     create_course, get_course, update_course, publish_course, list_courses,
     create_question, get_question, create_lab_course
@@ -211,6 +211,7 @@ async def create_lab_course_endpoint(
     Create a LAB course scoped to a classroom.
     Only the classroom's teacher can do this.
     Labs are published immediately — no pricing/certificate setup needed.
+    Optionally seed modules (with schedule + resources) at creation time.
     """
     # Verify the calling user is the teacher who owns this classroom
     classroom = await db.classrooms.find_one({"classroom_id": lab.classroom_id})
@@ -228,6 +229,301 @@ async def create_lab_course_endpoint(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/labs/{course_id}/publish")
+async def publish_lab_course(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Publish a LAB course so enrolled students can access it.
+    Teacher (creator) only. LAB-specific — does not touch pricing or certificates.
+    Can still add/edit modules after publishing.
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Lab course not found")
+    if course.get("course_type") != "LAB":
+        raise HTTPException(status_code=400, detail="This endpoint is for LAB courses only")
+    if course.get("creator_id") != user_id:
+        raise HTTPException(status_code=403, detail="Only the lab creator can publish this course")
+    if course.get("status") == "PUBLISHED":
+        return {"success": True, "message": "Lab course is already published"}
+
+    await db.courses.update_one(
+        {"course_id": course_id},
+        {"$set": {"status": "PUBLISHED", "published_at": datetime.utcnow(), "updated_at": datetime.utcnow()}}
+    )
+    return {"success": True, "course_id": course_id, "message": "Lab course published successfully"}
+
+
+@router.patch("/labs/{course_id}")
+async def update_lab_course(
+    course_id: str,
+    updates: CourseUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Update lab course metadata (title, description, thumbnail, tags).
+    Works regardless of published status — labs are always editable.
+    Teacher (creator) only. Does NOT touch modules (use module endpoints for that).
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Lab course not found")
+    if course.get("course_type") != "LAB":
+        raise HTTPException(status_code=400, detail="This endpoint is for LAB courses only")
+    if course.get("creator_id") != user_id:
+        raise HTTPException(status_code=403, detail="Only the lab creator can edit this course")
+
+    patch = {k: v for k, v in updates.dict().items() if v is not None}
+    if not patch:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    patch["updated_at"] = datetime.utcnow()
+    await db.courses.update_one({"course_id": course_id}, {"$set": patch})
+    return {"success": True, "course_id": course_id, "message": "Lab course updated"}
+
+
+@router.post("/labs/{course_id}/modules")
+async def create_lab_module(
+    course_id: str,
+    payload: LabModuleCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Add a module to a LAB course.
+    Teacher only. Each module can have unlock_at, close_at, and optional resources
+    (YouTube links, books, documents etc.).
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if course.get("course_type") != "LAB":
+        raise HTTPException(status_code=400, detail="This endpoint is for LAB courses only")
+    if course.get("creator_id") != user_id:
+        raise HTTPException(status_code=403, detail="Only the lab creator can add modules")
+
+    module_id = f"LMOD_{uuid.uuid4().hex[:10].upper()}"
+    doc = {
+        "module_id": module_id,
+        "course_id": course_id,
+        "course_type": "LAB",
+        "title": payload.title,
+        "description": payload.description,
+        "order": payload.order,
+        "unlock_at": payload.unlock_at,
+        "close_at": payload.close_at,
+        "resources": [r.dict() for r in payload.resources],
+        "created_at": datetime.utcnow(),
+    }
+    await db.modules.insert_one(doc)
+    return {"success": True, "module_id": module_id}
+
+
+@router.patch("/labs/{course_id}/modules/{module_id}")
+async def update_lab_module(
+    course_id: str,
+    module_id: str,
+    payload: LabModuleUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Update a lab module — schedule, resources, title, description, order.
+    Teacher only.
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course or course.get("course_type") != "LAB":
+        raise HTTPException(status_code=404, detail="Lab course not found")
+    if course.get("creator_id") != user_id:
+        raise HTTPException(status_code=403, detail="Only the lab creator can edit modules")
+
+    module = await db.modules.find_one({"module_id": module_id, "course_id": course_id})
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    updates = {k: v for k, v in payload.dict().items() if v is not None}
+    if "resources" in updates:
+        updates["resources"] = [r.dict() if hasattr(r, "dict") else r for r in updates["resources"]]
+    updates["updated_at"] = datetime.utcnow()
+
+    await db.modules.update_one({"module_id": module_id}, {"$set": updates})
+    return {"success": True}
+
+
+@router.get("/labs/{course_id}/modules")
+async def list_lab_modules(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get all modules for a lab course.
+    Students see: locked status based on schedule, resources, and problems count.
+    Locked modules still show title so students know what's coming.
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course or course.get("course_type") != "LAB":
+        raise HTTPException(status_code=404, detail="Lab course not found")
+
+    # Verify student is enrolled or is the teacher
+    is_teacher = course.get("creator_id") == user_id
+    if not is_teacher:
+        enrollment = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
+        if not enrollment:
+            raise HTTPException(status_code=403, detail="You are not enrolled in this lab")
+
+    now = datetime.utcnow()
+    cursor = db.modules.find({"course_id": course_id}).sort("order", 1)
+    modules = await cursor.to_list(None)
+
+    result = []
+    for m in modules:
+        unlock_at = m.get("unlock_at")
+        close_at = m.get("close_at")
+
+        is_unlocked = (unlock_at is None) or (now >= unlock_at)
+        is_closed = (close_at is not None) and (now > close_at)
+
+        question_count = await db.course_questions.count_documents({"module_id": m["module_id"], "is_active": True})
+
+        result.append({
+            "module_id": m["module_id"],
+            "title": m["title"],
+            "description": m["description"] if is_unlocked else None,
+            "order": m["order"],
+            "is_unlocked": is_unlocked,
+            "is_closed": is_closed,
+            "unlock_at": unlock_at.isoformat() if unlock_at else None,
+            "close_at": close_at.isoformat() if close_at else None,
+            # Resources only visible when module is unlocked and not closed
+            "resources": m.get("resources", []) if (is_unlocked and not is_closed) else [],
+            "question_count": question_count,
+        })
+
+    return result
+
+@router.get("/labs/{course_id}/students")
+async def get_lab_students(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Teacher view: all students enrolled in this lab course with their progress.
+    Only the lab creator can access this.
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course or course.get("course_type") != "LAB":
+        raise HTTPException(status_code=404, detail="Lab course not found")
+    if course.get("creator_id") != user_id:
+        raise HTTPException(status_code=403, detail="Only the lab creator can view student data")
+
+    # All enrolled students
+    enrollments = await db.course_enrollments.find(
+        {"course_id": course_id, "is_active": True}
+    ).to_list(length=None)
+
+    # Total questions in lab
+    total_questions = await db.course_questions.count_documents(
+        {"course_id": course_id, "is_active": True}
+    )
+
+    result = []
+    for enr in enrollments:
+        student_user_id = enr["user_id"]
+        profile = await db.users_profile.find_one({"user_id": student_user_id})
+
+        solved = enr.get("solved_questions", [])
+        solved_count = len(solved)
+        progress = round((solved_count / total_questions * 100) if total_questions > 0 else 0, 2)
+
+        # Per-module solved breakdown
+        modules = await db.modules.find({"course_id": course_id}).sort("order", 1).to_list(None)
+        module_breakdown = []
+        for m in modules:
+            module_questions = await db.course_questions.find(
+                {"course_id": course_id, "module_id": m["module_id"], "is_active": True}
+            ).to_list(length=None)
+            module_q_ids = [q["question_id"] for q in module_questions]
+            solved_in_module = len([qid for qid in solved if qid in module_q_ids])
+            module_breakdown.append({
+                "module_id": m["module_id"],
+                "title": m["title"],
+                "total_questions": len(module_q_ids),
+                "solved": solved_in_module,
+            })
+
+        result.append({
+            "user_id": student_user_id,
+            "sidhi_id": enr.get("sidhi_id"),
+            "username": profile.get("username") if profile else "Unknown",
+            "email": profile.get("email_id") if profile else None,
+            "enrolled_at": enr.get("enrolled_at"),
+            "solved_count": solved_count,
+            "total_questions": total_questions,
+            "progress_percentage": progress,
+            "league_points": enr.get("league_points", 0),
+            "current_league": enr.get("current_league", "BRONZE"),
+            "module_breakdown": module_breakdown,
+        })
+
+    return {
+        "course_id": course_id,
+        "total_enrolled": len(result),
+        "total_questions": total_questions,
+        "students": result,
+    }
+
+
+@router.post("/labs/{course_id}/enroll")
+async def enroll_in_lab_course(
+    course_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Enroll in a LAB course.
+    Student must already be a member of the classroom that owns this lab.
+    No password needed — classroom membership is the gate.
+    """
+    course = await db.courses.find_one({"course_id": course_id})
+    if not course or course.get("course_type") != "LAB":
+        raise HTTPException(status_code=404, detail="Lab course not found")
+
+    classroom_id = course.get("classroom_id")
+    if not classroom_id:
+        raise HTTPException(status_code=500, detail="Lab course has no linked classroom")
+
+    # Gate: student must be an active member of this classroom
+    membership = await db.classroom_memberships.find_one({
+        "classroom_id": classroom_id,
+        "student_user_id": user_id,
+        "is_active": True
+    })
+    if not membership:
+        raise HTTPException(
+            status_code=403,
+            detail="You must be a member of this classroom to enroll in its lab courses"
+        )
+
+    # Already enrolled?
+    existing = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
+    if existing:
+        return {"success": True, "enrollment_id": existing["enrollment_id"], "message": "Already enrolled"}
+
+    from app.courses.database import enroll_in_lab
+    profile = await db.users_profile.find_one({"user_id": user_id})
+    sidhi_id = profile.get("sidhi_id", user_id) if profile else user_id
+
+    enrollment_id = await enroll_in_lab(db, course_id, user_id, sidhi_id)
+    return {"success": True, "enrollment_id": enrollment_id, "message": "Enrolled in lab successfully"}
+
 
 @router.get("/{course_id}")
 async def get_course_endpoint(
@@ -1285,6 +1581,27 @@ async def get_question_endpoint(
     if not enrollment:
         raise HTTPException(status_code=403, detail="You must be enrolled in this course to view questions")
     
+    # For LAB courses: enforce module schedule (unlock_at / close_at)
+    course = await db.courses.find_one({"course_id": question["course_id"]})
+    if course and course.get("course_type") == "LAB":
+        module_id = question.get("module_id")
+        if module_id:
+            module = await db.modules.find_one({"module_id": module_id})
+            if module:
+                now = datetime.utcnow()
+                unlock_at = module.get("unlock_at")
+                close_at = module.get("close_at")
+                if unlock_at and now < unlock_at:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"This module is not unlocked yet. Available from {unlock_at.isoformat()}"
+                    )
+                if close_at and now > close_at:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"This module has closed and no longer accepts access."
+                    )
+
     # Completely hide private test cases — only return public (is_sample=True) ones
     if "test_cases" in question:
         question["test_cases"] = [

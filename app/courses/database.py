@@ -73,6 +73,7 @@ async def create_lab_course(db: AsyncIOMotorDatabase, lab_data: dict, creator_id
       - No sample questions
       - Leaderboard scoped to classroom members only
       - Enrollment restricted to classroom members
+      - Each module has its own schedule (unlock_at, close_at) + optional resources
     """
     course_id = f"LAB_{uuid.uuid4().hex[:12].upper()}"
 
@@ -83,11 +84,10 @@ async def create_lab_course(db: AsyncIOMotorDatabase, lab_data: dict, creator_id
         "course_type": CourseType.LAB,
         "domain": lab_data["domain"],
         "creator_id": creator_id,
-        "classroom_id": lab_data["classroom_id"],   # classroom scope
-        "status": CourseStatus.PUBLISHED,            # labs go live immediately
+        "classroom_id": lab_data["classroom_id"],
+        "status": CourseStatus.PUBLISHED,
         "thumbnail_url": lab_data.get("thumbnail_url"),
         "tags": lab_data.get("tags", []),
-        "external_resources": [],
         # LAB-specific flags
         "is_lab": True,
         "has_certificate": False,
@@ -102,6 +102,27 @@ async def create_lab_course(db: AsyncIOMotorDatabase, lab_data: dict, creator_id
     }
 
     await db.courses.insert_one(lab)
+
+    # Seed modules if provided at creation time
+    raw_modules = lab_data.get("modules", [])
+    if raw_modules:
+        module_docs = []
+        for m in raw_modules:
+            module_id = f"LMOD_{uuid.uuid4().hex[:10].upper()}"
+            module_docs.append({
+                "module_id": module_id,
+                "course_id": course_id,
+                "course_type": "LAB",
+                "title": m["title"],
+                "description": m.get("description", ""),
+                "order": m["order"],
+                "unlock_at": m.get("unlock_at"),     # datetime or None = open immediately
+                "close_at": m.get("close_at"),       # datetime or None = never closes
+                "resources": m.get("resources", []), # [{type, title, url, description?}]
+                "created_at": datetime.utcnow(),
+            })
+        await db.modules.insert_many(module_docs)
+
     return course_id
 
 

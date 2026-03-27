@@ -78,20 +78,46 @@ class CourseCreate(BaseModel):
     external_resources: List[Dict[str, str]] = []  # [{"title": "...", "url": "..."}]
 
 
+class LabResource(BaseModel):
+    """Optional resource attached to a lab module (video, book, link, etc.)"""
+    type: str                  # "video", "book", "link", "document"
+    title: str
+    url: str
+    description: Optional[str] = None
+
+class LabModuleCreate(BaseModel):
+    """A lab module with problems + optional resources"""
+    title: str
+    description: str
+    order: int
+    unlock_at: Optional[datetime] = None   # None = available immediately
+    close_at: Optional[datetime] = None    # None = never closes
+    resources: List[LabResource] = []      # optional: yt videos, books, links
+
+class LabModuleUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    order: Optional[int] = None
+    unlock_at: Optional[datetime] = None
+    close_at: Optional[datetime] = None
+    resources: Optional[List[LabResource]] = None
+
 class LabCourseCreate(BaseModel):
     """
     Classroom-scoped Lab course.
     - No certificates
     - No sample questions
     - Leaderboard scoped to the classroom only
-    - Enrollment restricted to classroom members
+    - Enrollment restricted to classroom members only
+    - Each module has its own schedule + optional resources
     """
     title: str
     description: str
     domain: CourseDomain
-    classroom_id: str          # which classroom this lab belongs to
+    classroom_id: str
     thumbnail_url: Optional[str] = None
     tags: List[str] = []
+    modules: List[LabModuleCreate] = []    # can seed modules on creation (optional)
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
@@ -106,6 +132,7 @@ class CoursePublish(BaseModel):
 # ==================== MODULE MODELS ====================
 
 class ModuleCreate(BaseModel):
+    """For OFFICIAL/CREATOR courses only. Use LabModuleCreate for LAB courses."""
     course_id: str
     title: str
     description: str
