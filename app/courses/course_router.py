@@ -373,6 +373,7 @@ async def list_lab_modules(
 
     # Verify student is enrolled or is the teacher
     is_teacher = course.get("creator_id") == user_id
+    enrollment = None
     if not is_teacher:
         enrollment = await db.course_enrollments.find_one({"course_id": course_id, "user_id": user_id})
         if not enrollment:
@@ -382,28 +383,41 @@ async def list_lab_modules(
     cursor = db.modules.find({"course_id": course_id}).sort("order", 1)
     modules = await cursor.to_list(None)
 
+    # Student's completed modules and solved questions
+    completed_modules = enrollment.get("completed_modules", []) if enrollment else []
+    solved_ids = set(enrollment.get("solved_questions", [])) if enrollment else set()
+
     result = []
     for m in modules:
         unlock_at = m.get("unlock_at")
-        close_at = m.get("close_at")
+        close_at  = m.get("close_at")
 
         is_unlocked = (unlock_at is None) or (now >= unlock_at)
-        is_closed = (close_at is not None) and (now > close_at)
+        is_closed   = (close_at is not None) and (now > close_at)
 
-        question_count = await db.course_questions.count_documents({"module_id": m["module_id"], "is_active": True})
+        # All active questions in this module
+        module_questions = await db.course_questions.find(
+            {"module_id": m["module_id"], "is_active": True},
+            {"question_id": 1}
+        ).to_list(length=None)
+
+        total_q  = len(module_questions)
+        solved_q = sum(1 for q in module_questions if q["question_id"] in solved_ids)
 
         result.append({
-            "module_id": m["module_id"],
-            "title": m["title"],
-            "description": m["description"] if is_unlocked else None,
-            "order": m["order"],
-            "is_unlocked": is_unlocked,
-            "is_closed": is_closed,
-            "unlock_at": unlock_at.isoformat() if unlock_at else None,
-            "close_at": close_at.isoformat() if close_at else None,
-            # Resources only visible when module is unlocked and not closed
-            "resources": m.get("resources", []) if (is_unlocked and not is_closed) else [],
-            "question_count": question_count,
+            "module_id":    m["module_id"],
+            "title":        m["title"],
+            "description":  m["description"] if is_unlocked else None,
+            "order":        m["order"],
+            "is_unlocked":  is_unlocked,
+            "is_closed":    is_closed,
+            "is_completed": m["module_id"] in completed_modules,  # ✅ all questions solved
+            "unlock_at":    unlock_at.isoformat() if unlock_at else None,
+            "close_at":     close_at.isoformat()  if close_at  else None,
+            "resources":    m.get("resources", []) if (is_unlocked and not is_closed) else [],
+            "question_count": total_q,
+            "solved_count":   solved_q,           # ✅ how many student solved
+            "total_count":    total_q,            # ✅ alias — convenient for frontend progress bars
         })
 
     return result
@@ -693,28 +707,36 @@ async def get_lab_module_questions_student(
         {"course_id": course_id, "module_id": module_id, "is_active": True}
     ).sort("created_at", 1).to_list(length=None)
 
-    solved_ids = set(enrollment.get("solved_questions", []))
+    solved_ids        = set(enrollment.get("solved_questions", []))
+    completed_modules = enrollment.get("completed_modules", [])
 
     result = []
     for q in questions:
         result.append({
-            "question_id": q["question_id"],
-            "title": q["title"],
-            "description": q["description"],
-            "difficulty": q["difficulty"],
-            "language": q["language"],
+            "question_id":  q["question_id"],
+            "title":        q["title"],
+            "description":  q["description"],
+            "difficulty":   q["difficulty"],
+            "language":     q["language"],
             "problem_type": q.get("problem_type", "coding"),
-            "points": q.get("points", 100),
-            "is_solved": q["question_id"] in solved_ids,
+            "points":       q.get("points", 100),
+            "is_solved":    q["question_id"] in solved_ids,
         })
 
+    solved_in_module = sum(1 for q in result if q["is_solved"])
+
     return {
-        "course_id": course_id,
-        "module_id": module_id,
-        "module_title": module["title"],
+        "course_id":      course_id,
+        "module_id":      module_id,
+        "module_title":   module["title"],
+        "is_completed":   module_id in completed_modules,  # ✅ all questions done
+        "solved_count":   solved_in_module,                # ✅ e.g. 2
+        "total_count":    len(result),                     # ✅ e.g. 3
         "question_count": len(result),
-        "questions": result,
+        "questions":      result,
     }
+
+
 @router.get("/labs/classroom/{classroom_id}")
 async def get_labs_for_classroom(
     classroom_id: str,
@@ -735,7 +757,6 @@ async def get_labs_for_classroom(
     if not membership:
         raise HTTPException(status_code=403, detail="You are not a member of this classroom")
 
-    # Fetch published labs for this classroom
     lab_courses = await db.courses.find({
         "course_type":  "LAB",
         "classroom_id": classroom_id,
@@ -756,20 +777,26 @@ async def get_labs_for_classroom(
 
         total_q  = await db.course_questions.count_documents({"course_id": cid, "is_active": True})
         solved_q = len(enrollment.get("solved_questions", [])) if enrollment else 0
+        completed_modules = enrollment.get("completed_modules", []) if enrollment else []
 
         modules = await db.modules.find({"course_id": cid}).sort("order", 1).to_list(length=None)
         module_summaries = []
         for m in modules:
             unlock_at = m.get("unlock_at")
             close_at  = m.get("close_at")
+            mq_count  = await db.course_questions.count_documents(
+                {"course_id": cid, "module_id": m["module_id"], "is_active": True}
+            )
             module_summaries.append({
-                "module_id":   m["module_id"],
-                "title":       m["title"],
-                "order":       m["order"],
-                "is_unlocked": (unlock_at is None) or (now >= unlock_at),
-                "is_closed":   (close_at is not None) and (now > close_at),
-                "unlock_at":   unlock_at.isoformat() if unlock_at else None,
-                "close_at":    close_at.isoformat()  if close_at  else None,
+                "module_id":    m["module_id"],
+                "title":        m["title"],
+                "order":        m["order"],
+                "is_unlocked":  (unlock_at is None) or (now >= unlock_at),
+                "is_closed":    (close_at is not None) and (now > close_at),
+                "is_completed": m["module_id"] in completed_modules,
+                "question_count": mq_count,
+                "unlock_at":    unlock_at.isoformat() if unlock_at else None,
+                "close_at":     close_at.isoformat()  if close_at  else None,
             })
 
         result.append({
@@ -1873,14 +1900,38 @@ async def get_question_endpoint(
                         detail=f"This module has closed and no longer accepts access."
                     )
 
-    # Completely hide private test cases — only return public (is_sample=True) ones
+    # Return only public test cases — is_sample: true (after running the mongo migration)
     if "test_cases" in question:
         question["test_cases"] = [
             tc for tc in question["test_cases"]
             if tc.get("is_sample", False)
         ]
 
-    # Attach solved status for this student
+    # Attach solved status + submission context for the editor
     q = serialize_mongo(question)
     q["is_solved"] = question_id in enrollment.get("solved_questions", [])
+
+    # How many times has the student attempted this question
+    q["submission_count"] = await db.course_submissions.count_documents({
+        "user_id":     user_id,
+        "question_id": question_id
+    })
+
+    # Their best accepted submission — editor can pre-fill code if already solved
+    best = await db.course_submissions.find_one(
+        {
+            "user_id":     user_id,
+            "question_id": question_id,
+            "verdict":     "Accepted"
+        },
+        sort=[("league_points_awarded", -1)]
+    )
+    q["best_submission"] = {
+        "code":                  best.get("code"),
+        "language":              best.get("language"),
+        "league_points_awarded": best.get("league_points_awarded", 0),
+        "efficiency_multiplier": best.get("efficiency_multiplier", 1.0),
+        "submitted_at":          best["submitted_at"].isoformat() if best.get("submitted_at") else None,
+    } if best else None
+
     return q
