@@ -686,7 +686,7 @@ async def download_module_record(
         public_tcs = [
             {"input": tc.get("input", ""), "output": tc.get("output", "")}
             for tc in q.get("test_cases", [])
-            if tc.get("is_sample", False)
+            if tc.get("is_sample", False) or not tc.get("is_hidden", True)
         ][:3]
 
         pdf_questions.append({

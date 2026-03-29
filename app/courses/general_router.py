@@ -117,7 +117,7 @@ def _sanitize_test_results(test_results: list, test_cases: list) -> list:
     sample_indices = {
         idx + 1
         for idx, tc in enumerate(test_cases)
-        if tc.get("is_sample", False)
+        if tc.get("is_sample", False) or not tc.get("is_hidden", True)
     }
     sanitized = []
     for tr in test_results:

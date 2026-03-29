@@ -1904,7 +1904,7 @@ async def get_question_endpoint(
     if "test_cases" in question:
         question["test_cases"] = [
             tc for tc in question["test_cases"]
-            if tc.get("is_sample", False)
+            if tc.get("is_sample", False) or not tc.get("is_hidden", True)
         ]
 
     # Attach solved status + submission context for the editor

@@ -242,7 +242,8 @@ def sanitize_test_results(test_results: list, question: dict) -> list:
     sample_indices = {
         idx + 1
         for idx, tc in enumerate(question.get("test_cases", []))
-        if tc.get("is_sample", False)
+        if tc.get("is_sample", False) or not tc.get("is_hidden", True)
+
     }
 
     sanitized = []
@@ -500,7 +501,8 @@ async def run_code(
             test_cases = [
                 {"input": tc.get("input", ""), "output": tc.get("output") or tc.get("expected_output", "")}
                 for tc in raw_cases
-                if tc.get("is_sample", False) and tc.get("input") is not None
+                if (tc.get("is_sample", False) or not tc.get("is_hidden", True)) and tc.get("input") is not None
+
             ]
 
     # Fall back to custom input if no sample test cases or no question_id

@@ -401,11 +401,11 @@ async def get_course_questions(db: AsyncIOMotorDatabase, course_id: str, user_id
         # Remove private test case outputs — only show sample inputs
         if "test_cases" in q:
             for tc in q["test_cases"]:
-                if not tc.get("is_sample", False):
+                if not tc.get("is_sample", False) and tc.get("is_hidden", True):
                     tc.pop("output", None)
         if "testcases" in q:
             for tc in q["testcases"]:
-                if not tc.get("is_sample", False):
+                if not tc.get("is_sample", False) and tc.get("is_hidden", True):
                     tc.pop("output", None)
 
     return serialize_many(questions)

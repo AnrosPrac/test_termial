@@ -478,7 +478,8 @@ async def _get_safe_question(db, question_id: str) -> dict:
     if not q:
         return {}
     q["_id"] = str(q["_id"])
-    q["test_cases"] = [tc for tc in q.get("test_cases", []) if tc.get("is_sample", False)]
+    q["test_cases"] = [tc for tc in q.get("test_cases", []) if tc.get("is_sample", False) or not tc.get("is_hidden", True)]
+
     return q
 
 
