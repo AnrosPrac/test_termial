@@ -715,6 +715,85 @@ async def get_lab_module_questions_student(
         "question_count": len(result),
         "questions": result,
     }
+@router.get("/labs/classroom/{classroom_id}")
+async def get_labs_for_classroom(
+    classroom_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    GET /api/courses/labs/classroom/{classroomId}
+    Returns all published lab courses for a classroom.
+    Student must be an active member of that classroom.
+    """
+    # Verify membership
+    membership = await db.classroom_memberships.find_one({
+        "classroom_id":    classroom_id,
+        "student_user_id": user_id,
+        "is_active":       True
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not a member of this classroom")
+
+    # Fetch published labs for this classroom
+    lab_courses = await db.courses.find({
+        "course_type":  "LAB",
+        "classroom_id": classroom_id,
+        "status":       "PUBLISHED"
+    }).sort("created_at", -1).to_list(length=None)
+
+    now = datetime.utcnow()
+    result = []
+
+    for lc in lab_courses:
+        cid = lc["course_id"]
+
+        enrollment = await db.course_enrollments.find_one({
+            "course_id": cid,
+            "user_id":   user_id,
+            "is_active": True
+        })
+
+        total_q  = await db.course_questions.count_documents({"course_id": cid, "is_active": True})
+        solved_q = len(enrollment.get("solved_questions", [])) if enrollment else 0
+
+        modules = await db.modules.find({"course_id": cid}).sort("order", 1).to_list(length=None)
+        module_summaries = []
+        for m in modules:
+            unlock_at = m.get("unlock_at")
+            close_at  = m.get("close_at")
+            module_summaries.append({
+                "module_id":   m["module_id"],
+                "title":       m["title"],
+                "order":       m["order"],
+                "is_unlocked": (unlock_at is None) or (now >= unlock_at),
+                "is_closed":   (close_at is not None) and (now > close_at),
+                "unlock_at":   unlock_at.isoformat() if unlock_at else None,
+                "close_at":    close_at.isoformat()  if close_at  else None,
+            })
+
+        result.append({
+            "course_id":     cid,
+            "title":         lc["title"],
+            "description":   lc.get("description", ""),
+            "domain":        lc.get("domain", ""),
+            "thumbnail_url": lc.get("thumbnail_url"),
+            "tags":          lc.get("tags", []),
+            "published_at":  lc["published_at"].isoformat() if isinstance(lc.get("published_at"), datetime) else lc.get("published_at"),
+            "enrolled":      enrollment is not None,
+            "progress": {
+                "solved":      solved_q,
+                "total":       total_q,
+                "percentage":  round((solved_q / total_q * 100) if total_q > 0 else 0, 1),
+            },
+            "modules": module_summaries,
+        })
+
+    return {
+        "classroom_id": classroom_id,
+        "lab_courses":  result,
+        "count":        len(result),
+    }
 
 
 @router.get("/{course_id}")
