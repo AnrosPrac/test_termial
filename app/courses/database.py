@@ -286,7 +286,7 @@ async def enroll_in_lab(db: AsyncIOMotorDatabase, course_id: str, user_id: str, 
         "course_id":           course_id,
         "user_id":             user_id,
         "sidhi_id":            sidhi_id,
-        "certificate_id":      None,           # no certificate for labs
+               # no certificate for labs
         "enrolled_at":         datetime.utcnow(),
         "progress":            0.0,
         "current_league":      LeagueTier.BRONZE,
