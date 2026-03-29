@@ -61,6 +61,8 @@ from app.editor_security.app_routes_security import router as security_router
 from app.system.health_router import monitor_heartbeat
 import asyncio  # Required for create_task and sleep
 import httpx    # Required for the async server pings
+from app.courses.lab_record_router import router as lab_record_router
+
 from contextlib import asynccontextmanager # Required for the lifespan handler
 ALLOWED_EXTENSIONS = {'.py', '.ipynb', '.c', '.cpp', '.h', '.java', '.js'}
 
@@ -192,7 +194,7 @@ app.include_router(security_router, prefix="/api/v1/editor", tags=["editor_secur
 app.include_router(claim_router, prefix="/api/claims")
 app.include_router(contact_router)
 app.include_router(dashboard_router, prefix="/api/dashboard")
-
+app.include_router(lab_record_router, prefix="/api/lab-records")
 app.include_router(interview_router, prefix="/api/interviews")
 app.include_router(integrity_router, prefix="/api/integrity")
 app.include_router(general_router,   prefix="/api/general")

@@ -89,15 +89,15 @@ async def get_dashboard_home(
 
     enrolled_course_ids = [e["course_id"] for e in enrollments]
 
-    # Batch fetch all enrolled courses
+    # Batch fetch all enrolled courses — exclude LAB courses (handled separately)
     enrolled_courses_docs = await db.courses.find(
-        {"course_id": {"$in": enrolled_course_ids}}
+        {"course_id": {"$in": enrolled_course_ids}, "course_type": {"$ne": "LAB"}}
     ).to_list(length=None) if enrolled_course_ids else []
     course_map = {c["course_id"]: c for c in enrolled_courses_docs}
 
-    # Batch question counts per course
+    # Batch question counts per course — exclude LAB courses
     q_counts_raw = await db.course_questions.aggregate([
-        {"$match": {"course_id": {"$in": enrolled_course_ids}, "is_active": True}},
+        {"$match": {"course_id": {"$in": enrolled_course_ids}, "is_active": True, "course_type": {"$ne": "LAB"}}},
         {"$group": {"_id": "$course_id", "count": {"$sum": 1}}}
     ]).to_list(length=None) if enrolled_course_ids else []
     q_counts = {r["_id"]: r["count"] for r in q_counts_raw}
@@ -182,8 +182,9 @@ async def get_dashboard_home(
 
     # ── 4. AVAILABLE COURSES (not yet enrolled) ───────────────────────
     available_cursor = db.courses.find({
-        "status":    {"$in": ["PUBLISHED", "ACTIVE"]},
-        "course_id": {"$nin": enrolled_course_ids}
+        "status":      {"$in": ["PUBLISHED", "ACTIVE"]},
+        "course_id":   {"$nin": enrolled_course_ids},
+        "course_type": {"$ne": "LAB"}
     }).sort("created_at", -1).limit(10)
     available_docs = await available_cursor.to_list(length=10)
 
@@ -315,7 +316,38 @@ async def get_dashboard_home(
     ]).to_list(length=1)
     my_global_rank = (global_rank[0]["count"] + 1) if global_rank else 1
 
-    # ── 9. CERTIFICATES ───────────────────────────────────────────────
+    # ── 9. LAB COURSES — scoped by classroom membership ──────────────
+    lab_memberships = await db.classroom_memberships.find(
+        {"student_user_id": user_id, "is_active": True}
+    ).to_list(length=None)
+    classroom_ids = [m["classroom_id"] for m in lab_memberships]
+    lab_courses_out = []
+    if classroom_ids:
+        lab_courses = await db.courses.find(
+            {"course_type": "LAB", "classroom_id": {"$in": classroom_ids}, "status": "PUBLISHED"}
+        ).to_list(length=None)
+        for lc in lab_courses:
+            cid = lc["course_id"]
+            lab_enr = await db.course_enrollments.find_one({"course_id": cid, "user_id": user_id, "is_active": True})
+            total_q = await db.course_questions.count_documents({"course_id": cid, "is_active": True})
+            solved_q = len(lab_enr.get("solved_questions", [])) if lab_enr else 0
+            lab_courses_out.append({
+                "course_id":    cid,
+                "title":        lc["title"],
+                "description":  lc.get("description", ""),
+                "domain":       lc["domain"],
+                "course_type":  "LAB",
+                "classroom_id": lc.get("classroom_id"),
+                "thumbnail_url": lc.get("thumbnail_url"),
+                "enrolled":     lab_enr is not None,
+                "progress": {
+                    "solved":      solved_q,
+                    "total":       total_q,
+                    "percentage":  round((solved_q / total_q * 100) if total_q > 0 else 0, 1),
+                },
+            })
+
+    # ── 10. CERTIFICATES ──────────────────────────────────────────────
     CERT_LEAGUES = ["SILVER", "GOLD", "PLATINUM", "DIAMOND", "MYTHIC", "LEGEND"]
     cert_enrollments = [e for e in enrollments if e.get("current_league") in CERT_LEAGUES]
     certificates_out = []
@@ -386,6 +418,9 @@ async def get_dashboard_home(
 
         # Enrolled courses with full progress
         "enrolled_courses": enrolled_courses_out,
+
+        # Lab courses scoped by classroom membership
+        "lab_courses": lab_courses_out,
 
         # Courses available to browse/enroll
         "available_courses": available_courses_out,

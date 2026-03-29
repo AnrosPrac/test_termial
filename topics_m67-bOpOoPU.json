@@ -1,0 +1,363 @@
+{
+  "type": "single",
+  "video_id": "m67-bOpOoPU",
+  "source": "https://youtu.be/m67-bOpOoPU?si=Wm2cL4-czt8Ode3T",
+  "total_video_duration": 19792.44,
+  "total_topics": 19,
+  "topics": [
+    {
+      "topic_key": "input_output",
+      "topic_label": "Input and Output",
+      "questions": [
+        "Write a program that prompts the user for their name and age using input(), then prints \"Hello <name>, you are <age> years old.\"",
+        "Write a program that asks the user to enter three numbers, one per line, and then prints each number on a separate line prefixed with its position (e.g., \"Number 1: 5\").",
+        "Write a program that reads a line of text from the user and prints the same line in uppercase.",
+        "Write a program that prompts the user for their name and age, then prints a greeting that includes both values.",
+        "Write a program that reads a line of text from the user and prints the number of characters entered.",
+        "Write a program that continuously reads numbers until the user enters 0, then prints how many numbers were entered (excluding the terminating 0)."
+      ],
+      "chunk_ids": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        13,
+        14,
+        19
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.47
+    },
+    {
+      "topic_key": "operators",
+      "topic_label": "Operators",
+      "questions": [
+        "Write a program that reads two integers from the user and prints their sum, difference, product, and integer division result.",
+        "Write a program that calculates and prints the result of (a + b) * c given three integer variables a, b, and c.",
+        "Write a program that swaps the values of two variables using only arithmetic operators and prints the swapped values.",
+        "Write a program that reads two integers and prints their sum, difference, product, integer division result, and remainder using the appropriate arithmetic operators.",
+        "Write a program that reads a number and prints the result of raising it to the power of 3 using the exponentiation operator.",
+        "Write a program that reads three numbers and prints the largest of the three using comparison operators."
+      ],
+      "chunk_ids": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        12
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.18
+    },
+    {
+      "topic_key": "if_else",
+      "topic_label": "If-Else Statements",
+      "questions": [
+        "Write a program that reads an integer from the user and prints \"Even\" if the number is divisible by 2, otherwise prints \"Odd\".",
+        "Write a program that asks for a user's score (0-100) and prints \"Pass\" if the score is 40 or higher, otherwise prints \"Fail\".",
+        "Write a program that reads a string representing a day of the week and prints \"Weekend\" if it is Saturday or Sunday, otherwise prints \"Weekday\".",
+        "Write a program that asks for a student's income and prints \"Eligible for scholarship\" if the income is greater than 7000, otherwise prints \"Not eligible for scholarship\".",
+        "Write a program that asks for a number and prints \"Divisible by 3\" if the number is divisible by 3, otherwise prints \"Not divisible by 3\".",
+        "Write a program that asks for a number and prints \"Divisible by both 3 and 5\" if the number is divisible by both 3 and 5, otherwise prints \"Not divisible by both\"."
+      ],
+      "chunk_ids": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        12,
+        13
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.18
+    },
+    {
+      "topic_key": "variables_and_datatypes",
+      "topic_label": "Variables and Data Types",
+      "questions": [
+        "Write a program that declares two integer variables a and b, assigns them the values 10 and 20, and prints their values separated by a space.",
+        "Write a program that stores your name in a string variable and your age in an integer variable, then prints a sentence like \"My name is <name> and I am <age> years old.\"",
+        "Write a program that creates three variables x, y, z, assigns them any numeric values, and prints the result of x + y + z.",
+        "Write a program that creates two variables a and b, assigns them the values 10 and 20, computes their sum, and prints the result.",
+        "Write a program that defines a variable price with the value 50000 and prints a message showing the price formatted as currency.",
+        "Write a program that stores your name in a variable and prints a greeting that includes the name."
+      ],
+      "chunk_ids": [
+        1,
+        14
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "type_conversion",
+      "topic_label": "Type Conversion",
+      "questions": [
+        "Write a program that reads two numbers as strings using input(), converts them to integers, and prints their sum.",
+        "Write a program that asks the user for their birth year as a string, converts it to an integer, calculates their age assuming the current year is 2026, and prints the age.",
+        "Write a program that reads a floating‑point number as a string, converts it to a float, multiplies it by 2, and prints the result.",
+        "Write a program that reads a score as a string, converts it to an integer, and then uses it in an if‑else statement to categorize the student.",
+        "Write a program that prompts the user for two numbers as strings, converts them to floats, and prints their division result.",
+        "Write a program that reads a user's age as input, converts it to an integer, and prints a message based on whether the age is at least 18."
+      ],
+      "chunk_ids": [
+        1,
+        3
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "for_loop",
+      "topic_label": "For Loop",
+      "questions": [
+        "Write a program that iterates over a list of fruit names ['apple', 'banana', 'cherry'] and prints each fruit on a separate line using a for loop.",
+        "Write a program that uses a for loop with range(5) to print the numbers 0 through 4.",
+        "Write a program that asks the user to enter a word and then uses a for loop to print each character of the word on a new line.",
+        "Write a program that iterates over the numbers from 1 to 10 and prints only the even numbers using a for loop.",
+        "Write a program that prints numbers from 1 to 10 using a for loop.",
+        "Write a program that asks the user for two integers A and B, then prints all numbers between A and B (inclusive) using a for loop."
+      ],
+      "chunk_ids": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "first_seen_at": 213.66,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "nested_loops",
+      "topic_label": "Nested Loops",
+      "questions": [
+        "Write a program that prints a multiplication table for numbers 1 to 3 using nested for loops.",
+        "Write a program that prints weeks and days: for week numbers 1 to 2, print \"Week X - Day Y\" for day numbers 1 to 3.",
+        "Write a program that generates a right‑triangle pattern of asterisks with 4 rows using nested loops.",
+        "Write a program that iterates over the lists [\"red\", \"green\"] and [\"apple\", \"pear\"] and prints every color‑fruit combination.",
+        "Write a program that creates and prints a 3×3 grid of sequential numbers using nested loops."
+      ],
+      "chunk_ids": [
+        9
+      ],
+      "first_seen_at": 14081.16,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "while_loop",
+      "topic_label": "While Loop",
+      "questions": [
+        "Write a program that prints numbers from 1 to 5 using a while loop.",
+        "Write a program that repeatedly asks the user to enter a number until they enter 0, then prints the total sum of all entered numbers.",
+        "Write a program that counts down from 10 to 1 using a while loop and prints each number.",
+        "Write a program that computes the factorial of a given positive integer using a while loop.",
+        "Write a program that keeps prompting the user for a password until the correct password \"secret\" is entered, then prints \"Access granted\".",
+        "Write a program that prints the numbers from 1 to 5 using a while loop."
+      ],
+      "chunk_ids": [
+        9,
+        10,
+        11
+      ],
+      "first_seen_at": 14081.16,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "lists",
+      "topic_label": "Lists",
+      "questions": [
+        "Write a program that creates a list of integers, inserts the value 11 at index 0, and then prints the updated list.",
+        "Write a program that starts with a list [1, 2, 3], extends it with another list [4, 5, 6], and prints the final list.",
+        "Write a program that removes the element at index 2 from a list using pop and prints the removed element and the remaining list.",
+        "Write a program that demonstrates how duplicate values are allowed in a list by adding repeated elements and printing the list."
+      ],
+      "chunk_ids": [
+        11
+      ],
+      "first_seen_at": 15765.5,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "sets",
+      "topic_label": "Sets",
+      "questions": [
+        "Write a program that creates a set with the values {1, 2, 3}, adds the number 4 using the add method, and prints the resulting set.",
+        "Write a program that attempts to add duplicate values to a set and shows that the set contains each element only once.",
+        "Write a program that removes an element from a set using the discard method and prints the set before and after removal."
+      ],
+      "chunk_ids": [
+        11
+      ],
+      "first_seen_at": 15765.5,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "dictionaries",
+      "topic_label": "Dictionaries",
+      "questions": [
+        "Write a program that creates a dictionary with a key \"name\" and value \"Alice\", then updates the value to \"Bob\" and prints the dictionary.",
+        "Write a program that adds a new key-value pair to a dictionary and prints all keys and values.",
+        "Write a program that demonstrates that duplicate keys are overwritten by inserting the same key with a different value and printing the final dictionary."
+      ],
+      "chunk_ids": [
+        11
+      ],
+      "first_seen_at": 15765.5,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "functions_basics",
+      "topic_label": "Functions Basics",
+      "questions": [
+        "Write a function called factorial that takes an integer n and returns its factorial using a while loop.",
+        "Write a function that receives a list and returns a new list with all duplicate elements removed.",
+        "Write a function that takes a dictionary and a key, and returns the corresponding value if the key exists or returns \"Not found\" otherwise.",
+        "Write a program that defines a function called greet that prints \"Hello, World!\" and then calls the function.",
+        "Write a program that defines a function sum_two that takes two numbers, returns their sum, and prints the result for the numbers 7 and 5.",
+        "Write a program that defines a function show_year that prints the current year using the datetime module and then calls the function."
+      ],
+      "chunk_ids": [
+        11,
+        12,
+        13,
+        14,
+        16
+      ],
+      "first_seen_at": 15765.5,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "function_arguments",
+      "topic_label": "Function Arguments",
+      "questions": [
+        "Write a function average_three that takes three numbers as arguments and returns their average.",
+        "Write a function list_length that takes a list as an argument and returns its length.",
+        "Write a function count_char that takes a string and a single character, and returns how many times the character appears in the string.",
+        "Write a function max_of_two that takes two integers and returns the larger one.",
+        "Write a function that takes two numbers as arguments and returns their sum.",
+        "Write a function that accepts a list of numbers and returns the count of elements in the list."
+      ],
+      "chunk_ids": [
+        12,
+        13,
+        15
+      ],
+      "first_seen_at": 15765.5,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "oop_classes_objects",
+      "topic_label": "Classes and Objects",
+      "questions": [
+        "Write a program that defines a class Laptop with attributes processor, ram, and price. Create an instance of Laptop, set its attributes to \"i5\", 16, and 75000, and then print all attribute values.",
+        "Write a program that defines a class Laptop with a method display_specs that prints the processor, ram, and price of the laptop. Create an object and call the method.",
+        "Write a program that defines a class Laptop, creates two Laptop objects with different specifications, and stores them in a list. Then iterate over the list and print each laptop's specifications.",
+        "Write a program that defines a class Student with attributes name and register_number and a method display that prints both attributes.",
+        "Write a program that defines a class Fruit with a color attribute set in the constructor, then creates two objects Apple and Banana with different colors and prints their colors.",
+        "Write a program that defines a class Laptop with attributes ram and processor and a method specs that returns a formatted string describing the laptop."
+      ],
+      "chunk_ids": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "oop_constructor",
+      "topic_label": "Constructor (__init__)",
+      "questions": [
+        "Write a program that defines a class Laptop with an __init__ method that initializes processor, ram, and price attributes from parameters. Create an instance using the constructor and print its attributes.",
+        "Write a program that defines a class Laptop with an __init__ method that sets a default price of 0 if no price is provided. Create one laptop with a price and one without, then print both prices.",
+        "Write a program that defines a class Laptop whose __init__ method takes a single string \"specs\" in the format \"processor-ram-price\" (e.g., \"i7-32-120000\") and parses it to set the corresponding attributes. Create an object using this format and display its attributes.",
+        "Write a program that defines a class Car whose __init__ method takes make, model, and year as parameters and stores them as attributes.",
+        "Write a program that defines a class Person with an __init__ method that takes name and age, stores them, and includes a method greet that prints a greeting using the name.",
+        "Write a program that defines a class Rectangle with an __init__ method that takes width and height, stores them, and provides a method perimeter that returns the rectangle's perimeter."
+      ],
+      "chunk_ids": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "oop_inheritance",
+      "topic_label": "Inheritance",
+      "questions": [
+        "Write a program that defines a base class Animal with a method sound that prints \"Generic animal sound\", defines a subclass Dog that overrides sound to print \"Woof!\", creates instances of both classes, and calls their sound methods.",
+        "Write a program that creates a class hierarchy Vehicle -> Car -> ElectricCar, where each subclass adds an attribute (e.g., number_of_wheels, battery_capacity) and inherits a method describe that prints all attributes, then demonstrates creating an ElectricCar and calling describe.",
+        "Write a program that defines two classes Flyable and Swimmable each with a method move that prints a specific action, then defines a class Duck that inherits from both and overrides move to print \"Duck can both fly and swim\", and finally creates a Duck instance and calls its move method.",
+        "Write a program that defines a base class Person with an attribute name and a method introduce that prints \"I am <name>\". Define a subclass Student that inherits Person, adds an attribute grade via its constructor, and overrides introduce to also print \"My grade is <grade>\". Create a Student and call introduce.",
+        "Write a program that defines a base class Vehicle with a method start that prints \"Vehicle started\". Define a subclass Car that inherits Vehicle and overrides start to print \"Car started\". Instantiate both classes and call their start methods.",
+        "Write a program that defines a base class Shape with a method area that returns 0. Define a subclass Rectangle that inherits Shape, has length and width attributes, and overrides area to return length * width. Create a Rectangle object and print its area."
+      ],
+      "chunk_ids": [
+        17,
+        18,
+        19
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "oop_polymorphism",
+      "topic_label": "Polymorphism",
+      "questions": [
+        "Write a program that defines two classes, Cat and Dog, each with a method sound that prints \"Meow\" and \"Bark\" respectively. Write a function make_sound that takes an animal object and calls its sound method. Demonstrate polymorphism by passing instances of both classes to make_sound."
+      ],
+      "chunk_ids": [
+        18
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "exception_handling",
+      "topic_label": "Exception Handling (try/except)",
+      "questions": [
+        "Write a program that prompts the user for two integers, adds them, and uses try/except to handle ValueError if the input is not a valid integer.",
+        "Write a program that divides a number by user‑provided divisor and catches ZeroDivisionError, printing an appropriate message.",
+        "Write a program that reads a number from input, converts it to int inside a try block, and prints \"Valid number\" if no exception occurs, otherwise prints \"Invalid input\".",
+        "Write a program that uses a try/except block to open a file named \"data.txt\" for reading and prints an error message if the file does not exist."
+      ],
+      "chunk_ids": [
+        19
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "file_handling",
+      "topic_label": "File Handling",
+      "questions": [
+        "Write a program that creates a new text file called \"fruits.txt\", writes the words \"Apple\" and \"Orange\" on separate lines, closes the file, then reopens it and prints its contents.",
+        "Write a program that reads a file named \"data.txt\" and prints the number of lines it contains. If the file does not exist, the program should create it with a single line saying \"Empty file\" and then print the line count.",
+        "Write a program that appends the user-provided fruit name to the end of \"fruits.txt\" without overwriting the existing content, then displays the updated file contents.",
+        "Write a program that attempts to read from a file that has been closed, catches the resulting exception, and prints a friendly error message indicating that the file is not open."
+      ],
+      "chunk_ids": [
+        20
+      ],
+      "first_seen_at": 19792.44,
+      "weightage": 1.0
+    }
+  ]
+}

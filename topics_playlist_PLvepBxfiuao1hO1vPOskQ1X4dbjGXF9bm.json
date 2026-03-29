@@ -1,0 +1,236 @@
+{
+  "type": "playlist",
+  "playlist_id": "PLvepBxfiuao1hO1vPOskQ1X4dbjGXF9bm",
+  "source": "https://youtube.com/playlist?list=PLvepBxfiuao1hO1vPOskQ1X4dbjGXF9bm&si=GojNYXUOA__QhBr9",
+  "total_videos": 27,
+  "videos_processed": 12,
+  "videos_skipped": 15,
+  "total_duration_all_videos": 3026.92,
+  "total_topics": 12,
+  "topics": [
+    {
+      "topic_key": "operators",
+      "topic_label": "Operators",
+      "questions": [
+        "Write a program that asks the user for two numbers and then prints the result of adding, subtracting, multiplying, and dividing them using the appropriate operators.",
+        "Write a program that calculates the area and perimeter of a rectangle given its length and width, using multiplication and addition operators.",
+        "Write a program that computes the average of three numbers entered by the user, using addition and division operators.",
+        "Write a program that swaps the values of two numeric variables without using a temporary variable, by applying addition and subtraction operators.",
+        "Write a program that reads an integer from the user and prints whether it is even or odd by using the modulus operator.",
+        "Write a program that reads three integers from the user, calculates their sum, product, and average, and prints all three results."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "first_seen_at": 66.6,
+      "weightage": 3.08
+    },
+    {
+      "topic_key": "if_else",
+      "topic_label": "If-Else Statements",
+      "questions": [
+        "Write a program that asks for a number and prints \"Divisible by 3\" if the number is divisible by 3, otherwise prints \"Not divisible by 3\".",
+        "Write a program that reads an integer and prints \"Divisible by both 3 and 5\" if it is divisible by both, otherwise prints \"Not divisible by both\".",
+        "Write a program that asks the user for their age and prints \"Adult\" if the age is 18 or older, otherwise prints \"Minor\".",
+        "Write a program that takes a score (0-100) as input and prints \"Pass\" if the score is 35 or higher, otherwise prints \"Fail\".",
+        "Write a program that reads a character and prints \"Vowel\" if it is a, e, i, o, or u, otherwise prints \"Consonant\".",
+        "Write a program that reads a numeric score (0‑100) and prints \"Poor\" if the score is less than 35, \"Average\" if it is between 35 and 70 inclusive, and \"Good\" if it is greater than 70."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "first_seen_at": 91.14,
+      "weightage": 2.84
+    },
+    {
+      "topic_key": "for_loop",
+      "topic_label": "For Loop",
+      "questions": [
+        "Write a program that prints the numbers from 1 to 10 using a for loop.",
+        "Write a program that prints all even numbers between 1 and 20 using a for loop.",
+        "Write a program that calculates and prints the sum of the numbers from 1 to 100 using a for loop.",
+        "Write a program that prints the multiplication table of 5 (from 5×1 to 5×10) using a for loop.",
+        "Write a program that prints numbers from 1 to 10 using a for loop.",
+        "Write a program that prints only even numbers between 1 and 20 using a for loop."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "first_seen_at": 0.0,
+      "weightage": 2.84
+    },
+    {
+      "topic_key": "input_output",
+      "topic_label": "Input and Output",
+      "questions": [
+        "Write a program that asks the user to enter their name and age, then prints a sentence like \"My name is <name> and I am <age> years old.\"",
+        "Write a program that prompts the user to input three numbers, one after another, and then prints each number on its own line.",
+        "Write a program that reads a user's department name and prints \"My department is <department>.\"",
+        "Write a program that asks the user to enter their income and then prints \"Scholarship available\" if the income is greater than 7000, otherwise prints \"Not eligible for scholarship\".",
+        "Write a program that prompts the user to enter an integer and then prints the integer back to the screen.",
+        "Write a program that reads a number from the user and prints whether the number is positive, negative, or zero."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "first_seen_at": 17.36,
+      "weightage": 2.5
+    },
+    {
+      "topic_key": "type_conversion",
+      "topic_label": "Type Conversion",
+      "questions": [
+        "Write a program that reads a number as a string from the user, converts it to an integer, adds 5 to it, and prints the result.",
+        "Write a program that asks the user for three numbers, converts each input to an integer, and then prints their sum.",
+        "Write a program that reads a user's age as input, converts it to an integer, and prints a message stating the age next year.",
+        "Write a program that reads three numbers as strings, converts them to integers, and prints their average as a floating‑point number.",
+        "Write a program that reads a temperature in Celsius as a string, converts it to a float, and prints the equivalent temperature in Fahrenheit.",
+        "Write a program that reads a binary number represented as a string, converts it to an integer, and prints its decimal value."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "first_seen_at": 17.36,
+      "weightage": 2.38
+    },
+    {
+      "topic_key": "functions_basics",
+      "topic_label": "Functions Basics",
+      "questions": [
+        "Write a program that defines a function which takes two integers and prints their sum.",
+        "Write a program that defines a function which receives an integer and prints \"Even\" if the number is even or \"Odd\" otherwise.",
+        "Write a program that defines a function which receives two integers A and B and prints all numbers from A to B inclusive.",
+        "Write a program that defines a function which receives a string and prints the string reversed."
+      ],
+      "chunk_ids": [
+        1
+      ],
+      "first_seen_at": 109.46,
+      "weightage": 1.9
+    },
+    {
+      "topic_key": "variables_and_datatypes",
+      "topic_label": "Variables and Data Types",
+      "questions": [
+        "Write a program that declares an integer variable, a float variable, and a string variable, then prints each of them on a separate line.",
+        "Write a program that reads two numbers from the user, stores them in variables, and prints their sum, difference, product, and quotient.",
+        "Write a program that creates two string variables, concatenates them with a space in between, and prints the resulting sentence.",
+        "Write a program that swaps the values of two variables using a temporary third variable and prints the values before and after swapping.",
+        "Write a program that assigns the value \"123\" to a variable, converts it to an integer, and prints both the original string and the converted integer.",
+        "Write a program that declares variables for a person's name and age, assigns them values, and prints both values on separate lines."
+      ],
+      "chunk_ids": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "first_seen_at": 66.6,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "lists",
+      "topic_label": "Lists",
+      "questions": [
+        "Write a program that reads 5 integers from the user, stores them in a list, and then prints the list in reverse order.",
+        "Write a program that creates a list of the first ten square numbers and prints the list.",
+        "Write a program that reads a list of words from the user (comma separated) and prints the longest word.",
+        "Write a program that removes duplicate elements from a list of numbers entered by the user and prints the resulting list.",
+        "Write a program that merges two lists entered by the user and prints the combined list.",
+        "Write a program that creates a list of numbers from 0 to 5, inserts the value 11 at index 0, and then prints the updated list."
+      ],
+      "chunk_ids": [
+        1,
+        1
+      ],
+      "first_seen_at": 31.26,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "nested_loops",
+      "topic_label": "Nested Loops",
+      "questions": [
+        "Write a program that uses nested for loops to print a rectangle of asterisks with 4 rows and 6 columns.",
+        "Write a program that prints a multiplication table for numbers 1 through 5 using nested for loops.",
+        "Write a program that generates all possible two‑digit combinations (00 to 99) and prints each combination on a separate line using nested loops.",
+        "Write a program that asks the user for a number n and then prints a right‑angled triangle of numbers where each row i contains the numbers 1 to i, using nested for loops."
+      ],
+      "chunk_ids": [
+        1
+      ],
+      "first_seen_at": 130.08,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "while_loop",
+      "topic_label": "While Loop",
+      "questions": [
+        "Write a program that prints the numbers from 1 to 5 using a while loop.",
+        "Write a program that prints the first 10 natural numbers in reverse order using a while loop.",
+        "Write a program that asks the user for a positive integer and then prints its factorial using a while loop.",
+        "Write a program that repeatedly asks the user to enter a number and adds it to a running total until the user enters 0, then prints the total sum."
+      ],
+      "chunk_ids": [
+        2
+      ],
+      "first_seen_at": 138.68,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "sets",
+      "topic_label": "Sets",
+      "questions": [
+        "Write a program that takes a list containing duplicate numbers, converts it to a set to remove duplicates, and prints the resulting set.",
+        "Write a program that creates an empty set, adds the numbers 1, 2, and 3 to it, and then prints the set.",
+        "Write a program that creates a set of strings, attempts to add a duplicate string, and prints the set to show that duplicates are not stored.",
+        "Write a program that removes an element from a set using the discard method and prints the set before and after removal."
+      ],
+      "chunk_ids": [
+        1
+      ],
+      "first_seen_at": 46.62,
+      "weightage": 1.0
+    },
+    {
+      "topic_key": "dictionaries",
+      "topic_label": "Dictionaries",
+      "questions": [
+        "Write a program that creates a dictionary with keys \"name\" and \"location\" and prints the dictionary.",
+        "Write a program that updates the value of an existing key in a dictionary and prints the updated dictionary.",
+        "Write a program that attempts to add a duplicate key to a dictionary with a different value and prints the dictionary to demonstrate that the last value overwrites the previous one.",
+        "Write a program that removes a key-value pair from a dictionary using the pop method and prints the removed value and the resulting dictionary."
+      ],
+      "chunk_ids": [
+        1
+      ],
+      "first_seen_at": 46.62,
+      "weightage": 1.0
+    }
+  ]
+}

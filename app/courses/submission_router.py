@@ -372,6 +372,15 @@ async def process_result(db: AsyncIOMotorDatabase, submission_id: str, result: d
             }}
         )
 
+        # ── LAB: check module completion (non-blocking) ───────────────
+        course_doc = await db.courses.find_one({"course_id": course_id}, {"course_type": 1})
+        if course_doc and course_doc.get("course_type") == "LAB":
+            import asyncio
+            from app.courses.lab_record_router import check_and_mark_module_completion
+            asyncio.create_task(
+                check_and_mark_module_completion(db, user_id, course_id, question_id)
+            )
+
     else:
         # ── RE-SUBMISSION ON ALREADY-SOLVED QUESTION ─────────────────────
         # Allow efficiency improvement: award DELTA points only if
