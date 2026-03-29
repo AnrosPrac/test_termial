@@ -41,3 +41,4 @@ Pillow
 
 #---AWS---
 boto3
+reportlab
