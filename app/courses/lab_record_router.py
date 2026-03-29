@@ -31,7 +31,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT, TA_JUSTIFY
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, PageBreak, KeepTogether
+    HRFlowable, PageBreak, KeepTogether, Image
 )
 from reportlab.lib import colors
 from reportlab.platypus.flowables import Flowable
@@ -43,6 +43,12 @@ router = APIRouter(tags=["Lab Records"])
 
 PAGE_W, PAGE_H = A4
 MARGIN = 20 * mm
+
+# ── Brand config ──────────────────────────────────────────────────
+BRAND_NAME           = "Lumetrix Classrooms"
+BRAND_LOGO_PATH      = "logo.jpg"   # path relative to server cwd; adjust as needed
+BRAND_LOGO_SIZE      = 7 * mm       # logo square size in footer
+BRAND_LOGO_SIZE_COVER = 14 * mm     # logo square size on cover page
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -82,12 +88,33 @@ class PageBorderCanvas:
         canvas.drawRightString(w - 14 * mm, h - 25 * mm, self.student_name)
 
         # ── Footer line ───────────────────────────────────────────
-        canvas.line(14 * mm, 18 * mm, w - 14 * mm, 18 * mm)
+        canvas.line(14 * mm, 19 * mm, w - 14 * mm, 19 * mm)
 
-        # ── Page number ───────────────────────────────────────────
+        # ── Page number (centred below footer line) ────────────────
         canvas.setFont("Helvetica", 8)
-        page_text = f"— {doc.page} —"
-        canvas.drawCentredString(w / 2, 13 * mm, page_text)
+        canvas.drawCentredString(w / 2, 14 * mm, f"— {doc.page} —")
+
+        # ── Brand: logo + name — bottom right, below footer line ──
+        import os
+        logo_size   = BRAND_LOGO_SIZE                 # 7 mm
+        logo_bottom = 12 * mm                         # well below the footer line
+        logo_x      = w - 14 * mm - logo_size         # right-aligned to inner border
+
+        if os.path.exists(BRAND_LOGO_PATH):
+            canvas.drawImage(
+                BRAND_LOGO_PATH,
+                logo_x, logo_bottom,
+                width=logo_size, height=logo_size,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
+
+        # Brand name — bold, larger, vertically centred with logo
+        canvas.setFont("Helvetica-Bold", 7.5)
+        canvas.setFillColor(colors.black)
+        brand_text_x = logo_x - 2 * mm
+        brand_text_y = logo_bottom + (logo_size / 2) - 2.8
+        canvas.drawRightString(brand_text_x, brand_text_y, BRAND_NAME)
 
         canvas.restoreState()
 
@@ -235,6 +262,42 @@ def _build_pdf(
     def on_page(canvas, doc):
         chrome.draw_page_chrome(canvas, doc)
 
+    def on_first_page(canvas, doc):
+        chrome.draw_page_chrome(canvas, doc)
+        # ── Brand block pinned to bottom of cover ─────────────────
+        import os
+        w, h = A4
+        brand_y      = 28 * mm          # above the inner border bottom
+        logo_size    = BRAND_LOGO_SIZE_COVER
+        left_x       = 14 * mm
+
+        # thin rule above brand
+        canvas.saveState()
+        canvas.setStrokeColor(colors.black)
+        canvas.setLineWidth(0.5)
+        canvas.line(left_x, brand_y + logo_size + 3 * mm,
+                    w - 14 * mm, brand_y + logo_size + 3 * mm)
+
+        if os.path.exists(BRAND_LOGO_PATH):
+            canvas.drawImage(
+                BRAND_LOGO_PATH, left_x, brand_y,
+                width=logo_size, height=logo_size,
+                preserveAspectRatio=True, mask="auto",
+            )
+            text_x = left_x + logo_size + 3 * mm
+        else:
+            text_x = left_x
+
+        canvas.setFont("Helvetica-Bold", 9)
+        canvas.setFillColor(colors.black)
+        canvas.drawString(text_x, brand_y + logo_size * 0.55, BRAND_NAME)
+
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(colors.Color(0.45, 0.45, 0.45))
+        canvas.drawString(text_x, brand_y + logo_size * 0.2, "Lab Record \u00b7 Verified Completion")
+
+        canvas.restoreState()
+
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
@@ -249,35 +312,120 @@ def _build_pdf(
     content_width = PAGE_W - 2 * MARGIN
     story = []
 
-    # ── COVER PAGE ────────────────────────────────────────────────
-    story.append(Spacer(1, 30 * mm))
+    # ══════════════════════════════════════════════════════════════
+    #  COVER PAGE  (lab-record style — mirrors physical record book)
+    # ══════════════════════════════════════════════════════════════
 
-    story.append(Paragraph(course_title.upper(), styles["cover_title"]))
-    story.append(Spacer(1, 3 * mm))
+    # ── Styles for cover ─────────────────────────────────────────
+    meta_label_style = ParagraphStyle(
+        "MetaLabel", fontName="Helvetica-Bold", fontSize=9, leading=14,
+    )
+    exp_title_cover = ParagraphStyle(
+        "ExpTitleCover", fontName="Helvetica-Bold", fontSize=13,
+        leading=18, alignment=TA_CENTER,
+    )
+    section_head = ParagraphStyle(
+        "SectionHead", fontName="Helvetica-Bold", fontSize=10,
+        leading=14, spaceBefore=5 * mm, spaceAfter=2 * mm,
+    )
+    body_text = ParagraphStyle(
+        "BodyText2", fontName="Helvetica", fontSize=9,
+        leading=14, spaceAfter=1.5 * mm, leftIndent=4 * mm,
+    )
+    bullet_text = ParagraphStyle(
+        "BulletText", fontName="Helvetica", fontSize=9,
+        leading=14, leftIndent=8 * mm, spaceAfter=1 * mm,
+    )
 
-    # Thick rule under course title
-    story.append(HRFlowable(
-        width="100%", thickness=2.5, color=colors.black, spaceAfter=4 * mm
-    ))
+    # ── Ex. No / Date / Title header box ─────────────────────────
+    left_col = [
+        Paragraph("Ex. No: ___________", meta_label_style),
+        Spacer(1, 3 * mm),
+        Paragraph("Date: ___________", meta_label_style),
+    ]
+    right_col = Paragraph(module_title, exp_title_cover)
 
-    story.append(Paragraph(module_title, styles["cover_sub"]))
-    story.append(Spacer(1, 2 * mm))
+    header_table = Table(
+        [[left_col, right_col]],
+        colWidths=[content_width * 0.30, content_width * 0.70],
+    )
+    header_table.setStyle(TableStyle([
+        ("BOX",          (0, 0), (-1, -1), 1.2, colors.black),
+        ("LINEBEFORE",   (1, 0), (1, -1),  0.8, colors.black),
+        ("VALIGN",       (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING",  (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING",   (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING",(0, 0), (-1, -1), 8),
+    ]))
 
-    story.append(HRFlowable(
-        width="60%", thickness=0.5, color=colors.black,
-        hAlign="CENTER", spaceAfter=6 * mm
-    ))
+    story.append(Spacer(1, 8 * mm))
+    story.append(header_table)
+    story.append(Spacer(1, 5 * mm))
 
-    story.append(Spacer(1, 20 * mm))
+    # ── AIM ───────────────────────────────────────────────────────
+    # Collect unique languages used across all questions
+    lang_set = sorted({q.get("language","").strip() for q in questions if q.get("language","").strip()})
+    lang_display = ", ".join(lang_set) if lang_set else "the given programming language"
 
-    # Cover meta — right aligned block
+    story.append(Paragraph("AIM:", section_head))
     story.append(Paragraph(
-        f"<b>Student:</b> {student_name}<br/>"
-        f"<b>ID:</b> {student_id}<br/>"
-        f"<b>Generated:</b> {generated_at}",
-        styles["cover_meta"]
+        f"The aim of this program is to understand and demonstrate the concepts covered "
+        f"in <b>{module_title}</b> using <b>{lang_display}</b>.",
+        body_text,
     ))
 
+    # ── SOFTWARE REQUIRED ─────────────────────────────────────────
+    story.append(Paragraph("SOFTWARE REQUIRED:", section_head))
+    story.append(Paragraph(
+        "&#8226; <b>Lumetrix Classrooms</b> — an advanced online lab environment "
+        "with a built-in code editor, multi-language compiler, automated test-case "
+        "runner, and instant submission feedback.",
+        bullet_text,
+    ))
+    story.append(Paragraph(
+        "&#8226; A modern <b>Web Browser</b> (Chrome / Firefox / Edge / Safari) "
+        "to access Lumetrix Classrooms.",
+        bullet_text,
+    ))
+
+    # ── HARDWARE REQUIRED ─────────────────────────────────────────
+    story.append(Paragraph("HARDWARE REQUIRED:", section_head))
+    story.append(Paragraph(
+        "&#8226; A computer, laptop, or <b>mobile phone</b> capable of running "
+        "a modern web browser with a stable internet connection.",
+        bullet_text,
+    ))
+
+    # ── PROCEDURE ─────────────────────────────────────────────────
+    story.append(Paragraph("PROCEDURE", section_head))
+
+    procedure_steps = [
+        ("<b>Open Lumetrix Classrooms:</b> Log in to your account and navigate "
+         "to the assigned lab module under your enrolled course."),
+        ("<b>Read the Problem Statement:</b> Carefully read the question, including "
+         "the description, constraints, and sample test cases provided."),
+        ("<b>Write the Program:</b> Use the built-in code editor to write your solution "
+         "in the given programming language."),
+        ("<b>Tap Run:</b> Click the <b>Run</b> button to compile and execute your program. "
+         "Review the output and fix any errors before proceeding."),
+        ("<b>Submit:</b> Once the output is correct, click <b>Submit</b>. The system will "
+         "automatically validate your solution against all test cases."),
+        ("<b>Claim the Record:</b> After successfully completing all questions in the module, "
+         "navigate to the module page and claim your lab record. "
+         "The PDF is generated instantly with your accepted solutions and verified results."),
+    ]
+
+    for i, step in enumerate(procedure_steps, start=1):
+        story.append(Paragraph(
+            f"{i}.&nbsp;&nbsp;{step}",
+            ParagraphStyle(
+                f"Step{i}", fontName="Helvetica", fontSize=9,
+                leading=14, leftIndent=6 * mm, spaceAfter=3 * mm,
+            )
+        ))
+
+    # Brand block is drawn via canvas in on_first_page (pinned to bottom of page)
     story.append(PageBreak())
 
     # ── QUESTIONS ─────────────────────────────────────────────────
@@ -356,9 +504,11 @@ def _build_pdf(
             tc_data = [
                 [
                     Paragraph("<b>INPUT</b>", ParagraphStyle(
-                        "TCH", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER)),
+                        "TCH", fontName="Helvetica-Bold", fontSize=8,
+                        alignment=TA_CENTER, textColor=colors.white)),
                     Paragraph("<b>EXPECTED OUTPUT</b>", ParagraphStyle(
-                        "TCH2", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER)),
+                        "TCH2", fontName="Helvetica-Bold", fontSize=8,
+                        alignment=TA_CENTER, textColor=colors.white)),
                 ]
             ]
             for tc in public_tcs:
@@ -414,7 +564,124 @@ def _build_pdf(
         if idx < len(questions_sorted) - 1:
             story.append(DiamondDivider(content_width))
 
-    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
+    # ══════════════════════════════════════════════════════════════
+    #  RESULT PAGE
+    # ══════════════════════════════════════════════════════════════
+    story.append(PageBreak())
+
+    # Styles for result page
+    result_page_title = ParagraphStyle(
+        "ResultPageTitle", fontName="Helvetica-Bold", fontSize=15,
+        leading=20, alignment=TA_CENTER, spaceAfter=2 * mm,
+    )
+    result_page_sub = ParagraphStyle(
+        "ResultPageSub", fontName="Helvetica", fontSize=9,
+        leading=13, alignment=TA_CENTER,
+        textColor=colors.Color(0.35, 0.35, 0.35), spaceAfter=6 * mm,
+    )
+    result_row_label = ParagraphStyle(
+        "ResultRowLabel", fontName="Helvetica-Bold", fontSize=9, leading=13,
+    )
+    result_row_value = ParagraphStyle(
+        "ResultRowValue", fontName="Helvetica", fontSize=9, leading=13,
+    )
+    result_verdict = ParagraphStyle(
+        "ResultVerdict", fontName="Helvetica-Bold", fontSize=11,
+        leading=16, alignment=TA_CENTER, spaceAfter=3 * mm,
+    )
+    result_sign_label = ParagraphStyle(
+        "ResultSignLabel", fontName="Helvetica", fontSize=8,
+        leading=12, alignment=TA_CENTER,
+        textColor=colors.Color(0.45, 0.45, 0.45),
+    )
+
+    # Push result block to lower portion of the page
+    story.append(Spacer(1, 38 * mm))
+
+    # ── Section heading ───────────────────────────────────────────
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceAfter=5 * mm))
+    story.append(Paragraph("RESULT", result_page_title))
+    story.append(Paragraph(
+        f"{module_title}  ·  {course_title}",
+        result_page_sub,
+    ))
+    story.append(HRFlowable(width="40%", thickness=0.5, color=colors.black,
+                            hAlign="CENTER", spaceAfter=6 * mm))
+
+    # ── Per-question result summary table ─────────────────────────
+    res_table_data = [[
+        Paragraph("<b>No.</b>", ParagraphStyle("RH0", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER, textColor=colors.white)),
+        Paragraph("<b>Question</b>", ParagraphStyle("RH1", fontName="Helvetica-Bold", fontSize=8, textColor=colors.white)),
+        Paragraph("<b>Language</b>", ParagraphStyle("RH2", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER, textColor=colors.white)),
+        Paragraph("<b>Test Cases</b>", ParagraphStyle("RH3", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER, textColor=colors.white)),
+        Paragraph("<b>Status</b>", ParagraphStyle("RH4", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER, textColor=colors.white)),
+    ]]
+
+    for idx, q in enumerate(questions_sorted):
+        passed = q.get("passed", 0)
+        total  = q.get("total", 0)
+        tc_str = f"{passed} / {total}" if total > 0 else "—"
+        status = "✓  PASS" if (total > 0 and passed == total) else f"{passed}/{total}"
+        res_table_data.append([
+            Paragraph(str(idx + 1), ParagraphStyle(f"RN{idx}", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)),
+            Paragraph(q.get("title", ""), ParagraphStyle(f"RT{idx}", fontName="Helvetica", fontSize=8)),
+            Paragraph(q.get("language", "").upper(), ParagraphStyle(f"RL{idx}", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)),
+            Paragraph(tc_str, ParagraphStyle(f"RTC{idx}", fontName="Courier", fontSize=8, alignment=TA_CENTER)),
+            Paragraph(status, ParagraphStyle(f"RS{idx}", fontName="Helvetica-Bold", fontSize=8, alignment=TA_CENTER)),
+        ])
+
+    col_widths = [
+        content_width * 0.07,
+        content_width * 0.42,
+        content_width * 0.16,
+        content_width * 0.16,
+        content_width * 0.19,
+    ]
+    res_table = Table(res_table_data, colWidths=col_widths)
+    res_table.setStyle(TableStyle([
+        ("BOX",           (0, 0), (-1, -1), 0.8, colors.black),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.3, colors.black),
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.black),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.Color(0.96, 0.96, 0.96)]),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 5),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(res_table)
+    story.append(Spacer(1, 6 * mm))
+
+    # ── Verdict statement ─────────────────────────────────────────
+    total_q   = len(questions_sorted)
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.black, spaceAfter=5 * mm))
+    story.append(Paragraph(
+        f"All {total_q} question{'s' if total_q != 1 else ''} and topics in the "
+        f"<b>{module_title}</b> module have been successfully understood and demonstrated.",
+        ParagraphStyle("VerdictBody", fontName="Helvetica", fontSize=9,
+                       leading=15, alignment=TA_CENTER, spaceAfter=8 * mm),
+    ))
+
+    # ── Signature row ─────────────────────────────────────────────
+    sign_data = [[
+        Paragraph("____________________________", result_sign_label),
+        Paragraph("____________________________", result_sign_label),
+    ],[
+        Paragraph("Student Signature", result_sign_label),
+        Paragraph("Staff Signature", result_sign_label),
+    ]]
+    sign_table = Table(sign_data, colWidths=[content_width / 2, content_width / 2])
+    sign_table.setStyle(TableStyle([
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
+        ("TOPPADDING",    (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    story.append(sign_table)
+
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_page)
     buf.seek(0)
     return buf.read()
 
